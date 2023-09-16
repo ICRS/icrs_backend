@@ -5,7 +5,7 @@ import os
 
 app = Flask(__name__)
 
-secret = os.environ["secret"]
+secret = os.environ["SECRET"]
 DATABASE = "database.db"
 
 def db_execute_command(sql_query, parameters):
@@ -26,10 +26,12 @@ def db_execute_command(sql_query, parameters):
 
 @app.route('/addUser', methods = ['POST'])
 def add_user():
+    print("POST")
     if request.method == "POST":
         try:
             data = request.json
-            secret = data.get("secret")
+            print(data)
+            # secret = data.get("secret")
             
             if data.get('secret') != secret:
                 return "incorrect key"
@@ -48,20 +50,20 @@ def set_user_can_print():
     if request.method == "POST":
         try:
             data = request.json
-            secret = data.get("secret")
+            # secret = data.get("secret")
             
             if data.get('secret') != secret:
                 return "incorrect key"
             
             ID = data.get('id')
             CAN_PRINT = data.get('value')
-            
-            db_execute_command("UPDATE Access SET CANPRINT=? WHERE VALID=TRUE AND ID=?", (CAN_PRINT, ID))
+            print(ID, CAN_PRINT)
+            db_execute_command("UPDATE Access SET CANPRINT=? WHERE VALID=\'TRUE\' AND ID=?", (CAN_PRINT, ID))
 
         except:
             return "ERROR in post message"
 
-    return
+    return "SUCCESS"
 
 
 last_set_time = datetime.datetime.fromtimestamp(0)
@@ -72,25 +74,28 @@ def set_can_print():
     if request.method == "POST":
         try:
             data = request.json
-            secret = data.get("secret")
-            
+            print(data)
             if data.get('secret') != secret:
                 return "incorrect key"
             
             ID = data.get('id')
-            
+
             with sqlite3.connect(DATABASE) as con:
                 cur = con.cursor()
-                cur.execute("SELECT Count() From Access WHERE ID=? AND CANPRINT=\'TRUE\'", ID)
+                cur.execute("SELECT Count() From Access WHERE ID=? AND CANPRINT=\'TRUE\'", (ID,))
 
                 if cur.fetchone()[0] > 0:
+                    print("CHECK TIME")
                     global last_set_time
                     last_set_time = datetime.datetime.now() + datetime.timedelta(minutes=1)
+            msg = "SUCCESS"
         except:
             con.rollback()
+            msg = "FAILURE"
         finally:
             con.close()
-    return
+            return msg
+    return "SUCCESS"
 
 
 @app.route('/getCanPrint', methods = ['GET'])
