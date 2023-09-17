@@ -1,12 +1,36 @@
-from flask import Flask, request
 import sqlite3
 import datetime
 import os
+from dotenv import load_dotenv
+import tornado
+import json
+load_dotenv()
 
-app = Flask(__name__)
 
 secret = os.environ["SECRET"]
 DATABASE = "database.db"
+
+try:
+    env = os.environ["ENV"]
+except:
+    env = "dev"
+
+def create_table():
+    """
+    creates a database using the db.sql schema
+    if dev environment is detected, the database is recreated every time
+    """
+    try:
+        with open("db.sql",'r') as f:
+            schema = f.read()
+        if env=="dev":
+            os.remove(DATABASE)
+        con = sqlite3.connect(DATABASE)
+        c = con.cursor()
+        c.execute(schema)
+        con.commit()
+    except Exception as e:
+        print(e)
 
 def db_execute_command(sql_query, parameters):
     try:
@@ -23,60 +47,55 @@ def db_execute_command(sql_query, parameters):
         con.close()
         return msg
 
-
-@app.route('/addUser', methods = ['POST'])
-def add_user():
-    print("POST")
-    if request.method == "POST":
+class addUser(tornado.web.RequestHandler):
+    '''adds a user to db with given ID'''
+    def post(self):
         try:
-            data = request.json
-            print(data)
-            # secret = data.get("secret")
-            
+            data = json.loads(self.request.body)
+
             if data.get('secret') != secret:
+                self.set_status(403)
+                self.finish("Not Authorised!")
                 return "incorrect key"
             
             ID = data.get('id')
 
-            return db_execute_command("INSERT INTO Access (ID, VALID) VALUES (?,?)", (ID, "TRUE"))
+            self.write(db_execute_command("INSERT INTO Access (ID, VALID) VALUES (?,?)", (ID, "TRUE")))
 
         except:
-            return "ERROR in post message"
-
-    return
-
-@app.route('/setUserCanPrint', methods = ['POST'])
-def set_user_can_print():
-    if request.method == "POST":
+            self.finish("ERROR in post message")
+        
+class setUserCanPrint(tornado.web.RequestHandler):
+    '''sets the canPrint status for a given user'''
+    def post(self):
         try:
-            data = request.json
-            # secret = data.get("secret")
+            data = json.loads(self.request.body)
+            secret = data.get("secret")
             
             if data.get('secret') != secret:
                 return "incorrect key"
             
             ID = data.get('id')
             CAN_PRINT = data.get('value')
-            print(ID, CAN_PRINT)
+            #print(ID, CAN_PRINT)
             db_execute_command("UPDATE Access SET CANPRINT=? WHERE VALID=\'TRUE\' AND ID=?", (CAN_PRINT, ID))
 
         except:
-            return "ERROR in post message"
+            self.finish("Error in post message")
 
-    return "SUCCESS"
-
+        self.finish("SUCCESS")
+ 
 
 last_set_time = datetime.datetime.fromtimestamp(0)
 
-
-@app.route('/setCanPrint', methods = ['POST'])
-def set_can_print():
-    if request.method == "POST":
+class setCanPrint(tornado.web.RequestHandler):
+    '''verifies if a user can print, if yes then the a print window of 1 min is opened'''
+    def post(self):
         try:
-            data = request.json
+            data = json.loads(self.request.body)
             print(data)
             if data.get('secret') != secret:
-                return "incorrect key"
+                self.write("incorrect key")
             
             ID = data.get('id')
 
@@ -88,19 +107,20 @@ def set_can_print():
                     print("CHECK TIME")
                     global last_set_time
                     last_set_time = datetime.datetime.now() + datetime.timedelta(minutes=1)
-            msg = "SUCCESS"
+                    msg = "SUCCESS"
+                else:
+                    msg = "FAILURE"
         except:
             con.rollback()
             msg = "FAILURE"
         finally:
             con.close()
-            return msg
-    return "SUCCESS"
+            print(msg)
+            self.write(msg)
+        
 
 
-@app.route('/getCanPrint', methods = ['GET'])
-def get_can_print():
+# @app.route('/getCanPrint', methods = ['GET'])
+# def get_can_print():
 
-    return {"canPrint": last_set_time > datetime.datetime.now()}
-
-app.run(host='0.0.0.0',port=5000)
+#     return {"canPrint": last_set_time > datetime.datetime.now()}
