@@ -9,6 +9,7 @@ load_dotenv()
 
 secret = os.environ["SECRET"]
 DATABASE = "database.db"
+last_set_time = datetime.datetime.fromtimestamp(0)
 
 try:
     env = os.environ["ENV"]
@@ -86,16 +87,14 @@ class setUserCanPrint(tornado.web.RequestHandler):
         self.finish("SUCCESS")
  
 
-last_set_time = datetime.datetime.fromtimestamp(0)
-
-class setCanPrint(tornado.web.RequestHandler):
+class setPrintWindow(tornado.web.RequestHandler):
     '''verifies if a user can print, if yes then the a print window of 1 min is opened'''
     def post(self):
         try:
             data = json.loads(self.request.body)
             print(data)
             if data.get('secret') != secret:
-                self.write("incorrect key")
+                self.finish("incorrect key")
             
             ID = data.get('id')
 
@@ -124,3 +123,17 @@ class setCanPrint(tornado.web.RequestHandler):
 # def get_can_print():
 
 #     return {"canPrint": last_set_time > datetime.datetime.now()}
+class getPrintWindow(tornado.web.RequestHandler):
+    '''queries if the print window is open, returns true if open'''
+    def post(self):
+        try:
+            data = json.loads(self.request.body)
+            print(data)
+            if data.get('secret') != secret:
+                self.finish("incorrect key")
+            
+            status = last_set_time > datetime.datetime.now()
+            self.write(str(status))
+
+        except:
+            self.write("Error in post message")
