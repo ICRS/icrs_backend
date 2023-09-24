@@ -75,11 +75,12 @@ class registerUsers(tornado.web.RequestHandler):
                 cur = con.cursor()
                 cur.execute("SELECT SHORTCODE From Access WHERE VALID=\'FALSE\'")
 
-                update = [c[0] for c in cur.fetchall() if union.isMember(c[0])]
-                
-                set_valid_by_shortcode = "UPDATE Access SET VALID=TRUE WHERE SHORTCODE=?"
+                update = [(c[0],) for c in cur.fetchall() if union.isMember(c[0])]
+
+                set_valid_by_shortcode = "UPDATE Access SET VALID=\'TRUE\' WHERE SHORTCODE=?"
                 cur.executemany(set_valid_by_shortcode, update)
                 con.commit()
+                msg = "Successfully Registered Users"
         except:
             con.rollback()
             msg = "FAILURE"
@@ -160,3 +161,8 @@ class getPrintWindow(tornado.web.RequestHandler):
 
         except:
             self.write("Error in post message")
+
+
+class getRegistrationPortal(tornado.web.RequestHandler):
+    def get(self):
+        self.render("template.html")
