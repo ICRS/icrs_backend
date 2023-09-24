@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import tornado
 import json
 load_dotenv()
-
+import union
 
 secret = os.environ["SECRET"]
 DATABASE = "database.db"
@@ -25,7 +25,7 @@ def create_table():
         with open("db.sql",'r') as f:
             schema = f.read()
         if env=="dev":
-            os.remove(DATABASE)
+            if os.path.isfile(DATABASE): os.remove(DATABASE)
         con = sqlite3.connect(DATABASE)
         c = con.cursor()
         c.execute(schema)
@@ -60,12 +60,35 @@ class addUser(tornado.web.RequestHandler):
                 return "incorrect key"
             
             ID = data.get('id')
-
-            self.write(db_execute_command("INSERT INTO Access (ID, VALID) VALUES (?,?)", (ID, "TRUE")))
+            SHORTCODE = data.get('shortcode')
+            
+            self.write(db_execute_command("INSERT INTO Access (ID, SHORTCODE, CANPRINT, VALID) VALUES (?,?,?,?)", (ID, SHORTCODE, "TRUE", "FALSE")))
 
         except:
             self.finish("ERROR in post message")
-        
+
+class registerUsers(tornado.web.RequestHandler):
+    '''sets users to valid if they have membership'''
+    def get(self):
+        try:
+            with sqlite3.connect(DATABASE) as con:
+                cur = con.cursor()
+                cur.execute("SELECT SHORTCODE From Access WHERE VALID=\'FALSE\'")
+
+                update = [c[0] for c in cur.fetchall() if union.isMember(c[0])]
+                
+                set_valid_by_shortcode = "UPDATE Access SET VALID=TRUE WHERE SHORTCODE=?"
+                cur.executemany(set_valid_by_shortcode, update)
+                con.commit()
+        except:
+            con.rollback()
+            msg = "FAILURE"
+        finally:
+            con.close()
+            print(msg)
+            self.write(msg)
+
+
 class setUserCanPrint(tornado.web.RequestHandler):
     '''sets the canPrint status for a given user'''
     def post(self):

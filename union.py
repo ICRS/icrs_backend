@@ -1,5 +1,7 @@
 from icu_ea_api import ICUEActivitiesAPI
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 csp_code = 625
 api_key = os.getenv('API_KEY')
