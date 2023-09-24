@@ -61,9 +61,10 @@ class addUser(tornado.web.RequestHandler):
             
             ID = data.get('id')
             SHORTCODE = data.get('shortcode')
+            ISMEMBER = "TRUE" if union.isMember(SHORTCODE) is True else "FALSE"
             
-            self.write(db_execute_command("INSERT INTO Access (ID, SHORTCODE, CANPRINT, VALID) VALUES (?,?,?,?)", (ID, SHORTCODE, "TRUE", "FALSE")))
-
+            self.write( db_execute_command("INSERT INTO Access (ID, SHORTCODE, CANPRINT, VALID) VALUES (?,?,?,?)", (ID, SHORTCODE, "TRUE", ISMEMBER)))
+            self.write("Is Member: " + ISMEMBER)
         except:
             self.finish("ERROR in post message")
 
@@ -166,3 +167,17 @@ class getPrintWindow(tornado.web.RequestHandler):
 class getRegistrationPortal(tornado.web.RequestHandler):
     def get(self):
         self.render("template.html")
+
+def getValidNameCIDs():
+    try:
+        with sqlite3.connect(DATABASE) as con:
+            cur = con.cursor()
+            cur.execute("SELECT SHORTCODE From Access WHERE VALID=\'TRUE\'")
+
+            update = [c[0] for c in cur.fetchall()]
+
+            return(union.getShortcodesToCIDAndName(update))
+    except:
+        con.rollback()
+    finally:
+        con.close()
