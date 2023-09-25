@@ -5,19 +5,27 @@ on:
   workflow_dispatch:
 
 jobs:
-  setup:
+  build:
     runs-on: self-hosted
     steps:
-      - run: fuser -k 8888/tcp
-      - run: python3 -m venv .venv
-      - run: . .venv/bin/activate
-      - run: pip install -r requirements.txt
-  deploy-server:
-    requires: setup
-    name: deploy to server code 
-    runs-on: self-hosted
-    steps:
-      - name: Retrieve secret
+      - uses: actions/checkout@v1
+      - name: setup env
+        run: |
+          sudo apt -y install python3-venv
+          python3 -m venv .venv
+      - name: Install dependencies
+        run: |
+          source .venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: kill current running process 
+        run: fuser -k 8888/tcp || true
+      - name: Run server
         env: 
           SECRET: ${{ secrets.SECRET }}
-      - run: python start.py
+          ENV: PROD
+        run: |
+          echo "Starting"
+          source .venv/bin/activate
+          RUNNER_TRACKING_ID="" && python start.py &
+          echo "Finished"
