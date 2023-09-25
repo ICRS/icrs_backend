@@ -1,0 +1,23 @@
+on:
+  push:
+    branches:
+    - main
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: self-hosted
+    steps:
+      - run: fuser -k 8888/tcp
+      - run: python3 -m venv .venv
+      - run: . .venv/bin/activate
+      - run: pip install -r requirements.txt
+  deploy-server:
+    requires: setup
+    name: deploy to server code 
+    runs-on: self-hosted
+    steps:
+      - name: Retrieve secret
+        env: 
+          SECRET: ${{ secrets.SECRET }}
+      - run: python start.py
