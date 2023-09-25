@@ -1,0 +1,41 @@
+<html>
+   <head>
+      <title>Registration Portal</title>
+   </head>
+   <body>
+     <form action="/addUser" method="POST" id="addUserForm">
+            <label for="id">ID:</label>
+            <input type="text" id="id" name="id" required>      
+            <br>
+            <label for="shortcode">SHORTCODE:</label>
+            <input type="text" id="shortcode" name="shortcode" required>           
+            <br>
+            <label for="secret">SECRET:</label>
+            <input type="password" id="secret" name="secret" required>                   
+            <br>
+            <input type="submit" value="Register" />
+       {% module xsrf_form_html() %}
+     </form>
+   </body>
+   <script>
+    var form = document.getElementById('addUserForm');
+    form.onsubmit = function(event){
+            var xhr = new XMLHttpRequest();
+            var formData = new FormData(form);
+            //open the request
+            xhr.open('POST','/addUser')
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            //send the form data
+            xhr.send(JSON.stringify(Object.fromEntries(formData)));
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == XMLHttpRequest.DONE) {
+                    form.reset(); //reset form after AJAX success or do something else
+                }
+            }
+            //Fail the onsubmit to avoid page refresh.
+            return false; 
+        }
+   </script>
+ </html>
