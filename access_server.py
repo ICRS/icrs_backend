@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import tornado
 import json
 load_dotenv()
-
+import union
 
 secret = os.environ["SECRET"]
 DATABASE = "database.db"
@@ -25,7 +25,7 @@ def create_table():
         with open("db.sql",'r') as f:
             schema = f.read()
         if env=="dev":
-            os.remove(DATABASE)
+            if os.path.isfile(DATABASE): os.remove(DATABASE)
         con = sqlite3.connect(DATABASE)
         c = con.cursor()
         c.execute(schema)
@@ -53,8 +53,6 @@ class addUser(tornado.web.RequestHandler):
     def post(self):
         try:
             data = json.loads(self.request.body)
-            canPrint = bool(data.get("canPrint"))
-            canLaserCut = bool(data.get("canLaserCut"))
 
             if data.get('secret') != secret:
                 self.set_status(403)
@@ -62,18 +60,54 @@ class addUser(tornado.web.RequestHandler):
                 return "incorrect key"
             
             ID = data.get('id')
+            SHORTCODE = data.get('shortcode')
+            ISMEMBER = "TRUE" if union.isMember(SHORTCODE) is True else "FALSE"
+            
+            self.write( db_execute_command("INSERT INTO Access (ID, SHORTCODE, VALID) VALUES (?,?,?)", (ID, SHORTCODE, ISMEMBER)))
+            self.write("Is Member: " + ISMEMBER)
+
+            canPrint = bool(data.get("canPrint"))
+            canLaserCut = bool(data.get("canLaserCut"))
+
             if canPrint is not None:
                 db_execute_command("UPDATE Access SET CANPRINT=? WHERE VALID=\'TRUE\' AND ID=?", (str(canPrint).upper(), ID))
             if canLaserCut is not None:
                 db_execute_command("UPDATE Access SET CANLASERCUT=? WHERE VALID=\'TRUE\' AND ID=?", (str(canLaserCut).upper(), ID))
 
-            self.write(db_execute_command("INSERT INTO Access (ID, VALID) VALUES (?,?)", (ID, "TRUE")))
 
         except:
             self.finish("ERROR in post message")
 
+class registerUsers(tornado.web.RequestHandler):
+    '''sets users to valid if they have membership'''
+    def get(self):
+        try:
+            with sqlite3.connect(DATABASE) as con:
+                cur = con.cursor()
+                cur.execute("SELECT SHORTCODE From Access WHERE VALID=\'FALSE\'")
+
+                update = [(c[0],) for c in cur.fetchall() if union.isMember(c[0])]
+
+                set_valid_by_shortcode = "UPDATE Access SET VALID=\'TRUE\' WHERE SHORTCODE=?"
+                cur.executemany(set_valid_by_shortcode, update)
+                con.commit()
+                msg = "Successfully Registered Users"
+        except:
+            con.rollback()
+            msg = "FAILURE"
+        finally:
+            con.close()
+            print(msg)
+            self.write(msg)
+
+
 class updateUser(tornado.web.RequestHandler):
     '''updates user perms'''
+    def post(self):
+        self.write("OK")
+
+class setUserCanPrint(tornado.web.RequestHandler):
+    '''sets the canPrint status for a given user'''
     def post(self):
         try:
             data = json.loads(self.request.body)
@@ -134,11 +168,6 @@ class setPrintWindow(tornado.web.RequestHandler):
             self.write(msg)
         
 
-
-# @app.route('/getCanPrint', methods = ['GET'])
-# def get_can_print():
-
-#     return {"canPrint": last_set_time > datetime.datetime.now()}
 class getPrintWindow(tornado.web.RequestHandler):
     '''queries if the print window is open, returns true if open'''
     def post(self):
@@ -154,3 +183,22 @@ class getPrintWindow(tornado.web.RequestHandler):
 
         except:
             self.write("Error in post message")
+
+
+class getRegistrationPortal(tornado.web.RequestHandler):
+    def get(self):
+        self.render("template.html")
+
+def getValidNameCIDs():
+    try:
+        with sqlite3.connect(DATABASE) as con:
+            cur = con.cursor()
+            cur.execute("SELECT SHORTCODE From Access WHERE VALID=\'TRUE\'")
+
+            update = [c[0] for c in cur.fetchall()]
+
+            return(union.getShortcodesToCIDAndName(update))
+    except:
+        con.rollback()
+    finally:
+        con.close()
