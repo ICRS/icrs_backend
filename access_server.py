@@ -49,10 +49,12 @@ def db_execute_command(sql_query, parameters):
         return msg
 
 class addUser(tornado.web.RequestHandler):
-    '''adds a user to db with given ID'''
+    '''adds a user to db with given ID and perms'''
     def post(self):
         try:
             data = json.loads(self.request.body)
+            canPrint = bool(data.get("canPrint"))
+            canLaserCut = bool(data.get("canLaserCut"))
 
             if data.get('secret') != secret:
                 self.set_status(403)
@@ -60,6 +62,18 @@ class addUser(tornado.web.RequestHandler):
                 return "incorrect key"
             
             ID = data.get('id')
+            if canPrint is not None:
+                db_execute_command("UPDATE Access SET CANPRINT=? WHERE VALID=\'TRUE\' AND ID=?", (str(canPrint).upper(), ID))
+            if canLaserCut is not None:
+                db_execute_command("UPDATE Access SET CANLASERCUT=? WHERE VALID=\'TRUE\' AND ID=?", (str(canLaserCut).upper(), ID))
+
+            self.write(db_execute_command("INSERT INTO Access (ID, VALID) VALUES (?,?)", (ID, "TRUE")))
+
+        except:
+            self.finish("ERROR in post message")
+
+class updateUser(tornado.web.RequestHandler):
+    '''updates user perms'''
             SHORTCODE = data.get('shortcode')
             ISMEMBER = "TRUE" if union.isMember(SHORTCODE) is True else "FALSE"
             
@@ -96,32 +110,42 @@ class setUserCanPrint(tornado.web.RequestHandler):
     def post(self):
         try:
             data = json.loads(self.request.body)
-            secret = data.get("secret")
+            canPrint = bool(data.get("canPrint"))
+            canLaserCut = bool(data.get("canLaserCut"))
             
             if data.get('secret') != secret:
-                return "incorrect key"
+                self.finish("incorrect key")
+                return
             
             ID = data.get('id')
-            CAN_PRINT = data.get('value')
-            #print(ID, CAN_PRINT)
-            db_execute_command("UPDATE Access SET CANPRINT=? WHERE VALID=\'TRUE\' AND ID=?", (CAN_PRINT, ID))
+            #print(data)
+            if canPrint is not None:
+                db_execute_command("UPDATE Access SET CANPRINT=? WHERE VALID=\'TRUE\' AND ID=?", (str(canPrint).upper(), ID))
+            if canLaserCut is not None:
+                db_execute_command("UPDATE Access SET CANLASERCUT=? WHERE VALID=\'TRUE\' AND ID=?", (str(canLaserCut).upper(), ID))
 
         except:
             self.finish("Error in post message")
+            return
 
         self.finish("SUCCESS")
+        return
  
 
 class setPrintWindow(tornado.web.RequestHandler):
-    '''verifies if a user can print, if yes then the a print window of 1 min is opened'''
+    '''verifies if a user can print, if yes a print window of default 1 min is opened'''
     def post(self):
         try:
             data = json.loads(self.request.body)
             print(data)
             if data.get('secret') != secret:
                 self.finish("incorrect key")
+                return
             
             ID = data.get('id')
+            window = data.get('window')
+            if window is None:
+                window = 60
 
             with sqlite3.connect(DATABASE) as con:
                 cur = con.cursor()
@@ -130,7 +154,7 @@ class setPrintWindow(tornado.web.RequestHandler):
                 if cur.fetchone()[0] > 0:
                     print("CHECK TIME")
                     global last_set_time
-                    last_set_time = datetime.datetime.now() + datetime.timedelta(minutes=1)
+                    last_set_time = datetime.datetime.now() + datetime.timedelta(seconds=int(window))
                     msg = "SUCCESS"
                 else:
                     msg = "FAILURE"
@@ -156,6 +180,7 @@ class getPrintWindow(tornado.web.RequestHandler):
             print(data)
             if data.get('secret') != secret:
                 self.finish("incorrect key")
+                return
             
             status = last_set_time > datetime.datetime.now()
             self.write(str(status))
