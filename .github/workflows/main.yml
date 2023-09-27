@@ -1,0 +1,31 @@
+on:
+  push:
+    branches:
+    - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v1
+      - name: setup env
+        run: |
+          sudo apt -y install python3-venv
+          python3 -m venv .venv
+      - name: Install dependencies
+        run: |
+          source .venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: kill current running process 
+        run: fuser -k 8888/tcp || true
+      - name: Run server
+        env: 
+          SECRET: ${{ secrets.SECRET }}
+          ENV: PROD
+        run: |
+          echo "Starting"
+          source .venv/bin/activate
+          RUNNER_TRACKING_ID="" && python start.py &
+          echo "Finished"
