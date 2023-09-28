@@ -59,15 +59,24 @@ class addUser(tornado.web.RequestHandler):
                 self.finish("Not Authorised!")
                 return "incorrect key"
             
-            ID = data.get('id')
-            SHORTCODE = data.get('shortcode')
-            ISMEMBER = "TRUE" if union.isMember(SHORTCODE) is True else "FALSE"
-            
+            ID = data.get('id').upper()
+            SHORTCODE = data.get('shortcode').lower()
+            # ISMEMBER = "TRUE" if union.isMember(SHORTCODE) is True else "FALSE"
+            ISMEMBER = "TRUE"
+
             self.write( db_execute_command("INSERT INTO Access (ID, SHORTCODE, VALID) VALUES (?,?,?)", (ID, SHORTCODE, ISMEMBER)))
             self.write("Is Member: " + ISMEMBER)
 
-            canPrint = bool(data.get("canPrint"))
-            canLaserCut = bool(data.get("canLaserCut"))
+            canPrint = None
+            canLaserCut = None
+            try:
+                canPrint = bool(data.get("canPrint"))
+            except:
+                pass
+            try:
+                canLaserCut = bool(data.get("canLaserCut"))
+            except:
+                pass
 
             if canPrint is not None:
                 db_execute_command("UPDATE Access SET CANPRINT=? WHERE VALID=\'TRUE\' AND ID=?", (str(canPrint).upper(), ID))
@@ -143,7 +152,7 @@ class setPrintWindow(tornado.web.RequestHandler):
                 self.finish("incorrect key")
                 return
             
-            ID = data.get('id')
+            ID = data.get('id').upper()
             window = data.get('window')
             if window is None:
                 window = 60
@@ -170,14 +179,8 @@ class setPrintWindow(tornado.web.RequestHandler):
 
 class getPrintWindow(tornado.web.RequestHandler):
     '''queries if the print window is open, returns true if open'''
-    def post(self):
-        try:
-            data = json.loads(self.request.body)
-            print(data)
-            if data.get('secret') != secret:
-                self.finish("incorrect key")
-                return
-            
+    def get(self):
+        try:            
             status = last_set_time > datetime.datetime.now()
             self.write(str(status))
 

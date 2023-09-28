@@ -13,6 +13,12 @@
             <label for="secret">SECRET:</label>
             <input type="password" id="secret" name="secret" required>                   
             <br>
+            <label for="canPrint">Can Print:</label>
+            <input type="text" id="canPrint" name="canPrint" value="True" required>                   
+            <br>
+            <label for="canLaserCut">Can Laser Cut:</label>
+            <input type="text" id="canLaserCut" name="canLaserCut" value="False" required>                   
+            <br>
             <input type="submit" value="Register" />
        {% module xsrf_form_html() %}
      </form>
