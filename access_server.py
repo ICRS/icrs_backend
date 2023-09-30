@@ -155,7 +155,7 @@ class setPrintWindow(tornado.web.RequestHandler):
             ID = data.get('id').upper()
             window = data.get('window')
             if window is None:
-                window = 60
+                window = 20
 
             with sqlite3.connect(DATABASE) as con:
                 cur = con.cursor()
