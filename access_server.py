@@ -8,13 +8,13 @@ load_dotenv()
 import union
 
 secret = os.environ["SECRET"]
-DATABASE = "database.db"
 last_set_time = datetime.datetime.fromtimestamp(0)
 
 try:
     env = os.environ["ENV"]
 except:
     env = "dev"
+DATABASE = "/home/pi/code/icrs_security/database.db" if env != "dev" else "database.db"
 
 def create_table():
     """
@@ -61,8 +61,8 @@ class addUser(tornado.web.RequestHandler):
             
             ID = data.get('id').upper()
             SHORTCODE = data.get('shortcode').lower()
-            # ISMEMBER = "TRUE" if union.isMember(SHORTCODE) is True else "FALSE"
-            ISMEMBER = "TRUE"
+            ISMEMBER = "TRUE" if union.isMember(SHORTCODE) is True else "FALSE"
+            #ISMEMBER = "TRUE"
 
             self.write( db_execute_command("INSERT INTO Access (ID, SHORTCODE, VALID) VALUES (?,?,?)", (ID, SHORTCODE, ISMEMBER)))
             self.write("Is Member: " + ISMEMBER)
@@ -145,17 +145,20 @@ class setUserCanPrint(tornado.web.RequestHandler):
 class setPrintWindow(tornado.web.RequestHandler):
     '''verifies if a user can print, if yes a print window of default 1 min is opened'''
     def post(self):
+        con = None
         try:
             data = json.loads(self.request.body)
-            print(data)
+            print(data, secret)
             if data.get('secret') != secret:
+                print("secret incorrect")
                 self.finish("incorrect key")
+                msg = "FAILURE"
                 return
-            
-            ID = data.get('id').upper()
-            window = data.get('window')
-            if window is None:
-                window = 20
+            print("ok")
+            ID = data.get('id').upper().replace(" ","")
+            #window = data.get('window')
+            #if window is None:
+            window = 60
 
             with sqlite3.connect(DATABASE) as con:
                 cur = con.cursor()
@@ -169,12 +172,12 @@ class setPrintWindow(tornado.web.RequestHandler):
                 else:
                     msg = "FAILURE"
         except:
-            con.rollback()
+            if con is not None: con.rollback()
             msg = "FAILURE"
-        finally:
-            con.close()
-            print(msg)
-            self.write(msg)
+        
+        if con is not None: con.close()
+        print(msg)
+        self.write(msg)
         
 
 class getPrintWindow(tornado.web.RequestHandler):
@@ -192,16 +195,24 @@ class getRegistrationPortal(tornado.web.RequestHandler):
     def get(self):
         self.render("template.html")
 
-def getValidNameCIDs():
-    try:
-        with sqlite3.connect(DATABASE) as con:
-            cur = con.cursor()
-            cur.execute("SELECT SHORTCODE From Access WHERE VALID=\'TRUE\'")
 
-            update = [c[0] for c in cur.fetchall()]
-
-            return(union.getShortcodesToCIDAndName(update))
-    except:
-        con.rollback()
-    finally:
-        con.close()
+class getValidUsers(tornado.web.RequestHandler):
+    def getValidNameCIDs(self):
+        try:
+            with sqlite3.connect(DATABASE) as con:
+                cur = con.cursor()
+                cur.execute("SELECT SHORTCODE From Access WHERE VALID=\'TRUE\'")
+    
+                update = [c[0] for c in cur.fetchall()]
+    
+                return(union.getShortcodesToCIDAndName(update))
+        except:
+            con.rollback()
+        finally:
+            con.close()
+    def get(self):
+        try:
+            self.write(str(self.getValidNameCIDs()))
+        
+        except:
+            self.write("ERROR")
