@@ -106,15 +106,15 @@ class registerUsers(tornado.web.RequestHandler):
         try:
             with sqlite3.connect(DATABASE) as con:
                 cur = con.cursor()
-                cur.execute("SELECT SHORTCODE From Access WHERE VALID=\'FALSE\'")
-
-                update = [(c[0],) for c in cur.fetchall() if union.isMember(c[0])]
-
-                set_valid_by_shortcode = "UPDATE Access SET VALID=\'TRUE\' WHERE SHORTCODE=?"
+                cur.execute("SELECT SHORTCODE From Access WHERE VALID=\'FALSE\' OR VALID=0")
+                update = [(c[0],) for c in cur.fetchall()]
+                update = union.isMemberList(update)
+                set_valid_by_shortcode = "UPDATE Access SET VALID=\'TRUE\', CANPRINT=\'TRUE\' WHERE SHORTCODE=?"
                 cur.executemany(set_valid_by_shortcode, update)
                 con.commit()
                 msg = "Successfully Registered Users"
-        except:
+        except Exception as e:
+            print(e)
             con.rollback()
             msg = "FAILURE"
         finally:
@@ -214,11 +214,14 @@ class getValidUsers(tornado.web.RequestHandler):
         try:
             with sqlite3.connect(DATABASE) as con:
                 cur = con.cursor()
-                cur.execute("SELECT SHORTCODE From Access WHERE VALID=\'TRUE\'")
-    
+                cur.execute("SELECT SHORTCODE FROM Access A WHERE VALID=\'TRUE\' AND NOT EXISTS (SELECT \'X\' FROM SENT S WHERE A.SHORTCODE=S.SHORTCODE)")
+
                 update = [c[0] for c in cur.fetchall()]
     
-                return(union.getShortcodesToCIDAndName(update))
+                mapping = union.getShortcodesToCIDAndName(update)
+                
+                cur.executemany("INSERT INTO SENT (SHORTCODE) VALUES (?)", [(c,) for c in update])
+                return mapping
         except:
             con.rollback()
         finally:
