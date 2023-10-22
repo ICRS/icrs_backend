@@ -9,8 +9,14 @@ year = '23-24'
 society_api = ICUEActivitiesAPI(csp_code, api_key, year)
 
 def isMember(shortcode: str) -> bool:
+    print(shortcode)
     return shortcode in [member['Login'] for member in society_api.list_members()]
 
 def getShortcodesToCIDAndName(shortcodes) -> list:
-    d = {member['Login']: (f"{member['FirstName']} {member['Surname']}", member['CID']) for member in society_api.list_members()}
-    return [d[s] for s in shortcodes if s in d]
+    d = {member['Login']: (f"{member['FirstName']} {member['Surname']}", member['CID'], member['Login']) for member in society_api.list_members()}
+    return list(set(d[s] for s in shortcodes if s in d))
+
+def isMemberList(shortcode: [str]) -> bool:
+    members = set(member['Login'] for member in society_api.list_members())
+    shortcode = [code for code in shortcode if code in members]
+    return shortcode
