@@ -251,6 +251,6 @@ class getUserPerms(tornado.web.RequestHandler):
                 result = {'shortcode':result[1],'print':result[2],'laser':result[3],'inducted':result[4]}
                 self.write(result)
         except:
-            con.rollback()
+            self.write("FAILURE")
         finally:
             con.close()
