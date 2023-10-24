@@ -221,7 +221,7 @@ class getValidUsers(tornado.web.RequestHandler):
             self.write("ERROR")
 
 class getUserPerms(tornado.web.RequestHandler):
-    def get(self):
+    def post(self):
         data = json.loads(self.request.body)
         uid = data.get('id')
         if data.get('secret') != secret:
