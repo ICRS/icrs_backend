@@ -237,7 +237,7 @@ class getUserPerms(tornado.web.RequestHandler):
                 result = cur.fetchall()[0]
                 result = {'shortcode':result[1],'print':result[2],'laser':result[3],'inducted':result[4]}
                 self.write(result)
-        except:
-            self.write("FAILURE")
+        except Exception as e:
+            self.write(e.message,e.args)
         finally:
             con.close()
