@@ -223,14 +223,20 @@ class getValidUsers(tornado.web.RequestHandler):
 class getUserPerms(tornado.web.RequestHandler):
     def get(self):
         data = json.loads(self.request.body)
-        shortcode = data.get('shortcode')
+        uid = data.get('id')
+        if data.get('secret') != secret:
+                print("secret incorrect")
+                self.finish("incorrect key")
+                msg = "FAILURE"
+                self.write(msg)
+                return
         try:
             with sqlite3.connect(DATABASE) as con:
                 cur = con.cursor()
-                cur.execute("SELECT * From Access WHERE SHORTCODE=?",(shortcode,))
+                cur.execute("SELECT * From Access WHERE ID=?",(uid,))
                 result = cur.fetchall()[0]
-                result = {'print':result[2],'laser':result[3],'inducted':result[4]}
-                print(result)
+                result = {'shortcode':result[1],'print':result[2],'laser':result[3],'inducted':result[4]}
+                self.write(result)
         except:
             con.rollback()
         finally:
