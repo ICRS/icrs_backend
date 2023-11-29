@@ -15,6 +15,7 @@ try:
 except:
     env = "dev"
 DATABASE = "/home/pi/code/icrs_security/database.db" if env != "dev" else "database.db"
+SCHEMA = "/home/pi/code/icrs_security/db.sql" if env != "dev" else "db.sql"
 
 def create_table():
     """
@@ -22,13 +23,13 @@ def create_table():
     if dev environment is detected, the database is recreated every time
     """
     try:
-        with open("db.sql",'r') as f:
+        with open(SCHEMA,'r') as f:
             schema = f.read()
         if env=="dev":
             if os.path.isfile(DATABASE): os.remove(DATABASE)
         con = sqlite3.connect(DATABASE)
         c = con.cursor()
-        c.execute(schema)
+        c.executescript(schema)
         con.commit()
     except Exception as e:
         print(e)
