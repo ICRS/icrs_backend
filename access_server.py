@@ -254,3 +254,16 @@ class getUserPerms(tornado.web.RequestHandler):
             self.write(e.message,e.args)
         finally:
             con.close()
+
+class printMetrics(tornado.web.RequestHandler):
+    def post(self):
+        data = json.loads(self.request.body)
+        if data.get('secret') != secret:
+            # print("secret incorrect")
+            self.finish("incorrect key")
+            msg = "FAILURE"
+            self.write(msg)
+            return
+        # TODO
+        return
+
