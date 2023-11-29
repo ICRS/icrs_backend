@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import tornado
 import json
 load_dotenv()
+import union
 import math
 
 secret = os.environ["SECRET"]
@@ -175,8 +176,11 @@ class setPrintWindow(tornado.web.RequestHandler):
                 if cur.fetchone()[0] > 0:
                     print("CHECK TIME")
                     global last_set_time, last_short_code
+                    global last_set_time, last_short_code
                     last_set_time = datetime.datetime.now() + datetime.timedelta(seconds=int(window))
                     msg = "SUCCESS"
+                    last_short_code = cur.execute("SELECT SHORTCODE FROM Access WHERE ID=? AND CANPRINT=\'TRUE\'",(ID,)).fetchall()[0][0]
+                    print(last_short_code)
                     last_short_code = cur.execute("SELECT SHORTCODE FROM Access WHERE ID=? AND CANPRINT=\'TRUE\'",(ID,)).fetchall()[0][0]
                     print(last_short_code)
                 else:
@@ -260,6 +264,14 @@ class printMetrics(tornado.web.RequestHandler):
 
     def post(self):
         data = json.loads(self.request.body)
+        # print(data)
+
+        print_time = self.parse_to_int(data.get('time').strip())
+        print_weight = self.parse_to_int(data.get('weight').strip())
+        printer_name = data.get('name').strip()
+        
+        print(print_time, print_weight, printer_name, last_short_code)
+        self.write(db_execute_command("INSERT INTO PRINT_METRICS (SHORTCODE, PRINT_DURATION, PRINT_WEIGHT, PRINTER_NAME) VALUES (?,?,?,?)", (last_short_code, print_time, print_weight, printer_name)))
         # print(data)
 
         print_time = self.parse_to_int(data.get('time').strip())
