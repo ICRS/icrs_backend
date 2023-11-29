@@ -12,5 +12,5 @@ def make_app():
         (r"/registerUsers", registerUsers),
         (r"/getValidUsers", getValidUsers),
         (r"/getUserPerms", getUserPerms),
-        (r"/postPrintMetrics", printMetrics),
+        (r"/postPrintTime", printMetrics),
     ])
