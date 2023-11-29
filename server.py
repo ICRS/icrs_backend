@@ -1,5 +1,5 @@
 import tornado
-from access_server import addUser, updateUser, getRegistrationPortal, registerUsers, setUserCanPrint, setPrintWindow, getPrintWindow, getValidUsers, getUserPerms
+from access_server import addUser, updateUser, getRegistrationPortal, registerUsers, setUserCanPrint, setPrintWindow, getPrintWindow, getValidUsers, getUserPerms, printMetrics
 
 def make_app():
     return tornado.web.Application([
@@ -12,4 +12,5 @@ def make_app():
         (r"/registerUsers", registerUsers),
         (r"/getValidUsers", getValidUsers),
         (r"/getUserPerms", getUserPerms),
+        (r"/postPrintMetrics", printMetrics),
     ])
