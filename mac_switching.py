@@ -20,3 +20,8 @@ new_mac = random.choice(tuple(mac_set))
 o = {"mac": new_mac}
 print(requests.get(f"{miwifi.address}/cgi-bin/luci/;stok={miwifi.token}/api/xqnetwork/mac_clone", params=o).json())
 
+
+reboot_param = {"client":"web"}
+
+print(requests.get(f"{miwifi.address}/cgi-bin/luci/;stok={miwifi.token}/api/xqsystem/reboot", params=reboot_param).json())
+
