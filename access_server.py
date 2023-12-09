@@ -110,10 +110,10 @@ class registerUsers(tornado.web.RequestHandler):
             with sqlite3.connect(DATABASE) as con:
                 cur = con.cursor()
                 cur.execute("SELECT SHORTCODE From Access WHERE VALID=\'FALSE\' OR VALID=0")
-                update = [(c[0],) for c in cur.fetchall()]
+                update = [c[0] for c in cur.fetchall()]
                 update = union.isMemberList(update)
                 set_valid_by_shortcode = "UPDATE Access SET VALID=\'TRUE\', CANPRINT=\'TRUE\' WHERE SHORTCODE=?"
-                cur.executemany(set_valid_by_shortcode, update)
+                cur.executemany(set_valid_by_shortcode, [(c,) for c in update])
                 con.commit()
                 msg = "Successfully Registered Users"
         except Exception as e:
