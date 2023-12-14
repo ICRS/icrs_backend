@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 import tornado
 import json
 load_dotenv()
-import union
 import math
 
 secret = os.environ["SECRET"]
@@ -16,6 +15,12 @@ try:
     env = os.environ["ENV"]
 except:
     env = "dev"
+
+if env == "dev":
+    import union_mock as union
+else:
+    import union
+
 DATABASE = "/home/pi/code/icrs_security/database.db" if env != "dev" else "database.db"
 SCHEMA = "/home/pi/code/icrs_security/db.sql" if env != "dev" else "db.sql"
 
