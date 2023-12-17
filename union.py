@@ -16,7 +16,7 @@ def getShortcodesToCIDAndName(shortcodes) -> list:
     d = {member['Login']: (f"{member['FirstName']} {member['Surname']}", member['CID'], member['Login']) for member in society_api.list_members()}
     return list(set(d[s] for s in shortcodes if s in d))
 
-def isMemberList(shortcode: [str]) -> bool:
+def isMemberList(shortcodes: [str]) -> bool:
     members = set(member['Login'] for member in society_api.list_members())
-    shortcode = [code for code in shortcode if code in members]
-    return shortcode
+    shortcodes = [code for code in shortcodes if code in members]
+    return shortcodes
