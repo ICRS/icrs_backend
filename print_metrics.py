@@ -19,7 +19,12 @@ class PrintStatistics(tornado.web.RequestHandler):
     type: object
     description: Print Statistics representation
     properties:
-    """
+    """    
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+
     def get(self):
         """
         ---
@@ -44,4 +49,5 @@ class PrintStatistics(tornado.web.RequestHandler):
             cur = con.cursor()
             cur.execute("SELECT SHORTCODE, SUM(PRINT_DURATION), SUM(PRINT_WEIGHT) FROM PRINT_METRICS WHERE TIME_STARTED > ? GROUP BY SHORTCODE", (start_time,))
             self.write(json.dumps([{ "shortcode" : c[0], "print_duration": c[1], "print_weight": c[2]} for c in cur.fetchall()]))
+        
 
