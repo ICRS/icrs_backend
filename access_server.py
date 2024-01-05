@@ -72,7 +72,7 @@ class addUser(tornado.web.RequestHandler):
             SHORTCODE = data.get('shortcode').lower()
             ISMEMBER = "TRUE" if union.isMember(SHORTCODE) is True else "FALSE"
             #ISMEMBER = "TRUE"
-
+           
             self.write( db_execute_command("INSERT INTO Access (ID, SHORTCODE, VALID) VALUES (?,?,?)", (ID, SHORTCODE, ISMEMBER)))
             self.write("Is Member: " + ISMEMBER)
 
@@ -93,8 +93,8 @@ class addUser(tornado.web.RequestHandler):
                 db_execute_command("UPDATE Access SET CANLASERCUT=? WHERE VALID=\'TRUE\' AND ID=?", (str(canLaserCut).upper(), ID))
 
 
-        except:
-            self.finish("ERROR in post message")
+        except Exception as e:
+            self.finish("ERROR in post message:"+str(e))
 
 class registerUsers(tornado.web.RequestHandler):
     '''sets users to valid if they have membership'''
@@ -257,6 +257,7 @@ class getUserPerms(tornado.web.RequestHandler):
             con.close()
 
 class printMetrics(tornado.web.RequestHandler):
+    '''Saves metrics for a singe print job'''
     def parse_to_int(self, s: str) -> int:
         '''Expects the time to be in in seconds (float)'''
         return math.ceil(float(s)) 
@@ -282,3 +283,14 @@ class printMetrics(tornado.web.RequestHandler):
         self.write(db_execute_command("INSERT INTO PRINT_METRICS (SHORTCODE, PRINT_DURATION, PRINT_WEIGHT, PRINTER_NAME) VALUES (?,?,?,?)", (last_short_code, print_time, print_weight, printer_name)))
         return
 
+class getMetrics(tornado.web.RequestHandler):
+    def post(self):
+        data = json.loads(self.request.body)
+        shortcode = data['shortcode'].lower()
+        with sqlite3.connect(DATABASE) as con:
+            cur = con.cursor()
+            cur.execute("SELECT * From PRINT_METRICS WHERE SHORTCODE=?", (shortcode,))
+        prints = cur.fetchall()
+        out = {"prints":prints}
+        self.write(out)
+        return
