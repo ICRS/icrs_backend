@@ -11,12 +11,20 @@ import math
 secret = os.environ["SECRET"]
 last_set_time = datetime.datetime.fromtimestamp(0)
 last_short_code = ''
+last_short_code = ''
 
 try:
     env = os.environ["ENV"]
 except:
     env = "dev"
+
+if env == "dev":
+    import union_mock as union
+else:
+    import union
+
 DATABASE = "/home/pi/code/icrs_security/database.db" if env != "dev" else "database.db"
+SCHEMA = "/home/pi/code/icrs_security/db.sql" if env != "dev" else "db.sql"
 SCHEMA = "/home/pi/code/icrs_security/db.sql" if env != "dev" else "db.sql"
 
 def create_table():
@@ -26,11 +34,13 @@ def create_table():
     """
     try:
         with open(SCHEMA,'r') as f:
+        with open(SCHEMA,'r') as f:
             schema = f.read()
         if env=="dev":
             if os.path.isfile(DATABASE): os.remove(DATABASE)
         con = sqlite3.connect(DATABASE)
         c = con.cursor()
+        c.executescript(schema)
         c.executescript(schema)
         con.commit()
     except Exception as e:
@@ -97,10 +107,10 @@ class registerUsers(tornado.web.RequestHandler):
             with sqlite3.connect(DATABASE) as con:
                 cur = con.cursor()
                 cur.execute("SELECT SHORTCODE From Access WHERE VALID=\'FALSE\' OR VALID=0")
-                update = [(c[0],) for c in cur.fetchall()]
+                update = [c[0] for c in cur.fetchall()]
                 update = union.isMemberList(update)
                 set_valid_by_shortcode = "UPDATE Access SET VALID=\'TRUE\', CANPRINT=\'TRUE\' WHERE SHORTCODE=?"
-                cur.executemany(set_valid_by_shortcode, update)
+                cur.executemany(set_valid_by_shortcode, [(c,) for c in update])
                 con.commit()
                 msg = "Successfully Registered Users"
         except Exception as e:
