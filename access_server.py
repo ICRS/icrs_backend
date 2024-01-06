@@ -11,6 +11,7 @@ import math
 secret = os.environ["SECRET"]
 last_set_time = datetime.datetime.fromtimestamp(0)
 last_short_code = ''
+last_short_code = ''
 
 try:
     env = os.environ["ENV"]
@@ -23,6 +24,7 @@ else:
     import union
 
 DATABASE = "/home/pi/code/icrs_security/database.db" if env != "dev" else "database.db"
+SCHEMA = "/home/pi/code/icrs_security/db.sql" if env != "dev" else "db.sql"
 SCHEMA = "/home/pi/code/icrs_security/db.sql" if env != "dev" else "db.sql"
 
 def create_table():
@@ -37,6 +39,7 @@ def create_table():
             if os.path.isfile(DATABASE): os.remove(DATABASE)
         con = sqlite3.connect(DATABASE)
         c = con.cursor()
+        c.executescript(schema)
         c.executescript(schema)
         con.commit()
     except Exception as e:

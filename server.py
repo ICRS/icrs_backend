@@ -1,5 +1,5 @@
 import tornado
-from access_server import addUser, updateUser, getRegistrationPortal, registerUsers, setUserCanPrint, setPrintWindow, getPrintWindow, getValidUsers, getUserPerms, printMetrics
+from access_server import addUser, getMetrics, updateUser, getRegistrationPortal, registerUsers, setUserCanPrint, setPrintWindow, getPrintWindow, getValidUsers, getUserPerms, printMetrics
 from print_metrics import PrintStatistics
 from tornado_swagger.setup import setup_swagger
 
@@ -15,7 +15,9 @@ class Application(tornado.web.Application):
         tornado.web.url(r"/getValidUsers", getValidUsers),
         tornado.web.url(r"/getUserPerms", getUserPerms),
         tornado.web.url(r"/postPrintTime", printMetrics),
-        tornado.web.url(r"/printStatistics", PrintStatistics),    
+        tornado.web.url(r"/printStatistics", PrintStatistics),
+        tornado.web.url(r"/getMetrics", getMetrics),
+    
     ]
 
     def __init__(self):
