@@ -34,7 +34,6 @@ def create_table():
     """
     try:
         with open(SCHEMA,'r') as f:
-        with open(SCHEMA,'r') as f:
             schema = f.read()
         if env=="dev":
             if os.path.isfile(DATABASE): os.remove(DATABASE)
