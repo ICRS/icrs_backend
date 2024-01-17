@@ -46,4 +46,4 @@ COPY . .
 EXPOSE 8888
 
 # Run the application.
-CMD .venv/bin/python start.py
+CMD ["python", "start.py"]
