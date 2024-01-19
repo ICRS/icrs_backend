@@ -12,6 +12,6 @@ jobs:
       # Build
       - name: Build Docker image
         run: |
-          docker build -t icrs_security:${GITHUB_SHA} .
+          docker build -t ${{ secrets.DOCKER_REGISTRY }}/icrs_security:${GITHUB_SHA} .
       
       
