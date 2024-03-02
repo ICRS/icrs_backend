@@ -160,10 +160,10 @@ class setPrintWindow(tornado.web.RequestHandler):
 
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
-                    cur = conn.cursor()
                     cur.execute("SELECT Count() From public.access WHERE ID=? AND CANPRINT=\'TRUE\'", (ID,))
+                    print(cur)
 
-                    if cur.fetchone()[0] > 0:
+                    if cur is not None and cur.fetchone()[0] > 0:
                         print("CHECK TIME")
                         global last_set_time, last_short_code
                         last_set_time = datetime.datetime.now() + datetime.timedelta(seconds=int(window))
@@ -199,7 +199,6 @@ class getValidUsers(tornado.web.RequestHandler):
         try:
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
-                    cur = conn.cursor()
                     cur.execute("SELECT SHORTCODE FROM public.access A WHERE VALID=\'TRUE\' AND NOT EXISTS (SELECT \'X\' FROM SENT S WHERE A.SHORTCODE=S.SHORTCODE)")
 
                     update = [c[0] for c in cur.fetchall()]
@@ -234,7 +233,6 @@ class getUserPerms(tornado.web.RequestHandler):
         try:
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
-                    cur = conn.cursor()
                     cur.execute("SELECT * From public.access WHERE ID=?",(uid,))
                     result = cur.fetchall()[0]
                     result = {'shortcode':result[1],'print':result[2],'laser':result[3],'inducted':result[4]}
@@ -271,7 +269,6 @@ class getMetrics(tornado.web.RequestHandler):
         shortcode = data['shortcode'].lower()
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
-                cur = conn.cursor()
                 cur.execute("SELECT * From PRINT_METRICS WHERE SHORTCODE=?", (shortcode,))
         prints = cur.fetchall()
         out = {"prints":prints}
