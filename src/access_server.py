@@ -1,11 +1,14 @@
-import sqlite3
+import psycopg2 as pg
+
 import datetime
 import os
 from dotenv import load_dotenv
 import tornado
 import json
+
+from src.database import DB_CONFIG
+
 load_dotenv()
-import union
 import math
 
 secret = os.environ["SECRET"]
@@ -19,48 +22,26 @@ except:
     env = "dev"
 
 if env == "dev":
-    import union_mock as union
+    import src.union_mock as union
 else:
-    import union
-
-DATABASE = "/home/pi/code/icrs_security/database.db" if env != "dev" else "database.db"
-SCHEMA = "/home/pi/code/icrs_security/db.sql" if env != "dev" else "db.sql"
-SCHEMA = "/home/pi/code/icrs_security/db.sql" if env != "dev" else "db.sql"
-
-def create_table():
-    """
-    creates a database using the db.sql schema
-    if dev environment is detected, the database is recreated every time
-    """
-    try:
-        with open(SCHEMA,'r') as f:
-            schema = f.read()
-        if env=="dev":
-            if os.path.isfile(DATABASE): os.remove(DATABASE)
-        con = sqlite3.connect(DATABASE)
-        c = con.cursor()
-        c.executescript(schema)
-        c.executescript(schema)
-        con.commit()
-    except Exception as e:
-        print(e)
+    import src.union as union
 
 def db_execute_command(sql_query, parameters):
     try:
-        with sqlite3.connect(DATABASE) as con:
-            cur = con.cursor()
-            cur.execute(sql_query, parameters)
+        with pg.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql_query, parameters)
 
-            con.commit()
-            msg = "Record successfully added"    
+                conn.commit()
+                msg = "Record successfully added"    
     except:
-        con.rollback()
+        conn.rollback()
         msg = "error in insert operation"
     finally:
-        con.close()
+        conn.close()
         return msg
 
-class addUser(tornado.web.RequestHandler):
+class AddUser(tornado.web.RequestHandler):
     '''adds a user to db with given ID and perms'''
     def post(self):
         try:
@@ -74,9 +55,8 @@ class addUser(tornado.web.RequestHandler):
             ID = data.get('id').upper()
             SHORTCODE = data.get('shortcode').lower()
             ISMEMBER = "TRUE" if union.isMember(SHORTCODE) is True else "FALSE"
-            #ISMEMBER = "TRUE"
            
-            self.write( db_execute_command("INSERT INTO Access (ID, SHORTCODE, VALID) VALUES (?,?,?)", (ID, SHORTCODE, ISMEMBER)))
+            self.write(db_execute_command("INSERT INTO public.access (ID, SHORTCODE, VALID) VALUES (%s,%s,%s)", (ID, SHORTCODE, ISMEMBER)))
             self.write("Is Member: " + ISMEMBER)
 
             canPrint = None
@@ -91,9 +71,9 @@ class addUser(tornado.web.RequestHandler):
                 pass
 
             if canPrint is not None:
-                db_execute_command("UPDATE Access SET CANPRINT=? WHERE VALID=\'TRUE\' AND ID=?", (str(canPrint).upper(), ID))
+                db_execute_command("UPDATE public.access SET CANPRINT=%s WHERE VALID=\'TRUE\' AND ID=%s", (str(canPrint).upper(), ID))
             if canLaserCut is not None:
-                db_execute_command("UPDATE Access SET CANLASERCUT=? WHERE VALID=\'TRUE\' AND ID=?", (str(canLaserCut).upper(), ID))
+                db_execute_command("UPDATE public.access SET CANLASERCUT=%s WHERE VALID=\'TRUE\' AND ID=%s", (str(canLaserCut).upper(), ID))
 
 
         except Exception as e:
@@ -103,27 +83,32 @@ class registerUsers(tornado.web.RequestHandler):
     '''sets users to valid if they have membership'''
     def get(self):
         try:
-            with sqlite3.connect(DATABASE) as con:
-                cur = con.cursor()
-                cur.execute("SELECT SHORTCODE From Access WHERE VALID=\'FALSE\' OR VALID=0")
-                update = [c[0] for c in cur.fetchall()]
-                update = union.isMemberList(update)
-                set_valid_by_shortcode = "UPDATE Access SET VALID=\'TRUE\', CANPRINT=\'TRUE\' WHERE SHORTCODE=?"
-                cur.executemany(set_valid_by_shortcode, [(c,) for c in update])
-                con.commit()
-                msg = "Successfully Registered Users"
+            update = [c[0] for c in cur.fetchall()]
+            update = union.is_member_list(update)
+        
+            with pg.connect(**DB_CONFIG) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT SHORTCODE From public.access WHERE VALID=\'FALSE\' OR VALID=0")
+                    
+                    set_valid_by_shortcode = "UPDATE public.access SET VALID=\'TRUE\', CANPRINT=\'TRUE\' WHERE SHORTCODE=?"
+                    cur.executemany(set_valid_by_shortcode, [(c,) for c in update])
+                    
+                    conn.commit()
+        
+                    msg = "Successfully Registered Users"
         except Exception as e:
             print(e)
-            con.rollback()
+            conn.rollback()
             msg = "FAILURE"
         finally:
-            con.close()
+            conn.close()
             print(msg)
             self.write(msg)
 
 
 class updateUser(tornado.web.RequestHandler):
     '''updates user perms'''
+    # TODO: remove this endpoint
     def post(self):
         self.write("OK")
 
@@ -142,9 +127,9 @@ class setUserCanPrint(tornado.web.RequestHandler):
             ID = data.get('id')
             #print(data)
             if canPrint is not None:
-                db_execute_command("UPDATE Access SET CANPRINT=? WHERE VALID=\'TRUE\' AND ID=?", (str(canPrint).upper(), ID))
+                db_execute_command("UPDATE public.access SET CANPRINT=? WHERE VALID=\'TRUE\' AND ID=?", (str(canPrint).upper(), ID))
             if canLaserCut is not None:
-                db_execute_command("UPDATE Access SET CANLASERCUT=? WHERE VALID=\'TRUE\' AND ID=?", (str(canLaserCut).upper(), ID))
+                db_execute_command("UPDATE public.access SET CANLASERCUT=? WHERE VALID=\'TRUE\' AND ID=?", (str(canLaserCut).upper(), ID))
 
         except:
             self.finish("Error in post message")
@@ -157,8 +142,9 @@ class setUserCanPrint(tornado.web.RequestHandler):
 class setPrintWindow(tornado.web.RequestHandler):
     '''verifies if a user can print, if yes a print window of default 1 min is opened'''
     def post(self):
-        con = None
         try:
+            msg = "SUCCESS"
+            
             data = json.loads(self.request.body)
             print(data, secret)
             if data.get('secret') != secret:
@@ -172,27 +158,22 @@ class setPrintWindow(tornado.web.RequestHandler):
             #if window is None:
             window = 60
 
-            with sqlite3.connect(DATABASE) as con:
-                cur = con.cursor()
-                cur.execute("SELECT Count() From Access WHERE ID=? AND CANPRINT=\'TRUE\'", (ID,))
+            with pg.connect(**DB_CONFIG) as conn:
+                with conn.cursor() as cur:
+                    cur = conn.cursor()
+                    cur.execute("SELECT Count() From public.access WHERE ID=? AND CANPRINT=\'TRUE\'", (ID,))
 
-                if cur.fetchone()[0] > 0:
-                    print("CHECK TIME")
-                    global last_set_time, last_short_code
-                    global last_set_time, last_short_code
-                    last_set_time = datetime.datetime.now() + datetime.timedelta(seconds=int(window))
-                    msg = "SUCCESS"
-                    last_short_code = cur.execute("SELECT SHORTCODE FROM Access WHERE ID=? AND CANPRINT=\'TRUE\'",(ID,)).fetchall()[0][0]
-                    print(last_short_code)
-                    last_short_code = cur.execute("SELECT SHORTCODE FROM Access WHERE ID=? AND CANPRINT=\'TRUE\'",(ID,)).fetchall()[0][0]
-                    print(last_short_code)
-                else:
-                    msg = "FAILURE"
+                    if cur.fetchone()[0] > 0:
+                        print("CHECK TIME")
+                        global last_set_time, last_short_code
+                        last_set_time = datetime.datetime.now() + datetime.timedelta(seconds=int(window))
+                        last_short_code = cur.execute("SELECT SHORTCODE FROM public.access WHERE ID=? AND CANPRINT=\'TRUE\'",(ID,)).fetchall()[0][0]
+
+                    else:
+                        msg = "FAILURE"
         except:
-            if con is not None: con.rollback()
             msg = "FAILURE"
         
-        if con is not None: con.close()
         print(msg)
         self.write(msg)
         
@@ -216,20 +197,22 @@ class getRegistrationPortal(tornado.web.RequestHandler):
 class getValidUsers(tornado.web.RequestHandler):
     def getValidNameCIDs(self):
         try:
-            with sqlite3.connect(DATABASE) as con:
-                cur = con.cursor()
-                cur.execute("SELECT SHORTCODE FROM Access A WHERE VALID=\'TRUE\' AND NOT EXISTS (SELECT \'X\' FROM SENT S WHERE A.SHORTCODE=S.SHORTCODE)")
+            with pg.connect(**DB_CONFIG) as conn:
+                with conn.cursor() as cur:
+                    cur = conn.cursor()
+                    cur.execute("SELECT SHORTCODE FROM public.access A WHERE VALID=\'TRUE\' AND NOT EXISTS (SELECT \'X\' FROM SENT S WHERE A.SHORTCODE=S.SHORTCODE)")
 
-                update = [c[0] for c in cur.fetchall()]
-    
-                mapping = union.getShortcodesToCIDAndName(update)
-                
-                cur.executemany("INSERT INTO SENT (SHORTCODE) VALUES (?)", [(c,) for c in update])
-                return mapping
+                    update = [c[0] for c in cur.fetchall()]
+        
+                    mapping = union.getShortcodesToCIDAndName(update)
+                    
+                    cur.executemany("INSERT INTO SENT (SHORTCODE) VALUES (?)", [(c,) for c in update])
+                    return mapping
         except:
-            con.rollback()
+            conn.rollback()
         finally:
-            con.close()
+            conn.close()
+            
     def get(self):
         try:
             self.write(str(self.getValidNameCIDs()))
@@ -247,17 +230,19 @@ class getUserPerms(tornado.web.RequestHandler):
                 msg = "FAILURE"
                 self.write(msg)
                 return
+        
         try:
-            with sqlite3.connect(DATABASE) as con:
-                cur = con.cursor()
-                cur.execute("SELECT * From Access WHERE ID=?",(uid,))
-                result = cur.fetchall()[0]
-                result = {'shortcode':result[1],'print':result[2],'laser':result[3],'inducted':result[4]}
-                self.write(result)
+            with pg.connect(**DB_CONFIG) as conn:
+                with conn.cursor() as cur:
+                    cur = conn.cursor()
+                    cur.execute("SELECT * From public.access WHERE ID=?",(uid,))
+                    result = cur.fetchall()[0]
+                    result = {'shortcode':result[1],'print':result[2],'laser':result[3],'inducted':result[4]}
+                    self.write(result)
         except Exception as e:
             self.write(e.message,e.args)
         finally:
-            con.close()
+            conn.close()
 
 class printMetrics(tornado.web.RequestHandler):
     '''Saves metrics for a singe print job'''
@@ -278,21 +263,16 @@ class printMetrics(tornado.web.RequestHandler):
         self.write(db_execute_command("INSERT INTO PRINT_METRICS (SHORTCODE, PRINT_DURATION, PRINT_WEIGHT, PRINTER_NAME) VALUES (?,?,?,?)", (last_short_code, print_time, print_weight, printer_name)))
         # print(data)
 
-        print_time = self.parse_to_int(data.get('time').strip())
-        print_weight = self.parse_to_int(data.get('weight').strip())
-        printer_name = data.get('name').strip()
-        
-        print(print_time, print_weight, printer_name, last_short_code)
-        self.write(db_execute_command("INSERT INTO PRINT_METRICS (SHORTCODE, PRINT_DURATION, PRINT_WEIGHT, PRINTER_NAME) VALUES (?,?,?,?)", (last_short_code, print_time, print_weight, printer_name)))
         return
 
 class getMetrics(tornado.web.RequestHandler):
     def post(self):
         data = json.loads(self.request.body)
         shortcode = data['shortcode'].lower()
-        with sqlite3.connect(DATABASE) as con:
-            cur = con.cursor()
-            cur.execute("SELECT * From PRINT_METRICS WHERE SHORTCODE=?", (shortcode,))
+        with pg.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur = conn.cursor()
+                cur.execute("SELECT * From PRINT_METRICS WHERE SHORTCODE=?", (shortcode,))
         prints = cur.fetchall()
         out = {"prints":prints}
         self.write(out)

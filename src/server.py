@@ -1,11 +1,11 @@
 import tornado
-from access_server import addUser, getMetrics, updateUser, getRegistrationPortal, registerUsers, setUserCanPrint, setPrintWindow, getPrintWindow, getValidUsers, getUserPerms, printMetrics
-from print_metrics import PrintStatistics
+from src.access_server import AddUser, getMetrics, updateUser, getRegistrationPortal, registerUsers, setUserCanPrint, setPrintWindow, getPrintWindow, getValidUsers, getUserPerms, printMetrics
+from src.print_metrics import PrintStatistics
 from tornado_swagger.setup import setup_swagger
 
 class Application(tornado.web.Application):
     _routes = [
-        tornado.web.url(r"/addUser", addUser,),
+        tornado.web.url(r"/addUser", AddUser,),
         tornado.web.url(r"/updateUser", updateUser),
         tornado.web.url(r"/setCanPrint", setPrintWindow),
         tornado.web.url(r"/setPrintWindow", setPrintWindow),
