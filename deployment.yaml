@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: icrs-access-deployment
+spec:
+  replicas: 1  # Number of replicas you want to run
+  selector:
+    matchLabels:
+      app: icrs-access
+  template:
+    metadata:
+      labels:
+        app: icrs-access
+    spec:
+      containers:
+      - name: icrs-access
+        image: localhost:32000/icrs-access  # Replace with your Python Docker image and tag
+        ports:
+        - containerPort: 8888  # Port your Python application is listening on
+        imagePullPolicy: "Always"
