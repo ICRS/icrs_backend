@@ -194,11 +194,6 @@ class GetPrintWindow(tornado.web.RequestHandler):
             self.write("Error in post message")
 
 
-class GetRegistrationPortal(tornado.web.RequestHandler):
-    def get(self):
-        self.render("template.html")
-
-
 class GetValidUsers(tornado.web.RequestHandler):
     def getValidNameCIDs(self):
         try:
