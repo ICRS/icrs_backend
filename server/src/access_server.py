@@ -177,7 +177,9 @@ class SetPrintWindow(tornado.web.RequestHandler):
                         print("CHECK TIME")
                         global last_set_time, last_short_code
                         last_set_time = datetime.datetime.now() + datetime.timedelta(seconds=int(window))
-                        last_short_code = cur.execute("SELECT shortcode FROM public.access WHERE id=%s AND canprint=\'TRUE\'",(ID,)).fetchall()
+                        
+                        cur.execute("SELECT shortcode FROM public.access WHERE id=%s AND canprint=\'TRUE\'",(ID,))
+                        last_short_code = cur.fetchone()[0]
                         print(last_short_code)
 
                     else:
