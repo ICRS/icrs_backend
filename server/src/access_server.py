@@ -34,10 +34,8 @@ def db_execute_command(sql_query, parameters):
                 conn.commit()
                 msg = "Record successfully added"    
     except:
-        conn.rollback()
         msg = "error in insert operation"
     finally:
-        conn.close()
         return msg
 
 class AddUser(tornado.web.RequestHandler):
@@ -57,7 +55,7 @@ class AddUser(tornado.web.RequestHandler):
             SHORTCODE = data.get('shortcode').lower()
             ISMEMBER = "TRUE" if union.isMember(SHORTCODE) is True else "FALSE"
            
-            self.write(db_execute_command("INSERT INTO public.access (ID, SHORTCODE, VALID) VALUES (%s,%s,%s)", (ID, SHORTCODE, ISMEMBER)))
+            self.write(db_execute_command("INSERT INTO public.access (id, shortcode, valid) VALUES (%s,%s,%s)", (ID, SHORTCODE, ISMEMBER)))
             self.write("Is Member: " + ISMEMBER)
 
             canPrint = None
@@ -72,9 +70,9 @@ class AddUser(tornado.web.RequestHandler):
                 pass
 
             if canPrint is not None:
-                db_execute_command("UPDATE public.access SET CANPRINT=%s WHERE VALID=\'TRUE\' AND ID=%s", (str(canPrint).upper(), ID))
+                db_execute_command("UPDATE public.access SET canprint=%s WHERE valid=\'TRUE\' AND id=%s", (str(canPrint).upper(), ID))
             if canLaserCut is not None:
-                db_execute_command("UPDATE public.access SET CANLASERCUT=%s WHERE VALID=\'TRUE\' AND ID=%s", (str(canLaserCut).upper(), ID))
+                db_execute_command("UPDATE public.access SET canlasercut=%s WHERE valid=\'TRUE\' AND id=%s", (str(canLaserCut).upper(), ID))
 
             self.write(db_execute_command("INSERT INTO Access (ID, VALID) VALUES (?,?)", (ID, "TRUE")))
 
@@ -100,9 +98,9 @@ class RegisterUsers(tornado.web.RequestHandler):
         
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT SHORTCODE From public.access WHERE VALID=\'FALSE\' OR VALID=0")
+                    cur.execute("SELECT shortcode From public.access WHERE valid=\'FALSE\' OR valid=0")
                     
-                    set_valid_by_shortcode = "UPDATE public.access SET VALID=\'TRUE\', CANPRINT=\'TRUE\' WHERE SHORTCODE=%s"
+                    set_valid_by_shortcode = "UPDATE public.access SET valid=\'TRUE\', canprint=\'TRUE\' WHERE shortcode=%s"
                     cur.executemany(set_valid_by_shortcode, [(c,) for c in update])
                     
                     conn.commit()
@@ -110,10 +108,8 @@ class RegisterUsers(tornado.web.RequestHandler):
                     msg = "Successfully Registered Users"
         except Exception as e:
             print(e)
-            conn.rollback()
             msg = "FAILURE"
         finally:
-            conn.close()
             print(msg)
             self.write(msg)
 
@@ -129,6 +125,8 @@ class SetUserCanPrint(tornado.web.RequestHandler):
     def post(self):
         try:
             data = json.loads(self.request.body)
+
+            # TODO: FIX THIS
             canPrint = bool(data.get("canPrint"))
             canLaserCut = bool(data.get("canLaserCut"))
             
@@ -139,9 +137,9 @@ class SetUserCanPrint(tornado.web.RequestHandler):
             ID = data.get('id')
             #print(data)
             if canPrint is not None:
-                db_execute_command("UPDATE public.access SET CANPRINT=%s WHERE VALID=\'TRUE\' AND ID=%s", (str(canPrint).upper(), ID))
+                db_execute_command("UPDATE public.access SET canprint=%s WHERE valid=\'TRUE\' AND id=%s", (str(canPrint).upper(), ID))
             if canLaserCut is not None:
-                db_execute_command("UPDATE public.access SET CANLASERCUT=%s WHERE VALID=\'TRUE\' AND ID=%s", (str(canLaserCut).upper(), ID))
+                db_execute_command("UPDATE public.access SET canlasercut=%s WHERE valid=\'TRUE\' AND id=%s", (str(canLaserCut).upper(), ID))
 
         except:
             self.finish("Error in post message")
@@ -165,21 +163,22 @@ class SetPrintWindow(tornado.web.RequestHandler):
                 msg = "FAILURE"
                 return
             print("ok")
-            ID = data.get('id').upper().replace(" ","")
+            ID = data.get('id').upper()
             #window = data.get('window')
             #if window is None:
             window = 60
 
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT Count() From public.access WHERE ID=%s AND CANPRINT=\'TRUE\'", (ID,))
-                    print(cur)
+                    cur.execute("SELECT COUNT(*) FROM public.access WHERE id=%s AND canprint=\'TRUE\'", (ID,))
+                    print("executed")
 
                     if cur is not None and cur.fetchone()[0] > 0:
                         print("CHECK TIME")
                         global last_set_time, last_short_code
                         last_set_time = datetime.datetime.now() + datetime.timedelta(seconds=int(window))
-                        last_short_code = cur.execute("SELECT SHORTCODE FROM public.access WHERE ID=%s AND CANPRINT=\'TRUE\'",(ID,)).fetchall()[0][0]
+                        last_short_code = cur.execute("SELECT shortcode FROM public.access WHERE id=%s AND canprint=\'TRUE\'",(ID,)).fetchall()
+                        print(last_short_code)
 
                     else:
                         msg = "FAILURE"
@@ -211,18 +210,16 @@ class GetValidUsers(tornado.web.RequestHandler):
         try:
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT SHORTCODE FROM public.access A WHERE VALID=\'TRUE\' AND NOT EXISTS (SELECT \'X\' FROM SENT S WHERE A.SHORTCODE=S.SHORTCODE)")
+                    cur.execute("SELECT shortcode FROM public.access A WHERE valid=\'TRUE\' AND NOT EXISTS (SELECT \'X\' FROM public.sent S WHERE A.shortcode=S.shortcode)")
 
                     update = [c[0] for c in cur.fetchall()]
         
                     mapping = union.getShortcodesToCIDAndName(update)
                     
-                    cur.executemany("INSERT INTO SENT (SHORTCODE) VALUES (%s)", [(c,) for c in update])
+                    cur.executemany("INSERT INTO public.sent (shortcode) VALUES (%s)", [(c,) for c in update])
                     return mapping
         except:
-            conn.rollback()
-        finally:
-            conn.close()
+            print("Error somewhere in here")
             
     def get(self):
         try:
@@ -245,14 +242,12 @@ class GetUserPerms(tornado.web.RequestHandler):
         try:
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT * From public.access WHERE ID=%s",(uid,))
+                    cur.execute("SELECT * FROM public.access WHERE id=%s",(uid,))
                     result = cur.fetchall()[0]
                     result = {'shortcode':result[1],'print':result[2],'laser':result[3],'inducted':result[4]}
                     self.write(result)
         except Exception as e:
             self.write(e.message,e.args)
-        finally:
-            conn.close()
 
 class PrintMetrics(tornado.web.RequestHandler):
     '''Saves metrics for a singe print job'''
@@ -270,7 +265,7 @@ class PrintMetrics(tornado.web.RequestHandler):
         printer_name = data.get('name').strip()
         
         print(print_time, print_weight, printer_name, last_short_code)
-        self.write(db_execute_command("INSERT INTO PRINT_METRICS (SHORTCODE, PRINT_DURATION, PRINT_WEIGHT, PRINTER_NAME) VALUES (%s,%s,%s,%s)", (last_short_code, print_time, print_weight, printer_name)))
+        self.write(db_execute_command("INSERT INTO public.print_metrics (shortcode, print_duration, print_weight, printer_name) VALUES (%s,%s,%s,%s)", (last_short_code, print_time, print_weight, printer_name)))
         # print(data)
 
         return
@@ -281,7 +276,7 @@ class GetMetrics(tornado.web.RequestHandler):
         shortcode = data['shortcode'].lower()
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT * From PRINT_METRICS WHERE SHORTCODE=%s", (shortcode,))
+                cur.execute("SELECT * FROM public.print_metrics WHERE shortcode=%s", (shortcode,))
                 prints = cur.fetchall()
                 out = {"prints":prints}
                 self.write(out)

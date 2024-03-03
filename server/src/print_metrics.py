@@ -40,7 +40,7 @@ class PrintStatistics(tornado.web.RequestHandler):
         start_time = self.get_argument("start_time", default="1980-01-01")
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT SHORTCODE, SUM(PRINT_DURATION), SUM(PRINT_WEIGHT) FROM PRINT_METRICS WHERE TIME_STARTED > ? GROUP BY SHORTCODE", (start_time,))
+                cur.execute("SELECT SHORTCODE, SUM(PRINT_DURATION), SUM(PRINT_WEIGHT) FROM PRINT_METRICS WHERE TIME_STARTED > %s GROUP BY SHORTCODE", (start_time,))
                 self.write(json.dumps([{ "shortcode" : c[0], "print_duration": c[1], "print_weight": c[2]} for c in cur.fetchall()]))
         
 
