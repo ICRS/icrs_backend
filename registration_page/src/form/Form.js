@@ -1,14 +1,13 @@
 import useForm from "./UseForm";
-import * as secrets from "./../settings.json";
+import FORM_ENDPOINT from "./../settings.json";
 
-const FORM_ENDPOINT = secrets.FORM_ENDPOINT; // TODO - update to the correct endpoint
 
 export const Form = () => {
     const { handleSubmit, status, message } = useForm({});
-
+	console.log(FORM_ENDPOINT.FORM_ENDPOINT)
     return (
         <form
-            action={FORM_ENDPOINT}
+            action={FORM_ENDPOINT.FORM_ENDPOINT}
             onSubmit={handleSubmit}
             method="POST"
         >
