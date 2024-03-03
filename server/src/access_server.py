@@ -139,7 +139,7 @@ class SetUserCanPrint(tornado.web.RequestHandler):
         return
  
 
-class setPrintWindow(tornado.web.RequestHandler):
+class SetPrintWindow(tornado.web.RequestHandler):
     '''verifies if a user can print, if yes a print window of default 1 min is opened'''
     def post(self):
         try:
@@ -178,7 +178,7 @@ class setPrintWindow(tornado.web.RequestHandler):
         self.write(msg)
         
 
-class getPrintWindow(tornado.web.RequestHandler):
+class GetPrintWindow(tornado.web.RequestHandler):
     '''queries if the print window is open, returns true if open'''
     def get(self):
         try:            
@@ -189,12 +189,12 @@ class getPrintWindow(tornado.web.RequestHandler):
             self.write("Error in post message")
 
 
-class getRegistrationPortal(tornado.web.RequestHandler):
+class GetRegistrationPortal(tornado.web.RequestHandler):
     def get(self):
         self.render("template.html")
 
 
-class getValidUsers(tornado.web.RequestHandler):
+class GetValidUsers(tornado.web.RequestHandler):
     def getValidNameCIDs(self):
         try:
             with pg.connect(**DB_CONFIG) as conn:
@@ -219,7 +219,7 @@ class getValidUsers(tornado.web.RequestHandler):
         except:
             self.write("ERROR")
 
-class getUserPerms(tornado.web.RequestHandler):
+class GetUserPerms(tornado.web.RequestHandler):
     def post(self):
         data = json.loads(self.request.body)
         uid = data.get('id').strip().replace(" ","")
@@ -242,7 +242,7 @@ class getUserPerms(tornado.web.RequestHandler):
         finally:
             conn.close()
 
-class printMetrics(tornado.web.RequestHandler):
+class PrintMetrics(tornado.web.RequestHandler):
     '''Saves metrics for a singe print job'''
     def parse_to_int(self, s: str) -> int:
         '''Expects the time to be in in seconds (float)'''
@@ -263,7 +263,7 @@ class printMetrics(tornado.web.RequestHandler):
 
         return
 
-class getMetrics(tornado.web.RequestHandler):
+class GetMetrics(tornado.web.RequestHandler):
     def post(self):
         data = json.loads(self.request.body)
         shortcode = data['shortcode'].lower()
