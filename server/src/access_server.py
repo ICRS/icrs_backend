@@ -229,6 +229,9 @@ class GetValidUsers(tornado.web.RequestHandler):
             self.write("ERROR")
 
 class GetUserPerms(tornado.web.RequestHandler):
+    def get(self):
+        return self.post()
+
     def post(self):
         data = json.loads(self.request.body)
         uid = data.get('id').strip().replace(" ","")
@@ -243,8 +246,12 @@ class GetUserPerms(tornado.web.RequestHandler):
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
                     cur.execute("SELECT * FROM public.access WHERE id=%s",(uid,))
-                    result = cur.fetchall()[0]
-                    result = {'shortcode':result[1],'print':result[2],'laser':result[3],'inducted':result[4]}
+                    result = cur.fetchall()
+                    if not result:
+                        result = {}
+                    else:
+                        result = result[0]
+                        result = {'shortcode':result[1],'print':result[2],'laser':result[3],'inducted':result[4]}
                     self.write(result)
         except Exception as e:
             self.write(e.message,e.args)
@@ -278,6 +285,6 @@ class GetMetrics(tornado.web.RequestHandler):
             with conn.cursor() as cur:
                 cur.execute("SELECT * FROM public.print_metrics WHERE shortcode=%s", (shortcode,))
                 prints = cur.fetchall()
-                out = {"prints":prints}
-                self.write(out)
+                # out = {"prints":prints}
+                self.write(json.dumps(prints, default=str))
                 return
