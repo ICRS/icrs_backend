@@ -54,7 +54,7 @@ class AddUser(tornado.web.RequestHandler):
                 self.finish("Not Authorised!")
                 return "incorrect key"
             
-            ID = data.get('id').upper()
+            ID = data.get('id').upper().strip().replace(" ","")
             SHORTCODE = data.get('shortcode').lower()
             ISMEMBER = "TRUE" if union.isMember(SHORTCODE) is True else "FALSE"
            
@@ -155,7 +155,7 @@ class SetPrintWindow(tornado.web.RequestHandler):
                 msg = "FAILURE"
                 return
             print("ok")
-            ID = data.get('id').upper()
+            ID = data.get('id').upper().strip().replace(" ","")
             #window = data.get('window')
             #if window is None:
             window = 60
