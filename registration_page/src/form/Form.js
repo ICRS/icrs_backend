@@ -52,8 +52,8 @@ export const Form = () => {
             <div className="pt-0 mb-3">
                 <label>Can Print:</label>
                 <select id="canPrint" name="canPrint">
+                    <option value="True">True</option>                    
                     <option value="">False</option>
-                    <option value="True">True</option>
                 </select>
             </div>
 
