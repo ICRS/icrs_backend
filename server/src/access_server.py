@@ -277,3 +277,14 @@ class GetMetrics(tornado.web.RequestHandler):
                 # out = {"prints":prints}
                 self.write(json.dumps(prints, default=str))
                 return
+
+
+class GetAllInducted(tornado.web.RequestHandler):
+    def get(self):
+        with pg.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT shortcode FROM public.access WHERE valid=\'TRUE\'")
+                inducted = cur.fetchall()
+                inducted = [c[0] + "@ic.ac.uk" for c in inducted]
+                self.write(json.dumps(inducted, default=str))
+                return
