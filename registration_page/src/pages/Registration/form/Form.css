@@ -1,0 +1,23 @@
+.form-box label {
+    display:inline;
+    text-align: center;
+    font-size: 20px;
+    margin: 0 0 2vh 0;
+}
+
+.form-box {
+    /* min-width: 100%; */
+    /* width: 100vh; */
+    /* height: 100vh; */
+    /* border: #f55a00 5vw; */
+    /* border: 1px solid red; */
+    margin: 2vw;
+    padding: 0vw;
+    position: relative;
+    /* position:relative for .prevBtn and .nextBtn position:absolute; */
+}
+
+.form-box button {
+    display: block;
+    text-align: center;
+}
