@@ -1,13 +1,35 @@
 import './App.css';
-import { Form } from './form/Form.js';
+// import { Form } from './form/Form.js';
+// import { BrowserRouter as Router, Switch, Route, createBrowserRouter, Link } from 'react-router-dom';
+import {
+  createBrowserRouter,
+  RouterProvider,
+} from "react-router-dom";
+import Registration from './pages/Registration/registration';
+import Root from "./routes/root";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Root />,
+    children: [{
+      path: "registration",
+      element: <Registration />
+    }]
+  },
+  // {
+  //   path: "/registration",
+  //   element: <Registration />,
+    
+  // }
+]);
+
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <Form />
-      </header>
-    </div>
+    <RouterProvider router={router} />
+    // <div className="App">
+    // </div>
   );
 }
 
