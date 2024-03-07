@@ -1,20 +1,25 @@
 import useForm from "./UseForm";
-import FORM_ENDPOINT from "./../../../settings.json";
 import "./Form.css";
 
-export const Form = () => {
-    const { handleSubmit, status, message } = useForm({});
-    console.log(FORM_ENDPOINT.FORM_ENDPOINT)
+export function Form(props) {
+    const { handleSubmit, status } = useForm({});
+    const handleSub = (e) => {
+        e.preventDefault();
+        handleSubmit(e);
+        // Clear input values
+        document.getElementsByName("id")[0].value = "";
+        document.getElementsByName("shortcode")[0].value = "";
+        document.getElementsByName("secret")[0].value = "";
+    }
     return (
         <div className="form-box">
             <form
-                action={FORM_ENDPOINT.FORM_ENDPOINT}
-                onSubmit={handleSubmit}
+                action={props.endpoint}
+                onSubmit={handleSub}
                 method="POST"
-                class="table-form"
-            >
-                <div class="table-row">
-                    <label class="table-cell">Card UID: </label>
+                className="table-form" >
+                <div className="table-row">
+                    <label className="table-cell">Card UID: </label>
                     <input
                         type="text"
                         name="id"

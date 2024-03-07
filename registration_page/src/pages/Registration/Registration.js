@@ -1,12 +1,12 @@
 import { Form } from './form/Form.js';
 
-const Registration = () => {
+function Registration(props) {
     return (
-        <>
+        // <>
             <div id="contact">
-                <Form />
+                <Form endpoint={props.endpoint} />
             </div>
-        </>
+        // </>
     );
 }
 
