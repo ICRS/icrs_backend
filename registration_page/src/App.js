@@ -1,12 +1,16 @@
 import './App.css';
-// import { Form } from './form/Form.js';
-// import { BrowserRouter as Router, Switch, Route, createBrowserRouter, Link } from 'react-router-dom';
+
 import {
   createBrowserRouter,
   RouterProvider,
 } from "react-router-dom";
-import Registration from './pages/Registration/registration';
+import Registration from './pages/Registration/Registration';
+import UserDetails from './pages/UserDetail/UserDetail';
 import Root from "./routes/root";
+
+import app_config from "./settings.json";
+import AllUsers from './pages/Users/AllUsers';
+
 
 const router = createBrowserRouter([
   {
@@ -14,8 +18,17 @@ const router = createBrowserRouter([
     element: <Root />,
     children: [{
       path: "registration",
-      element: <Registration />
-    }]
+      element: <Registration endpoint={app_config[ "FORM_ENDPOINT" ]} />
+    },
+    {
+      path: "user",
+      element: <UserDetails endpoint={app_config[ "USER_ENDPOINT" ]} />
+    },
+    {
+      path: "users/all",
+      element: <AllUsers endpoint={app_config[ "ALL_USERS_ENDPOINT" ]} />
+    }
+  ]
   },
   // {
   //   path: "/registration",
@@ -28,8 +41,6 @@ const router = createBrowserRouter([
 function App() {
   return (
     <RouterProvider router={router} />
-    // <div className="App">
-    // </div>
   );
 }
 
