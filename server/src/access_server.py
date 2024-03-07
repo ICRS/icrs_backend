@@ -41,8 +41,8 @@ def db_execute_command(sql_query, parameters):
 class AddUser(tornado.web.RequestHandler):
     def set_default_headers(self):
         self.set_header("Access-Control-Allow-Origin", "*") # TODO: remove wildcard
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST')
+        #self.set_header("Access-Control-Allow-Headers", "x-requested-with")
+        self.set_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
 
     '''adds a user to db with given ID and perms'''
     def post(self):
@@ -85,12 +85,13 @@ class RegisterUsers(tornado.web.RequestHandler):
     '''sets users to valid if they have membership'''
     def get(self):
         try:
-            update = [c[0] for c in cur.fetchall()]
-            update = union.is_member_list(update)
         
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT shortcode From public.access WHERE valid=\'FALSE\' OR valid=0")
+                    cur.execute("SELECT shortcode From public.access WHERE valid=\'FALSE\' OR valid=\'0\'")
+
+                    update = [c[0] for c in cur.fetchall()]
+                    update = union.is_member_list(update)
                     
                     set_valid_by_shortcode = "UPDATE public.access SET valid=\'TRUE\', canprint=\'TRUE\' WHERE shortcode=%s"
                     cur.executemany(set_valid_by_shortcode, [(c,) for c in update])
