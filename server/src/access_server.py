@@ -218,29 +218,66 @@ class GetValidUsers(tornado.web.RequestHandler):
         except:
             self.write("ERROR")
 
-class GetUserPerms(tornado.web.RequestHandler):
-    def get(self):
-        return self.post()
+class GetUserPermsFromShortCode(tornado.web.RequestHandler):
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*") # TODO: remove wildcard
+        self.set_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
 
-    def post(self):
-        data = json.loads(self.request.body)
-        uid = data.get('id').strip().replace(" ","")
-        if data.get('secret') != secret:
-                print("secret incorrect")
-                self.finish("incorrect key")
-                msg = "FAILURE"
-                self.write(msg)
-                return
+    def get(self):
+        if self.get_argument('secret', default=None) != secret:
+            self.write("FAILURE")
+            return
+
+        shortcode = self.get_argument('shortcode', default=None)
+        if not shortcode:
+            self.write("Shortcode not provided!")
+            return
         
         try:
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT * FROM public.access WHERE id=%s",(uid,))
-                    result = cur.fetchall()
+                    cur.execute("SELECT * FROM public.access WHERE shortcode=%s", (shortcode,))
+                    result = cur.fetchone()
                     if not result:
                         result = {}
                     else:
-                        result = result[0]
+                        result = {'shortcode':result[1],'print':result[2],'laser':result[3],'inducted':result[4]}
+                    self.write(result)
+        except Exception as e:
+            self.write(e.message,e.args)
+        
+
+class GetUserPerms(tornado.web.RequestHandler):
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*") # TODO: remove wildcard
+        self.set_header('Access-Control-Allow-Methods', 'GET')
+
+    def get(self):
+        data = json.loads(self.request.body)
+        if data.get('secret') != secret:
+            print("secret incorrect")
+            self.finish("incorrect key")
+            msg = "FAILURE"
+            self.write(msg)
+            return
+
+        if (shortcode := data.get('shortcode')):
+            shortcode = shortcode.strip().replace(" ", "")    
+            perm_request = "SELECT * FROM public.access WHERE shortcode=%s"
+            param = shortcode
+        else:
+            uid = data.get('id').strip().replace(" ","")
+            perm_request = "SELECT * FROM public.access WHERE id=%s"
+            param = uid
+        try:
+            with pg.connect(**DB_CONFIG) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(perm_request, (param,))
+                    result = cur.fetchone()
+                    print(result)
+                    if not result:
+                        result = {}
+                    else:
                         result = {'shortcode':result[1],'print':result[2],'laser':result[3],'inducted':result[4]}
                     self.write(result)
         except Exception as e:
@@ -281,6 +318,10 @@ class GetMetrics(tornado.web.RequestHandler):
 
 
 class GetAllInducted(tornado.web.RequestHandler):
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*") # TODO: remove wildcard
+        self.set_header('Access-Control-Allow-Methods', 'GET')
+        
     def get(self):
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:

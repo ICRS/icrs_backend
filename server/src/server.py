@@ -11,6 +11,7 @@ from src.access_server import (
     GetValidUsers,
     GetUserPerms,
     PrintMetrics,
+    GetUserPermsFromShortCode
 )
 from src.print_metrics import PrintStatistics
 from tornado_swagger.setup import setup_swagger
@@ -30,6 +31,7 @@ class Application(tornado.web.Application):
         tornado.web.url(r"/printStatistics", PrintStatistics),
         tornado.web.url(r"/getMetrics", GetMetrics),
         tornado.web.url(r"/getAllInducted", GetAllInducted),
+        tornado.web.url(r"/user/perms", GetUserPermsFromShortCode),
     ]
 
     def __init__(self):
