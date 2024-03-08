@@ -67,7 +67,7 @@ FROM nginx:alpine
 #COPY --from=build /usr/src/app/build/ ./build/
 
 COPY --from=build /usr/src/app/build/ /usr/share/nginx/html
-# COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose the port that the application listens on.
 EXPOSE 80
