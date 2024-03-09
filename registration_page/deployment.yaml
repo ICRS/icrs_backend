@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: icrs-registration-page-deployment
+spec:
+  replicas: 1  # Number of replicas you want to run
+  selector:
+    matchLabels:
+      app: icrs-registration-page
+  template:
+    metadata:
+      labels:
+        app: icrs-registration-page
+    spec:
+      containers:
+      - name: icrs-registration-page
+        image: localhost:32000/icrs-registration-page  # Replace with your Python Docker image and tag
+        ports:
+        - containerPort: 80  # Port your Python application is listening on
+        imagePullPolicy: "Always"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: icrs-registration-page-service
+spec:
+  selector:
+    app: icrs-registration-page
+  ports:
+    - protocol: TCP
+      port: 80
+      nodePort: 30002  # Change this to the desired external port
+      targetPort: 80
+  type: NodePort
