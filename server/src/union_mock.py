@@ -4,5 +4,5 @@ def isMember(shortcode: str) -> bool:
 def getShortcodesToCIDAndName(shortcodes) -> list:
     return shortcodes
 
-def isMemberList(shortcodes: [str]) -> bool:
+def isMemberList(shortcodes: list[str]) -> bool:
     return shortcodes

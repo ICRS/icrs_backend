@@ -1,6 +1,5 @@
 import schedule
 import time
-import sqlite3
 import requests
 import os
 from dotenv import load_dotenv
