@@ -157,6 +157,7 @@ class SetPrintWindow(tornado.web.RequestHandler):
                 return
             print("ok")
             ID = data.get('id').upper().strip().replace(" ","")
+            ID = ID.zfill(8)
             #window = data.get('window')
             #if window is None:
             window = 60
