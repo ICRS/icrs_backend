@@ -67,7 +67,8 @@ function QueryUserDetail() {
             headers: {
                 "Accept": "*/*",
                 // 'Content-Type': 'application/json',
-            },            
+            },
+            redirect: 'follow',    
         })
             .then((response) => {
                 if (!response.ok) {

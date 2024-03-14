@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function useForm({ additionalData }) {
 	const [status, setStatus] = useState('');
+	const navigate = useNavigate();
 
-	const handleSubmit = (e) => {
+	const handleSubmit = (e, cookie) => {
 		e.preventDefault();
 		setStatus('loading');
 
@@ -16,10 +18,17 @@ function useForm({ additionalData }) {
 			method: 'POST',
 			headers: {
 				"Accept": "*/*",
+				"cookie": cookie,
 			},
 			body: JSON.stringify(data),
 		})
 			.then((response) => {
+				if (response.redirected) {
+					console.log("Response", response)
+					return navigate(response.url);
+					// return;
+				}
+
 				if (!response.ok) {
 					setStatus('error');
 					return alert('User not registered. Membership may need to be acquired.');
