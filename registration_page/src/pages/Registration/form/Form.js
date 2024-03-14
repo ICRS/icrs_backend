@@ -3,9 +3,10 @@ import "./Form.css";
 
 export function Form(props) {
     const { handleSubmit, status } = useForm({});
+
     const handleSub = (e) => {
         e.preventDefault();
-        handleSubmit(e);
+        handleSubmit(e, props.cookie);
         // Clear input values
         document.getElementsByName("id")[0].value = "";
         document.getElementsByName("shortcode")[0].value = "";

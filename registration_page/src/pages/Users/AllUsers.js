@@ -12,6 +12,7 @@ function AllUsers(props) {
 			headers: {
 				"Accept": "*/*",
 			},
+			// redirect: 'follow',
 		})
 			.then((response) => {
 				if (!response.ok) {

@@ -4,8 +4,11 @@ import datetime
 import os
 from dotenv import load_dotenv
 import tornado
+import tornado.web
+
 import json
 
+from src.authentication import BaseHandler
 from src.database import DB_CONFIG
 
 load_dotenv()
@@ -38,14 +41,24 @@ def db_execute_command(sql_query, parameters):
     finally:
         return msg
 
-class AddUser(tornado.web.RequestHandler):
+class AddUser(BaseHandler):
     def set_default_headers(self):
         self.set_header("Access-Control-Allow-Origin", "*") # TODO: remove wildcard
         #self.set_header("Access-Control-Allow-Headers", "x-requested-with")
         self.set_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
 
     '''adds a user to db with given ID and perms'''
+    def check_permission(self, password, username):
+        # if username == "admin" and password == "admin":
+        return True
+    #     return False
+
+    @tornado.web.authenticated
     def post(self):
+        
+        self.write("Hello, world")
+        # self.redirect("/login")
+        return
         try:
             data = json.loads(self.request.body)
 
@@ -318,11 +331,12 @@ class GetMetrics(tornado.web.RequestHandler):
                 return
 
 
-class GetAllInducted(tornado.web.RequestHandler):
+class GetAllInducted(BaseHandler):
     def set_default_headers(self):
         self.set_header("Access-Control-Allow-Origin", "*") # TODO: remove wildcard
         self.set_header('Access-Control-Allow-Methods', 'GET')
-        
+    
+    @tornado.web.authenticated
     def get(self):
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:

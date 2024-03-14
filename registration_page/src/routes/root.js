@@ -8,9 +8,6 @@ export default function Root() {
                 <nav>
                     <ul>
                         <li>
-                            <Link to={`/`}> Home </Link>
-                        </li>
-                        <li>
                             <Link to={`/registration`} > Registration </Link>
                         </li>
                         <li>
@@ -22,7 +19,6 @@ export default function Root() {
                     </ul>
                 </nav>
             </div>
-            {/* <div id="detail"></div> */}
             <div>
                 <Outlet />
             </div>
