@@ -215,10 +215,6 @@ class GetValidUsers(BaseHandler):
             self.write("ERROR")
 
 class GetUserPermsFromShortCode(BaseHandler):
-    # def set_default_headers(self):
-        # self.set_header("Access-Control-Allow-Origin", "*") # TODO: remove wildcard
-        # self.set_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
-
     @tornado.web.authenticated
     def get(self):
         shortcode = self.get_argument('shortcode', default=None)
@@ -242,10 +238,6 @@ class GetUserPermsFromShortCode(BaseHandler):
         
 
 class GetUserPerms(BaseHandler):
-    # def set_default_headers(self):
-        # self.set_header("Access-Control-Allow-Origin", "*") # TODO: remove wildcard
-        # self.set_header('Access-Control-Allow-Methods', 'GET')
-    # @tornado.web.authenticated
     def get(self):
         data = json.loads(self.request.body)
         if data.get('secret') != secret:
