@@ -16,17 +16,16 @@ import { useState } from 'react';
 
 function App() {
   const [login, setLogin] = useState(false);
-  const [cookie, setCookie] = useState(null);
 
   return (
     <Routes>
-      <Route path="/login" element={<Login loginHandler={setLogin} cookieHandler={setCookie} />} />
+      <Route path="/login" element={<Login loginHandler={setLogin} />} />
       {
         login && 
         <Route path="/" element={<Root />} >
-          <Route path="/registration" element={<Registration endpoint={app_config["FORM_ENDPOINT"]} cookie={cookie} />} />
-          <Route path="/user" element={<UserDetails endpoint={app_config["USER_ENDPOINT"]} cookie={cookie} />} />
-          <Route path="/users/all" element={<AllUsers endpoint={app_config["ALL_USERS_ENDPOINT"]} cookie={cookie} />} />
+          <Route path="/registration" element={<Registration endpoint={app_config["FORM_ENDPOINT"]}  />} />
+          <Route path="/user" element={<UserDetails endpoint={app_config["USER_ENDPOINT"]}  />} />
+          <Route path="/users/all" element={<AllUsers endpoint={app_config["ALL_USERS_ENDPOINT"]}  />} />
         </Route> 
       }
       <Route path="*" element={<Navigate to="/login" />} />

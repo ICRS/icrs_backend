@@ -42,33 +42,12 @@ def db_execute_command(sql_query, parameters):
         return msg
 
 class AddUser(BaseHandler):
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*") # TODO: remove wildcard
-        #self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
-
     '''adds a user to db with given ID and perms'''
-    def check_permission(self, password, username):
-        # if username == "admin" and password == "admin":
-        return True
-    #     return False
 
     @tornado.web.authenticated
     def post(self):
-        
-        self.write("Hello, world")
-        # self.redirect("/login")
-        return
         try:
             data = json.loads(self.request.body)
-            canPrint = bool(data.get("canPrint"))
-            canLaserCut = bool(data.get("canLaserCut"))
-
-            if data.get('secret') != secret:
-                self.set_status(403)
-                self.finish("Not Authorised!")
-                return "incorrect key"
-            
             ID = data.get('id').upper().strip().replace(" ","")
             SHORTCODE = data.get('shortcode').lower()
             ISMEMBER = "TRUE" if union.isMember(SHORTCODE) is True else "FALSE"
@@ -97,17 +76,7 @@ class AddUser(BaseHandler):
         except Exception as e:
             self.finish("ERROR in post message:"+str(e))
 
-class updateUser(tornado.web.RequestHandler):
-    '''updates user perms'''
-            SHORTCODE = data.get('shortcode')
-            ISMEMBER = "TRUE" if union.isMember(SHORTCODE) is True else "FALSE"
-            
-            self.write( db_execute_command("INSERT INTO Access (ID, SHORTCODE, CANPRINT, VALID) VALUES (?,?,?,?)", (ID, SHORTCODE, "TRUE", ISMEMBER)))
-            self.write("Is Member: " + ISMEMBER)
-        except:
-            self.finish("ERROR in post message")
-
-class RegisterUsers(tornado.web.RequestHandler):
+class RegisterUsers(BaseHandler):
     '''sets users to valid if they have membership'''
     def get(self):
         try:
@@ -133,13 +102,13 @@ class RegisterUsers(tornado.web.RequestHandler):
             self.write(msg)
 
 
-class UpdateUser(tornado.web.RequestHandler):
+class UpdateUser(BaseHandler):
     '''updates user perms'''
     # TODO: remove this endpoint
     def post(self):
         self.write("OK")
 
-class SetUserCanPrint(tornado.web.RequestHandler):
+class SetUserCanPrint(BaseHandler):
     '''sets the canPrint status for a given user'''
     def post(self):
         try:
@@ -168,7 +137,7 @@ class SetUserCanPrint(tornado.web.RequestHandler):
         return
  
 
-class SetPrintWindow(tornado.web.RequestHandler):
+class SetPrintWindow(BaseHandler):
     '''verifies if a user can print, if yes a print window of default 1 min is opened'''
     def post(self):
         try:
@@ -211,7 +180,7 @@ class SetPrintWindow(tornado.web.RequestHandler):
         self.write(msg)
         
 
-class GetPrintWindow(tornado.web.RequestHandler):
+class GetPrintWindow(BaseHandler):
     '''queries if the print window is open, returns true if open'''
     def get(self):
         try:            
@@ -222,7 +191,7 @@ class GetPrintWindow(tornado.web.RequestHandler):
             self.write("Error in post message")
 
 
-class GetValidUsers(tornado.web.RequestHandler):
+class GetValidUsers(BaseHandler):
     def getValidNameCIDs(self):
         try:
             with pg.connect(**DB_CONFIG) as conn:
@@ -245,17 +214,15 @@ class GetValidUsers(tornado.web.RequestHandler):
         except:
             self.write("ERROR")
 
-class GetUserPermsFromShortCode(tornado.web.RequestHandler):
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*") # TODO: remove wildcard
-        self.set_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+class GetUserPermsFromShortCode(BaseHandler):
+    # def set_default_headers(self):
+        # self.set_header("Access-Control-Allow-Origin", "*") # TODO: remove wildcard
+        # self.set_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
 
+    @tornado.web.authenticated
     def get(self):
-        if self.get_argument('secret', default=None) != secret:
-            self.write("FAILURE")
-            return
-
         shortcode = self.get_argument('shortcode', default=None)
+        print("Shortcode", shortcode)
         if not shortcode:
             self.write("Shortcode not provided!")
             return
@@ -274,11 +241,11 @@ class GetUserPermsFromShortCode(tornado.web.RequestHandler):
             self.write(e.message,e.args)
         
 
-class GetUserPerms(tornado.web.RequestHandler):
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*") # TODO: remove wildcard
-        self.set_header('Access-Control-Allow-Methods', 'GET')
-
+class GetUserPerms(BaseHandler):
+    # def set_default_headers(self):
+        # self.set_header("Access-Control-Allow-Origin", "*") # TODO: remove wildcard
+        # self.set_header('Access-Control-Allow-Methods', 'GET')
+    # @tornado.web.authenticated
     def get(self):
         data = json.loads(self.request.body)
         if data.get('secret') != secret:
@@ -310,7 +277,7 @@ class GetUserPerms(tornado.web.RequestHandler):
         except Exception as e:
             self.write(e.message,e.args)
 
-class PrintMetrics(tornado.web.RequestHandler):
+class PrintMetrics(BaseHandler):
     '''Saves metrics for a singe print job'''
     def parse_to_int(self, s: str) -> int:
         '''Expects the time to be in in seconds (float)'''
@@ -331,7 +298,7 @@ class PrintMetrics(tornado.web.RequestHandler):
 
         return
 
-class GetMetrics(tornado.web.RequestHandler):
+class GetMetrics(BaseHandler):
     def post(self):
         data = json.loads(self.request.body)
         shortcode = data['shortcode'].lower()

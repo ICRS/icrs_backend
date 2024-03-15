@@ -17,12 +17,6 @@ function Form(props) {
                         type="text"
                         name="shortcode" />
                 </div>
-                <div className="pt-0 mb-3">
-                    <label>Secret:</label>
-                    <input
-                        type="password"
-                        name="secret" />
-                </div>
                 <div>
                     <button type="submit">Submit</button>
                 </div>
@@ -61,14 +55,12 @@ function QueryUserDetail() {
             .filter((input) => input.name)
             .reduce((obj, input) => Object.assign(obj, { [input.name]: input.value }), {});
         // console.log("Data", data, JSON.stringify(data));
-
+        console.log(finalFormEndpoint+`?${new URLSearchParams(data)}`);
         fetch(finalFormEndpoint+`?${new URLSearchParams(data)}`, {
             method: 'GET',
             headers: {
                 "Accept": "*/*",
-                // 'Content-Type': 'application/json',
             },
-            redirect: 'follow',    
         })
             .then((response) => {
                 if (!response.ok) {

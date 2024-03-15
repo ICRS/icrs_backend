@@ -6,7 +6,7 @@ export function Form(props) {
 
     const handleSub = (e) => {
         e.preventDefault();
-        handleSubmit(e, props.cookie);
+        handleSubmit(e);
         // Clear input values
         document.getElementsByName("id")[0].value = "";
         document.getElementsByName("shortcode")[0].value = "";
@@ -34,15 +34,6 @@ export function Form(props) {
                         type="text"
                         name="shortcode"
                         className="focus:outline-none focus:ring relative w-full px-3 py-3 text-sm text-gray-600 placeholder-gray-400 bg-white border-0 rounded shadow outline-none"
-                        required
-                    />
-                </div>
-
-                <div className="pt-0 mb-3">
-                    <label>Secret:</label>
-                    <input
-                        type="password"
-                        name="secret"
                         required
                     />
                 </div>

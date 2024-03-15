@@ -4,7 +4,7 @@ function Registration(props) {
     return (
         // <>
             <div id="contact">
-                <Form endpoint={props.endpoint} cookie={props.cookie} />
+                <Form endpoint={props.endpoint}  />
             </div>
         // </>
     );
