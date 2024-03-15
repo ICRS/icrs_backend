@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import './Login.css';
 
 function Login(props) {
     const navigate = useNavigate();
@@ -40,11 +41,12 @@ function Login(props) {
     }
 
     return (
-        <div >
+        <div className='login-container'>
             <form 
                 action="/api/login"
                 method="POST"
                 onSubmit={handleSubmit}
+                className="login-form"
                 >
                 <div>
                     <label>Username</label>
