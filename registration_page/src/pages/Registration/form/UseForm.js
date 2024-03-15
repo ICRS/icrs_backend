@@ -5,7 +5,7 @@ function useForm({ additionalData }) {
 	const [status, setStatus] = useState('');
 	const navigate = useNavigate();
 
-	const handleSubmit = (e, cookie) => {
+	const handleSubmit = (e) => {
 		e.preventDefault();
 		setStatus('loading');
 
@@ -18,7 +18,6 @@ function useForm({ additionalData }) {
 			method: 'POST',
 			headers: {
 				"Accept": "*/*",
-				"cookie": cookie,
 			},
 			body: JSON.stringify(data),
 		})
