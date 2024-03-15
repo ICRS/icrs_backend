@@ -1,5 +1,4 @@
 import { useState } from "react";
-import axios from 'axios';
 
 function Form(props) {
     const { handleSubmit, details } = QueryUserDetail();
@@ -70,8 +69,6 @@ function QueryUserDetail() {
                     console.log(data);
                     setDetails(data);
                 });
-                // console.log(details);
-                return alert("Success!");
             }).catch(() => {
                 return alert('Could not submit form. Please try again later. Network error likely.');
             });
