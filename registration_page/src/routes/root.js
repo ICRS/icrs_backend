@@ -11,7 +11,10 @@ export default function Root() {
                             <Link to={`/registration`} > Registration </Link>
                         </li>
                         <li>
-                            <Link to={`/user`}> User Details/Permissions </Link>
+                            <Link to={`/user/detail`}> Details/Permissions </Link>
+                        </li>
+                        <li>
+                            <Link to={`/user/permission`}> Update Permissions </Link>
                         </li>
                         <li>
                             <Link to={`/users/all`} > All Users </Link>

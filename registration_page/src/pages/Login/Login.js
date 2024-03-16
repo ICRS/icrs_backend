@@ -43,7 +43,7 @@ function Login(props) {
     return (
         <div className='login-container'>
             <form 
-                action="/api/login"
+                action={props.endpoint}
                 method="POST"
                 onSubmit={handleSubmit}
                 className="login-form"

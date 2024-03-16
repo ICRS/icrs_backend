@@ -6,6 +6,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+users = {
+    "icrs": os.getenv("SECRET"),
+}
+
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
         return self.get_signed_cookie("icrs")
@@ -17,20 +21,7 @@ class MainHandler(BaseHandler):
         self.write("Hello World")
         return
 
-users = {
-    "icrs": os.getenv("SECRET"),
-}
-
 class LoginHandler(BaseHandler):
-    # def get(self):
-    #     self.write("Please login")
-        # self.redirect("/login")
-        # return
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*") # TODO: remove wildcard
-        self.set_header("Access-Control-Allow-Headers", "*")
-        self.set_header('Access-Control-Allow-Methods', '*')
-
     def post(self):
         auth_header = self.request.headers.get('Authorization')
         print(auth_header, users)

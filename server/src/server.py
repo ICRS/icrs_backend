@@ -3,7 +3,7 @@ from src.authentication import LoginHandler, MainHandler
 from src.access_server import (
     AddUser,
     GetAllInducted,
-    SetUserCanPrint,
+    UserMachinePermissions,
     GetMetrics,
     UpdateUser,
     RegisterUsers,
@@ -25,7 +25,7 @@ class Application(tornado.web.Application):
     _routes = [
         tornado.web.url(r"/addUser", AddUser),
         tornado.web.url(r"/updateUser", UpdateUser),
-        tornado.web.url(r"/setCanPrint", SetUserCanPrint),
+        tornado.web.url(r"/user/permissions", UserMachinePermissions),
         tornado.web.url(r"/setPrintWindow", SetPrintWindow),
         tornado.web.url(r"/getPrintWindow", GetPrintWindow),
         tornado.web.url(r"/registerUsers", RegisterUsers),
