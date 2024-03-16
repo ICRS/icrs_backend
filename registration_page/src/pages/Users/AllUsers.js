@@ -29,7 +29,7 @@ function AllUsers(props) {
 			});
 	}
 	return (
-		<>
+		<div className="form-box">
 			<div>
 				<h1>All Users</h1>
 				<button onClick={handleRefresh}>Refresh</button>
@@ -43,7 +43,7 @@ function AllUsers(props) {
 				</ul>
 				)}
 			</div>
-		</>
+		</div>
 	);
 }
 

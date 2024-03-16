@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-function useForm({ additionalData }) {
+function useForm() {
 	const [status, setStatus] = useState('');
 	const navigate = useNavigate();
 

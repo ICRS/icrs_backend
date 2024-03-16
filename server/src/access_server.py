@@ -80,7 +80,6 @@ class RegisterUsers(BaseHandler):
     '''sets users to valid if they have membership'''
     def get(self):
         try:
-        
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
                     cur.execute("SELECT shortcode From public.access WHERE valid=\'FALSE\' OR valid=\'0\'")
@@ -108,27 +107,32 @@ class UpdateUser(BaseHandler):
     def post(self):
         self.write("OK")
 
-class SetUserCanPrint(BaseHandler):
+class UserMachinePermissions(BaseHandler):
     '''sets the canPrint status for a given user'''
+    @tornado.web.authenticated
     def post(self):
         try:
             data = json.loads(self.request.body)
 
             # TODO: FIX THIS
             canPrint = bool(data.get("canPrint"))
-            canLaserCut = bool(data.get("canLaserCut"))
+            canLaserCut = bool(data.get("canLaserCut"))    
             
-            if data.get('secret') != secret:
-                self.finish("incorrect key")
-                return
+            if "id" in data:
+                id = data.get('id')
             
-            ID = data.get('id')
-            #print(data)
-            if canPrint is not None:
-                db_execute_command("UPDATE public.access SET canprint=%s WHERE valid=\'TRUE\' AND id=%s", (str(canPrint).upper(), ID))
-            if canLaserCut is not None:
-                db_execute_command("UPDATE public.access SET canlasercut=%s WHERE valid=\'TRUE\' AND id=%s", (str(canLaserCut).upper(), ID))
+                if canPrint is not None:
+                    db_execute_command("UPDATE public.access SET canprint=%s WHERE valid=\'TRUE\' AND id=%s", (str(canPrint).upper(), id))
+                if canLaserCut is not None:
+                    db_execute_command("UPDATE public.access SET canlasercut=%s WHERE valid=\'TRUE\' AND id=%s", (str(canLaserCut).upper(), id))
 
+            if "shortcode" in data:
+                shortcode = data.get("shortcode")
+                if canPrint is not None:
+                    db_execute_command("UPDATE public.access SET canprint=%s WHERE valid=\'TRUE\' AND shortcode=%s", (str(canPrint).upper(), shortcode))
+                if canLaserCut is not None:
+                    db_execute_command("UPDATE public.access SET canlasercut=%s WHERE valid=\'TRUE\' AND shortcode=%s", (str(canLaserCut).upper(), shortcode))
+                
         except:
             self.finish("Error in post message")
             return
@@ -151,15 +155,15 @@ class SetPrintWindow(BaseHandler):
                 msg = "FAILURE"
                 return
             print("ok")
-            ID = data.get('id').upper().strip().replace(" ","")
-            ID = ID.zfill(8)
+            id = data.get('id').upper().strip().replace(" ","")
+            id = id.zfill(8)
             #window = data.get('window')
             #if window is None:
             window = 60
 
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT COUNT(*) FROM public.access WHERE id=%s AND canprint=\'TRUE\'", (ID,))
+                    cur.execute("SELECT COUNT(*) FROM public.access WHERE id=%s AND canprint=\'TRUE\'", (id,))
                     print("executed")
 
                     if cur is not None and cur.fetchone()[0] > 0:
@@ -167,7 +171,7 @@ class SetPrintWindow(BaseHandler):
                         global last_set_time, last_short_code
                         last_set_time = datetime.datetime.now() + datetime.timedelta(seconds=int(window))
                         
-                        cur.execute("SELECT shortcode FROM public.access WHERE id=%s AND canprint=\'TRUE\'",(ID,))
+                        cur.execute("SELECT shortcode FROM public.access WHERE id=%s AND canprint=\'TRUE\'",(id,))
                         last_short_code = cur.fetchone()[0]
                         print(last_short_code)
 
@@ -188,7 +192,7 @@ class GetPrintWindow(BaseHandler):
             self.write(str(status))
 
         except:
-            self.write("Error in post message")
+            self.write("Error in get message")
 
 
 class GetValidUsers(BaseHandler):
@@ -303,11 +307,7 @@ class GetMetrics(BaseHandler):
                 return
 
 
-class GetAllInducted(BaseHandler):
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*") # TODO: remove wildcard
-        self.set_header('Access-Control-Allow-Methods', 'GET')
-    
+class GetAllInducted(BaseHandler):    
     @tornado.web.authenticated
     def get(self):
         with pg.connect(**DB_CONFIG) as conn:
