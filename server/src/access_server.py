@@ -101,12 +101,6 @@ class RegisterUsers(BaseHandler):
             self.write(msg)
 
 
-class UpdateUser(BaseHandler):
-    '''updates user perms'''
-    # TODO: remove this endpoint
-    def post(self):
-        self.write("OK")
-
 class UserMachinePermissions(BaseHandler):
     '''sets the canPrint status for a given user'''
     @tornado.web.authenticated

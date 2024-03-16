@@ -5,7 +5,6 @@ from src.access_server import (
     GetAllInducted,
     UserMachinePermissions,
     GetMetrics,
-    UpdateUser,
     RegisterUsers,
     SetPrintWindow,
     GetPrintWindow,
@@ -24,7 +23,6 @@ import uuid
 class Application(tornado.web.Application):
     _routes = [
         tornado.web.url(r"/addUser", AddUser),
-        tornado.web.url(r"/updateUser", UpdateUser),
         tornado.web.url(r"/user/permissions", UserMachinePermissions),
         tornado.web.url(r"/setPrintWindow", SetPrintWindow),
         tornado.web.url(r"/getPrintWindow", GetPrintWindow),

@@ -7,7 +7,6 @@ from datetime import date
 load_dotenv()
 
 
-
 # ===== Get the current date =====
 date_now = date.today()
 month_now = date_now.month
@@ -29,8 +28,6 @@ society_api = ICUEActivitiesAPI(CSP_CODE, api_key, year_string)
 # =========================================
 
 def isMember(shortcode: str) -> bool:
-    
-    print(shortcode)
     return shortcode in [member['Login'] for member in society_api.list_members()]
 
 def is_member(shortcode: str) -> bool:
