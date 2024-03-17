@@ -1,33 +1,8 @@
-import { useState } from "react";
+import QueryEndpoint from "./QueryEndpoint";
 
 function AllUsers(props) {
-	const [users, setUsers] = useState('');
+	const { handleRefresh, users } = QueryEndpoint(props["endpoint"], "GET");
 
-	const handleRefresh = (e) => {
-		e.preventDefault();
-		const finalFormEndpoint = props["endpoint"];
-		console.log(finalFormEndpoint);
-		fetch(finalFormEndpoint, {
-			method: 'GET',
-			headers: {
-				"Accept": "*/*",
-			},
-			// redirect: 'follow',
-		})
-			.then((response) => {
-				if (!response.ok) {
-					return alert('Something went wrong server side.');
-				}
-				console.log(response);
-				response.json().then((data) => {
-					console.log(data);
-					setUsers(data);
-				});
-				//   return alert("Success!");
-			}).catch(() => {
-				return alert('Could not submit form. Please try again later. Network error likely.');
-			});
-	}
 	return (
 		<div className="form-box">
 			<div>

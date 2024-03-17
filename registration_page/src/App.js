@@ -14,6 +14,7 @@ import AllUsers from './pages/Users/AllUsers';
 import Login from './pages/Login/Login';
 import { useState } from 'react';
 import UpdatePermissions from './pages/UpdatePermissions/UpdatePermissions';
+import RecentlyInducted from './pages/Users/RecentlyInducted';
 
 function App() {
     const [login, setLogin] = useState(false);
@@ -27,7 +28,8 @@ function App() {
                     <Route path="/registration" element={<Registration endpoint={app_config["FORM_ENDPOINT"]} />} />
                     <Route path="/user/detail" element={<UserDetails endpoint={app_config["USER_ENDPOINT"]} />} />
                     <Route path="/user/permission" element={<UpdatePermissions endpoint={app_config["UPDATE_PERMISSION_ENDPOINT"]} />} />
-                    <Route path="/users/all" element={<AllUsers endpoint={app_config["ALL_USERS_ENDPOINT"]} />} />
+                    <Route path="/users/inducted/all" element={<AllUsers endpoint={app_config["ALL_USERS_ENDPOINT"]} />} />
+                    <Route path="/users/inducted/recent" element ={ <RecentlyInducted endpoint={app_config["RECENTLY_INDUCTED_ENDPOINT"]} registrationEndpoint={app_config["REREGISTER_USERS_ENDPOINT"]}/>} />
                 </Route>
             }
             <Route path="*" element={<Navigate to="/login" />} />
