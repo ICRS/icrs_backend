@@ -1,0 +1,9 @@
+{
+    "FORM_ENDPOINT" : "/api/addUser",
+    "USER_ENDPOINT" : "/api/user/perms",
+    "ALL_USERS_ENDPOINT" : "/api/getAllInducted",
+    "LOGIN_ENDPOINT" : "/api/login",
+    "UPDATE_PERMISSION_ENDPOINT" : "/api/user/permissions",
+    "RECENTLY_INDUCTED_ENDPOINT" : "/api/users/inducted/recent",
+    "REREGISTER_USERS_ENDPOINT" : "/api/users/update/recent"
+}

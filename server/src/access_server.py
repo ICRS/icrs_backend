@@ -189,7 +189,7 @@ class GetPrintWindow(BaseHandler):
             self.write("Error in get message")
 
 
-class GetValidUsers(BaseHandler):
+class GetRecentlyInducted(BaseHandler):
     def getValidNameCIDs(self):
         try:
             with pg.connect(**DB_CONFIG) as conn:
