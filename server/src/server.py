@@ -9,9 +9,9 @@ from src.access_server import (
     SetPrintWindow,
     GetPrintWindow,
     GetRecentlyInducted,
-    GetUserPerms,
     PrintMetrics,
     GetUserPermsFromShortCode,
+    GetUserPermsFromID
 )
 from src.print_metrics import PrintStatistics
 from tornado_swagger.setup import setup_swagger
@@ -28,13 +28,12 @@ class Application(tornado.web.Application):
         tornado.web.url(r"/getPrintWindow", GetPrintWindow),
         # tornado.web.url(r"/registerUsers", RegisterUsers),
         # tornado.web.url(r"/getValidUsers", GetRecentlyInducted),
-        tornado.web.url(r"/getUserPerms", GetUserPerms),
         tornado.web.url(r"/postPrintTime", PrintMetrics),
         tornado.web.url(r"/printStatistics", PrintStatistics),
         tornado.web.url(r"/getMetrics", GetMetrics),
         tornado.web.url(r"/getAllInducted", GetAllInducted),
         
-        tornado.web.url(r"/user/perms/uid", GetUserPermsFromShortCode),
+        tornado.web.url(r"/user/perms/uid", GetUserPermsFromID),
         tornado.web.url(r"/user/perms", GetUserPermsFromShortCode),
         
         tornado.web.url(r"/users/inducted/all", GetAllInducted),
