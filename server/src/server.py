@@ -33,6 +33,8 @@ class Application(tornado.web.Application):
         tornado.web.url(r"/printStatistics", PrintStatistics),
         tornado.web.url(r"/getMetrics", GetMetrics),
         tornado.web.url(r"/getAllInducted", GetAllInducted),
+        
+        tornado.web.url(r"/user/perms/uid", GetUserPermsFromShortCode),
         tornado.web.url(r"/user/perms", GetUserPermsFromShortCode),
         
         tornado.web.url(r"/users/inducted/all", GetAllInducted),

@@ -233,26 +233,24 @@ class GetUserPermsFromShortCode(BaseHandler):
                     self.write(result)
         except Exception as e:
             self.write(e.message,e.args)
-        
 
-class GetUserPerms(BaseHandler):
+class GetUserPermsFromID(BaseHandler):
     def get(self):
-        data = json.loads(self.request.body)
-        if data.get('secret') != secret:
+        uid = self.get_argument('id', default=None)
+        secret_ = self.get_argument('secret', default=None)
+        
+        if secret_ != secret:
             print("secret incorrect")
             self.finish("incorrect key")
             msg = "FAILURE"
             self.write(msg)
             return
 
-        if (shortcode := data.get('shortcode')):
-            shortcode = shortcode.strip().replace(" ", "")    
-            perm_request = "SELECT * FROM public.access WHERE shortcode=%s"
-            param = shortcode
-        else:
-            uid = data.get('id').strip().replace(" ","")
-            perm_request = "SELECT * FROM public.access WHERE id=%s"
-            param = uid
+        uid = uid.strip().replace(" ","")
+        uid = uid.zfill(8)
+
+        perm_request = "SELECT * FROM public.access WHERE id=%s"
+        param = uid
         try:
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
