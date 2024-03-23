@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: icrs-bambu-printer-gateway-deployment
+spec:
+  replicas: 1  # Number of replicas you want to run
+  selector:
+    matchLabels:
+      app: icrs-bambu-printer-gateway
+  template:
+    metadata:
+      labels:
+        app: icrs-bambu-printer-gateway
+    spec:
+      containers:
+      - name: icrs-bambu-printer-gateway
+        image: localhost:32000/icrs-bambu-printer-gateway  # Replace with your Python Docker image and tag
+        ports:
+        - containerPort: 8000  # Port your Python application is listening on
+        imagePullPolicy: "Always"
