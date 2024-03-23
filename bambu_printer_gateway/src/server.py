@@ -1,12 +1,15 @@
 from fastapi import APIRouter, HTTPException
 from .bambulab_printer_mqtt import PrinterMQTTClient
 
-router = APIRouter()
-hostname = "hostname"
-access = "access"
-printer_serial = "printer_serial"
+import os
 
-printerMQTTClient = PrinterMQTTClient(hostname, access, printer_serial)
+router = APIRouter()
+
+hostname = os.getenv("HOSTNAME")
+access_code = os.getenv("ACCESS_CODE")
+printer_serial = os.getenv("PRINTER_SERIAL")
+
+printerMQTTClient = PrinterMQTTClient(hostname, access_code, printer_serial)
 printerMQTTClient.connect()
 printerMQTTClient.start()
 

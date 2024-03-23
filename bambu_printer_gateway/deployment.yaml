@@ -1,3 +1,5 @@
+define: &secret_file <>
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,3 +20,19 @@ spec:
         ports:
         - containerPort: 8000  # Port your Python application is listening on
         imagePullPolicy: "Always"
+        env:
+        - name: HOSTNAME
+          valueFrom:
+          secretKeyRef:
+            name: *secret_file
+            key: hostname
+        - name: ACCESS_CODE
+          valueFrom:
+          secretKeyRef:
+            name: *secret_file
+            key: access_code
+        - name: PRINTER_SERIAL
+          valueFrom:
+          secretKeyRef:
+            name: *secret_file
+            key: printer_serial
