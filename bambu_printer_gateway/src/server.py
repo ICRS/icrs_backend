@@ -5,9 +5,9 @@ import os
 
 router = APIRouter()
 
-hostname = os.getenv("HOSTNAME")
-access_code = os.getenv("ACCESS_CODE")
-printer_serial = os.getenv("PRINTER_SERIAL")
+hostname = str(os.getenv("HOSTNAME")).strip()
+access_code = str(os.getenv("ACCESS_CODE")).strip()
+printer_serial = str(os.getenv("PRINTER_SERIAL")).strip()
 
 printerMQTTClient = PrinterMQTTClient(hostname, access_code, printer_serial)
 printerMQTTClient.connect()
