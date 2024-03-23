@@ -1,4 +1,4 @@
-define: &secret_file <>
+define: &secret <>
 
 apiVersion: apps/v1
 kind: Deployment
@@ -23,16 +23,16 @@ spec:
         env:
         - name: HOSTNAME
           valueFrom:
-          secretKeyRef:
-            name: *secret_file
-            key: hostname
+            secretKeyRef:
+              name: *secret 
+              key: hostname
         - name: ACCESS_CODE
           valueFrom:
-          secretKeyRef:
-            name: *secret_file
-            key: access_code
+            secretKeyRef:
+              name: *secret
+              key: access_code
         - name: PRINTER_SERIAL
           valueFrom:
-          secretKeyRef:
-            name: *secret_file
-            key: printer_serial
+            secretKeyRef:
+              name: *secret
+              key: printer_serial
