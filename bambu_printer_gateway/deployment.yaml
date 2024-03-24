@@ -1,21 +1,19 @@
-define: &secret <>
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: icrs-bambu-printer-gateway-deployment
+  name: ${printer-name}-printer-gateway-deployment
 spec:
-  replicas: 1  # Number of replicas you want to run
+  replicas: 3  # Number of replicas you want to run
   selector:
     matchLabels:
-      app: icrs-bambu-printer-gateway
+      app: ${printer-name}-printer-gateway
   template:
     metadata:
       labels:
-        app: icrs-bambu-printer-gateway
+        app: ${printer-name}-printer-gateway
     spec:
       containers:
-      - name: icrs-bambu-printer-gateway
+      - name: ${printer-name}-printer-gateway
         image: localhost:32000/icrs-bambu-printer-gateway  # Replace with your Python Docker image and tag
         ports:
         - containerPort: 8000  # Port your Python application is listening on
@@ -24,15 +22,29 @@ spec:
         - name: HOSTNAME
           valueFrom:
             secretKeyRef:
-              name: *secret 
+              name: ${printer-name}-secret 
               key: hostname
         - name: ACCESS_CODE
           valueFrom:
             secretKeyRef:
-              name: *secret
+              name: ${printer-name}-secret
               key: access_code
         - name: PRINTER_SERIAL
           valueFrom:
             secretKeyRef:
-              name: *secret
+              name: ${printer-name}-secret
               key: printer_serial
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${printer-name}-printer-gateway-service
+spec:
+  selector:
+    app: ${printer-name}-printer-gateway
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: ClusterIP

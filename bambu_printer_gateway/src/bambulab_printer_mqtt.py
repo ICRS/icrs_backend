@@ -11,7 +11,7 @@ class PrinterMQTTClient:
         self._printer_serial = printer_serial
         
         self._port = port
-        self._timeout = 60
+        self._timeout = timeout
         
         self._client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
         self._client.username_pw_set(username, access)
