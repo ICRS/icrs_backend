@@ -1,7 +1,9 @@
-PRINTERS=["andrew-printerson",""]
+#!/bin/bash
+
+PRINTERS=("andrew-printerson" "")
 
 for printer in ${PRINTERS[@]}; do
     echo "Deploying printer $printer"
-    cat deployment.yaml | sed "s/${printer-name}/$printer/g" | kubectl apply -f -
+    cat deployment.yaml | sed -e "s/\${printer-name}/$printer/g" | kubectl apply -f -
     # Deploy printer
 done
