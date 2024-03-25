@@ -106,6 +106,25 @@ server = IP_ADDRESS
 password = BAMBU_LABS_ACCESS_CODE
 
 printer_camera = PrinterCamera(server, password)
+printer_camera.connect()
 
 frame = printer_camera.get_frame()
 """
+
+if __name__ == "__main__":
+    server = "192.168.1.125"
+    password = "14053862"
+
+    printer_camera = PrinterCamera(server, password)
+    printer_camera.connect()
+
+    frame = printer_camera.get_frame()
+
+    if frame is None:
+        print("Failed to get frame.")
+        exit(1)
+
+    cv2.imshow("Frame", frame)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    exit(0)
