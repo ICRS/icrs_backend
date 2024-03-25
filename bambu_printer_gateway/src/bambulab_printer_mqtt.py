@@ -65,14 +65,22 @@ class PrinterMQTTClient:
 
     def stop(self):
         self._client.loop_stop()
-                
+    
     def get_last_print_percentage(self):
-        return self._data["mc_percent"] if "mc_percent" in self._data else None
+        return self._data.get("mc_percent", None)
     
     def get_remaining_time(self):
-        return self._data["mc_remaining_time"] if "mc_remaining_time" in self._data else None
+        return self._data.get("mc_remaining_time", None)
+    
+    def get_printer_state(self):
+        return self._data.get("gcode_state", "IDLE") 
 
-
+    def get_file_name(self) -> str:
+        return self._data.get("gcode_file", "")
+    
+    def get_print_speed(self) -> int:
+        return int(self._data.get("spd_mag", 100))
+    
 """
 Example Use case
 

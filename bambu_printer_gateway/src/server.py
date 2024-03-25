@@ -20,5 +20,17 @@ async def printer_get_time() -> dict:
 
 @router.get("/printer/status/percentage")
 async def printer_get_percentage():
-    return { "percentage": percentage} if (percentage:=printerMQTTClient.get_last_print_percentage()) is not None else {}
+    return { "percentage": percentage } if (percentage:=printerMQTTClient.get_last_print_percentage()) is not None else {}
+
+@router.get("/printer/status/state")
+async def printer_get_state():
+    return { "state": printerMQTTClient.get_printer_state() }
+
+@router.get("/printer/status/print_speed")
+async def get_print_speed():
+    return { "print_speed": printerMQTTClient.get_print_speed() }
+
+@router.get("/printer/status/file_name")
+async def get_file_name():
+    return { "file_name": printerMQTTClient.get_file_name() }
 
