@@ -1,10 +1,14 @@
+import asyncio
 import os
 import ftplib
 from io import BytesIO
 import ssl
 import tempfile
+from threading import Thread
+import time
 
 import cv2
+from fastapi.responses import StreamingResponse
 
 
 __all__ = ["PrinterCamera"]
@@ -50,6 +54,9 @@ class PrinterCamera:
         self.__ftp_password = str(ftp_password)
         self.__ftps = None
 
+        self.__thread = Thread(target=self.__retriever)
+        self.__thread.daemon = True
+
         self.last_file = None
         self.last_frame = None
 
@@ -58,19 +65,40 @@ class PrinterCamera:
             self.__ftps = ImplicitFTP_TLS()
             self.__ftps.connect(host=self.__ftp_server, port=self.__ftp_port)
             self.__ftps.login(self.__ftp_user, self.__ftp_password)
-            self.__ftps.prot_p()
+            status = self.__ftps.prot_p()
+            print("FTP Status: ", status)
+
+            self.__thread.start()
+
         except Exception as e:
             print(str(e))
             raise e
+
+    def __retriever(self):
+        while True:
+            try:
+                self.__get_last_frame()
+            except Exception as e:
+                print(str(e))
+            time.sleep(15)
 
     def disconnect(self):
         self.__ftps.quit()
 
     def get_frame(self):
-        self.__get_last_frame()
-        return self.last_frame
+        if self.last_frame is None:
+            raise Exception("No frame available.")
+        try:
+            res, im_png = cv2.imencode(".png", self.last_frame)
+            if not res:
+                raise Exception("Failed to encode the frame.")
+        except Exception as e:
+            raise Exception(str(e))
+        return StreamingResponse(BytesIO(im_png.tobytes()),
+                                 media_type="image/png")
 
     def __get_last_frame(self, folder="ipcam"):
+        print("Getting last frame...")
         error = None
         try:
             self.__ftps.cwd(folder)
@@ -102,6 +130,9 @@ class PrinterCamera:
             offset = max(filesize - num_bytes, 0)
             offset = 0
 
+            print(f"File Size: {convert_bytes(filesize)}")
+            print(f"Downloading {file}")
+
             with BytesIO() as file_in_memory:
                 output = self.__ftps.retrbinary(cmd='RETR ' + file,
                                                 callback=file_in_memory.write,
@@ -110,6 +141,8 @@ class PrinterCamera:
                 file_in_memory.seek(0)
                 video_bytes = file_in_memory.read()
                 video_bytes = bytearray(video_bytes)
+
+                print(f"Downloaded {convert_bytes(len(video_bytes))}")
 
                 with tempfile.NamedTemporaryFile(
                         delete=False,
