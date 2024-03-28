@@ -2,7 +2,7 @@ import os
 import dotenv
 
 from .bambulab_printer_mqtt import PrinterMQTTClient
-from .printer_camera_ftp import PrinterCamera
+from .bambulab_printer_camera import PrinterCamera
 
 from fastapi import APIRouter
 
@@ -16,7 +16,6 @@ printer_serial = str(os.getenv("PRINTER_SERIAL")).strip()
 
 print("Connecting to printer camera...")
 camera = PrinterCamera(hostname, access_code)
-camera.connect()
 
 print("Connecting to printer MQTT client...")
 printerMQTTClient = PrinterMQTTClient(hostname, access_code, printer_serial)
