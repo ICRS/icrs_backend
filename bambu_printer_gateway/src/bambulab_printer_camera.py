@@ -13,11 +13,11 @@ __all__ = ["PrinterCamera"]
 
 
 class PrinterCamera:
-    def __init__(self, hostname, access_code):
-        self.__username = 'bblp'
+    def __init__(self, hostname, access_code, port=6000, username='bblp'):
+        self.__username = username
         self.__access_code = str(access_code)
         self.__hostname = str(hostname)
-        self.__port = 6000
+        self.__port = port
 
         self.__thread = Thread(target=self.retriever)
         self.__thread.daemon = True
