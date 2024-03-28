@@ -51,7 +51,7 @@ class PrinterMQTTClient:
         rc : int
             The connection result
         """
-        print("Connected with result code " + str(rc))
+        # print("Connected with result code " + str(rc))
         client.subscribe(f"device/{self._printer_serial}/report")
         # return None
 
