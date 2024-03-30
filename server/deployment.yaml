@@ -23,6 +23,13 @@ spec:
             mountPath: /app/postgres.ini
             subPath: postgres.ini
             readOnly: true
+        env:
+        - name: SECRET
+          valueFrom:
+            secretKeyRef:
+              name: access-server-secret
+              key: secret
+
       volumes:
         - name: postgres-ini 
           secret:
