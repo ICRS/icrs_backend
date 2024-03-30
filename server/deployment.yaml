@@ -29,7 +29,11 @@ spec:
             secretKeyRef:
               name: access-server-secret
               key: secret
-
+        - name: ENV
+          valueFrom:
+            secretKeyRef:
+              name: access-server-secret
+              key: env
       volumes:
         - name: postgres-ini 
           secret:
