@@ -18,6 +18,16 @@ spec:
         ports:
         - containerPort: 8888  # Port your Python application is listening on
         imagePullPolicy: "Always"
+        volumeMounts:
+          - name: postgres-ini 
+            mountPath: /app/postgres.ini
+            subPath: postgres.ini
+            readOnly: true
+      volumes:
+        - name: postgres-ini 
+          secret:
+            secretName: postgres-ini-secret 
+
 
 ---
 apiVersion: v1
