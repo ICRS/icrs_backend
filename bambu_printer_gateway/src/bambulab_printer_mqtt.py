@@ -1,11 +1,28 @@
 import json
 import ssl
+from typing import Any
 
 import paho.mqtt.client as mqtt
 
 
 class PrinterMQTTClient:
-    def __init__(self, hostname, access, printer_serial, username="bblp", port=8883, timeout=60):
+    """
+    Printer class for handling MQTT communication with the printer
+    
+    Example::
+    
+        hostname = IP_ADDRESS
+        access = BAMBULABS_ACCESS_TOKEN
+        username = "bblp"
+        printer_serial = PRINTER_SERIAL_NUMBER
+
+
+        printerMQTTClient = PrinterMQTTClient(hostname, access, username, printer_serial)
+        printerMQTTClient.connect()
+        printerMQTTClient.start()
+    """
+    def __init__(self, hostname: str, access: str, printer_serial: str,
+                 username: str = "bblp", port: int = 8883, timeout: int = 60):
         self._hostname = hostname
         self._access = access
         self._username = username
@@ -22,6 +39,8 @@ class PrinterMQTTClient:
 
         self._client.on_connect = self._on_connect
         self._client.on_message = self._on_message
+
+        self.command_topic = f"device/{printer_serial}/command"
 
         self._data = {}
 
@@ -55,45 +74,93 @@ class PrinterMQTTClient:
         client.subscribe(f"device/{self._printer_serial}/report")
         # return None
 
-    def connect(self):
+    def connect(self) -> None:
+        """
+        Connects to the MQTT server asynchronously
+        """
         self._client.connect_async(self._hostname, self._port, self._timeout)
 
     def start(self):
+        """
+        Starts the MQTT client
+        """
         self._client.loop_start()
 
     def loop_forever(self):
+        """
+        Loop client forever (synchonous, blocking call)
+        """
         self._client.loop_forever()
 
     def stop(self):
+        """
+        Stops the MQTT client
+        """
         self._client.loop_stop()
 
-    def get_last_print_percentage(self):
+    def get_last_print_percentage(self) -> int | str | None:
+        """
+        Get the last print percentage
+
+        Returns:
+            int | str | None: The last print percentage
+        """
         return self._data.get("mc_percent", None)
 
-    def get_remaining_time(self):
+    def get_remaining_time(self) -> int | str | None:
+        """
+        Get the remaining time for the print
+
+        Returns:
+            int | str | None: The remaining time for the print
+        """
         return self._data.get("mc_remaining_time", None)
 
-    def get_printer_state(self):
+    def get_printer_state(self) -> str:
+        """
+        Get the printer state
+
+        Returns:
+            str: gcode_state
+        """
         return self._data.get("gcode_state", "IDLE")
 
     def get_file_name(self) -> str:
+        """
+        Get the file name of the current/last print
+
+        Returns:
+            str: file name
+        """
         return self._data.get("gcode_file", "")
 
     def get_print_speed(self) -> int:
+        """
+        Get the print speed
+
+        Returns:
+            int: print speed
+        """
         return int(self._data.get("spd_mag", 100))
 
+    def __publish_command(self, payload: dict[Any, Any]) -> None:
+        """
+        Generate a command payload and publish it to the MQTT server
 
-"""
-Example Use case
+        Args:
+            payload (dict[Any, Any]): command to send to the printer
+        """
+        self._client.publish(self.command_topic, json.dumps(payload))
 
-hostname = IP_ADDRESS
-access = BAMBULABS_ACCESS_TOKEN
-username = "bblp"
-printer_serial = PRINTER_SERIAL_NUMBER
+    def turn_light_off(self) -> None:
+        """
+        Turn off the printer light
+        """
+        self.__publish_command({"system": {"led_mode": "off"}})
 
+    def turn_light_on(self) -> None:
+        """
+        Turn on the printer light
+        """
+        self.__publish_command({"system": {"led_mode": "on"}})
 
-printerMQTTClient = PrinterMQTTClient(hostname, access, username, printer_serial)
-printerMQTTClient.connect()
-printerMQTTClient.start()
-
-"""
