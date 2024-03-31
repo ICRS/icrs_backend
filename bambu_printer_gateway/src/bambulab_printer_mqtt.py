@@ -8,9 +8,9 @@ import paho.mqtt.client as mqtt
 class PrinterMQTTClient:
     """
     Printer class for handling MQTT communication with the printer
-    
+
     Example::
-    
+
         hostname = IP_ADDRESS
         access = BAMBULABS_ACCESS_TOKEN
         username = "bblp"
@@ -21,6 +21,7 @@ class PrinterMQTTClient:
         printerMQTTClient.connect()
         printerMQTTClient.start()
     """
+
     def __init__(self, hostname: str, access: str, printer_serial: str,
                  username: str = "bblp", port: int = 8883, timeout: int = 60):
         self._hostname = hostname
@@ -164,3 +165,17 @@ class PrinterMQTTClient:
         """
         self.__publish_command({"system": {"led_mode": "on"}})
 
+    def get_light_state(self) -> str:
+        """
+        Get the printer light state
+
+        Returns:
+            str: led_mode
+        """
+        light_report: list[dict[str, str]] = self._data.get(
+            "lights_report", [])
+
+        if not light_report:
+            return "unknown"
+
+        return light_report[0].get("mode", "unknown")
