@@ -4,6 +4,7 @@ import ftplib
 import logging
 from typing import IO, Any, BinaryIO
 
+from numpy import delete
 import paho.mqtt.client as mqtt
 
 
@@ -42,4 +43,12 @@ class PrinterFTPClient:
         logging.info(self.ftps.prot_p())
 
     def upload_file(self, file: BinaryIO, file_path: str) -> None:
-        self.ftps.storbinary(f'STOR {file_path}', file)
+        self.ftps.storbinary(f'STOR {file_path}', file) # TODO: Check folder path
+    
+    def delete_file(self, file_path: str) -> None:
+        self.ftps.delete(file_path)
+        
+    def close(self) -> None:
+        self.ftps.quit()
+    
+    
