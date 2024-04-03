@@ -1,9 +1,11 @@
 import os
+from typing import BinaryIO
 import dotenv
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, UploadFile
 
+from .bambulab_printer_ftp import PrinterFTPClient
 from .bambulab_printer_mqtt import PrinterMQTTClient  # noqa
 from .bambulab_printer_camera import PrinterCamera
 
@@ -18,9 +20,14 @@ logging.basicConfig(level=logging.INFO,
 
 router = APIRouter()
 
-HOSTNAME = str(os.getenv("HOSTNAME")).strip()
-ACCESS_CODE = str(os.getenv("ACCESS_CODE")).strip()
-PRINTER_SERIAL = str(os.getenv("PRINTER_SERIAL")).strip()
+
+def get_env_string(env_name: str) -> str:
+    return str(os.getenv(env_name)).strip()
+
+
+HOSTNAME = get_env_string("HOSTNAME")
+ACCESS_CODE = get_env_string("ACCESS_CODE")
+PRINTER_SERIAL = get_env_string("PRINTER_SERIAL")
 
 print("Connecting to printer camera...")
 camera = PrinterCamera(HOSTNAME, ACCESS_CODE)
@@ -30,8 +37,11 @@ printerMQTTClient = PrinterMQTTClient(HOSTNAME, ACCESS_CODE, PRINTER_SERIAL)
 printerMQTTClient.connect()
 printerMQTTClient.start()
 
+status_router = APIRouter(prefix="/printer/status", tags=["Printer Status"])
 
-@router.get("/printer/status/time")
+printerFTPClient = PrinterFTPClient(HOSTNAME, ACCESS_CODE)
+
+@status_router.get("/time")
 async def printer_get_time() -> dict:
     """
     Get the remaining time for the current print
@@ -44,7 +54,7 @@ async def printer_get_time() -> dict:
                               .get_remaining_time()) is not None else {}
 
 
-@router.get("/printer/status/percentage")
+@status_router.get("/percentage")
 async def printer_get_percentage() -> dict:
     """
     Get the last print percentage completed
@@ -57,7 +67,7 @@ async def printer_get_percentage() -> dict:
                                           ) is not None else {}
 
 
-@router.get("/printer/status/state")
+@status_router.get("/state")
 async def printer_get_state():
     """
     Get the current state of the printer
@@ -68,7 +78,7 @@ async def printer_get_state():
     return {"state": printerMQTTClient.get_printer_state()}
 
 
-@router.get("/printer/status/print_speed")
+@status_router.get("/print_speed")
 async def get_print_speed():
     """
     Get the print speed of the printer
@@ -79,7 +89,7 @@ async def get_print_speed():
     return {"print_speed": printerMQTTClient.get_print_speed()}
 
 
-@router.get("/printer/status/file_name")
+@status_router.get("/file_name")
 async def get_file_name():
     """
     Get the file name of the current/last print
@@ -117,3 +127,19 @@ async def printer_get_led_state():
     """
     return {"led_state": led_state} if (led_state := printerMQTTClient
                                         .get_light_state()) is not None else {}
+
+
+@router.post("/printer/upload/gcode")
+async def upload_gcode_file(file: UploadFile):
+    try:
+        io_file: BinaryIO = file.file    
+        if file.filename:
+            printerFTPClient.upload_file(io_file, file.filename)
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Exception occurred during file upload: {e}")
+    finally:
+        file.file.close()
+
+    return
