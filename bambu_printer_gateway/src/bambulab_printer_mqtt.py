@@ -3,7 +3,7 @@ import ssl
 from typing import Any
 
 import paho.mqtt.client as mqtt
-
+from paho.mqtt.enums import CallbackAPIVersion
 
 class PrinterMQTTClient:
     """
@@ -32,7 +32,7 @@ class PrinterMQTTClient:
         self._port = port
         self._timeout = timeout
 
-        self._client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+        self._client = mqtt.Client(CallbackAPIVersion.VERSION2)
         self._client.username_pw_set(username, access)
         self._client.tls_set(tls_version=ssl.PROTOCOL_TLS,
                              cert_reqs=ssl.CERT_NONE)
@@ -179,3 +179,34 @@ class PrinterMQTTClient:
             return "unknown"
 
         return light_report[0].get("mode", "unknown")
+
+    def start_print(self) -> None:
+        """
+        Start the print
+
+        Returns:
+            str: print_status
+        """
+        # TODO: Implement this
+        return 
+    
+    def stop_print(self) -> None:
+        """
+        Stop the print
+
+        Returns:
+            str: print_status
+        """
+        # TODO: Implement this
+        return
+    
+    def pause_print(self) -> None:
+        """
+        Pause the print
+
+        Returns:
+            str: print_status
+        """
+        # TODO: Implement this
+        return
+        

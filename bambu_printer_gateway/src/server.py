@@ -154,3 +154,19 @@ async def upload_gcode_file(file: UploadFile):
         file.file.close()
 
     return
+
+@router.post("/printer/print/start")
+async def start_print():
+    # TODO: Implement start print
+    # printerMQTTClient.start_print()
+    return
+
+@router.post("/printer/print/stop")
+async def stop_print():
+    # TODO: Implement stop print
+    return
+
+@router.post("/printer/print/pause")
+async def pause_print():
+    # TODO: Implement pause print
+    return
