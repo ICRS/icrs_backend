@@ -33,7 +33,6 @@ class PrinterCamera:
 
     def retriever(self):
         print("Starting camera thread.")
-        MAX_CONNECT_ATTEMPTS = 12
 
         auth_data = bytearray()
         connect_attempts = 0
@@ -73,7 +72,7 @@ class PrinterCamera:
         # Bytes payload_size-2:payload_size = jpeg_end magic bytes
 
         # Further attempts to receive data will get SSLWantReadError until a new image is ready (1-2 seconds later)  # noqa
-        while connect_attempts < MAX_CONNECT_ATTEMPTS:
+        while True:
             try:
                 with socket.create_connection((self.__hostname, self.__port)) as sock:  # noqa
                     try:
@@ -109,7 +108,7 @@ class PrinterCamera:
                             # LOGGER.error(f"{self._client._device.info.device_type}: A Chamber Image thread inner exception occurred:")    # noqa
                             # LOGGER.error(f"{self._client._device.info.device_type}: Exception. Type: {type(e)} Args: {e}")                # noqa
                             time.sleep(1)
-                            continue
+                            break
 
                         if img is not None and len(dr) > 0:
                             img += dr
