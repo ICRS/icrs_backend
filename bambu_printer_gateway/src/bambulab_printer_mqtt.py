@@ -184,7 +184,7 @@ class PrinterMQTTClient:
 
         return light_report[0].get("mode", "unknown")
 
-    def start_print(self) -> None:
+    def start_print(self, filename: str) -> None:
         """
         Start the print
 
@@ -192,6 +192,7 @@ class PrinterMQTTClient:
             str: print_status
         """
         # TODO: Implement this
+        self.__publish_command({"print": {"command": "project_file", "param": filename}})
         return
     
     def stop_print(self) -> bool:
