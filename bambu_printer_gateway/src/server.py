@@ -4,6 +4,7 @@ import dotenv
 import logging
 
 from fastapi import APIRouter, HTTPException, UploadFile
+import logging
 
 from .bambulab_printer_ftp import PrinterFTPClient
 from .bambulab_printer_mqtt import PrinterMQTTClient  # noqa
@@ -19,6 +20,13 @@ logging.basicConfig(level=logging.INFO,
                     ])
 
 router = APIRouter()
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(name)s [%(levelname)s]: %(message)s',
+                    datefmt='%d-%b-%y %H:%M:%S',
+                    handlers=[
+                        logging.StreamHandler()
+                    ])
 
 
 def get_env_string(env_name: str) -> str:
@@ -152,7 +160,7 @@ async def upload_gcode_file(file: UploadFile):
     try:
         io_file: BinaryIO = file.file    
         if file.filename:
-            printerFTPClient.upload_file(io_file, file.filename)
+            return printerFTPClient.upload_file(io_file, file.filename)
     
     except Exception as e:
         raise HTTPException(
