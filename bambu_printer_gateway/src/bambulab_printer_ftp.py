@@ -1,11 +1,8 @@
-import json
-import ssl
 import ftplib
-import logging
-from typing import IO, Any, BinaryIO
+import ssl
 
-from numpy import delete
-import paho.mqtt.client as mqtt
+import logging
+from typing import BinaryIO
 
 
 class ImplicitFTP_TLS(ftplib.FTP_TLS):
@@ -35,11 +32,11 @@ class PrinterFTPClient:
                  user: str = 'bblp',
                  port: int = 990) -> None:
         self.ftps = ImplicitFTP_TLS()
-        
+        logging.info("Connecting to FTP server...", server_ip, port, user, access_code)
         # Connect to the FTP server
         self.ftps.connect(host=server_ip, port=port)
         self.ftps.login(user, access_code)
-        
+        logging.info("Connected to FTP server")
         logging.info(self.ftps.prot_p())
 
     def upload_file(self, file: BinaryIO, file_path: str) -> None:

@@ -1,4 +1,5 @@
 import json
+import logging
 import ssl
 from typing import Any
 
@@ -41,8 +42,8 @@ class PrinterMQTTClient:
         self._client.on_connect = self._on_connect
         self._client.on_message = self._on_message
 
-        self.command_topic = f"device/{printer_serial}/command"
-
+        self.command_topic = f"device/{printer_serial}/request"
+        print(self.command_topic)
         self._data = {}
 
     def _on_message(self, client, userdata, msg) -> None:  # pylint: disable=unused-argument  # noqa
@@ -144,26 +145,29 @@ class PrinterMQTTClient:
         """
         return int(self._data.get("spd_mag", 100))
 
-    def __publish_command(self, payload: dict[Any, Any]) -> None:
+    def __publish_command(self, payload: dict[Any, Any]) -> bool:
         """
         Generate a command payload and publish it to the MQTT server
 
         Args:
             payload (dict[Any, Any]): command to send to the printer
         """
-        self._client.publish(self.command_topic, json.dumps(payload))
-
-    def turn_light_off(self) -> None:
+        command = self._client.publish(self.command_topic, json.dumps(payload))
+        logging.info(f"Published command: {payload}")
+        command.wait_for_publish()
+        return command.is_published()
+    
+    def turn_light_off(self) -> bool:
         """
         Turn off the printer light
         """
-        self.__publish_command({"system": {"led_mode": "off"}})
+        return self.__publish_command({"system": {"led_mode": "off"}})
 
-    def turn_light_on(self) -> None:
+    def turn_light_on(self) -> bool:
         """
         Turn on the printer light
         """
-        self.__publish_command({"system": {"led_mode": "on"}})
+        return self.__publish_command({"system": {"led_mode": "on"}})
 
     def get_light_state(self) -> str:
         """
@@ -188,25 +192,54 @@ class PrinterMQTTClient:
             str: print_status
         """
         # TODO: Implement this
-        return 
+        return
     
-    def stop_print(self) -> None:
+    def stop_print(self) -> bool:
         """
         Stop the print
 
         Returns:
             str: print_status
         """
-        # TODO: Implement this
-        return
+        return self.__publish_command({"print": {"command": "stop"}})
     
-    def pause_print(self) -> None:
+    def pause_print(self) -> bool:
         """
         Pause the print
 
         Returns:
             str: print_status
         """
-        # TODO: Implement this
-        return
-        
+        if self.get_printer_state() == "PAUSED":
+            return True
+        return self.__publish_command({"print": {"command": "pause"}})
+    
+    def resume_print(self) -> bool:
+        """
+        Resume the print
+
+        Returns:
+            str: print_status
+        """
+        if self.get_printer_state() == "RUNNING":
+            return True
+        return self.__publish_command({"print": {"command": "resume"}})
+
+    
+    def __send_gcode_line(self, gcode_command: str) -> bool:
+        """
+        Send a G-code line command to the printer
+
+        Args:
+            gcode_command (str): G-code command to send to the printer
+        """
+        return self.__publish_command({"print": {"command": "gcode_line", "param":f"{gcode_command}"}})
+    
+    def set_bed_temperature(self, temperature: int) -> bool:
+        """
+        Set the bed temperature
+
+        Args:
+            temperature (int): The temperature to set the bed to
+        """
+        return self.__send_gcode_line(f"M140 S{temperature}")

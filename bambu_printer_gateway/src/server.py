@@ -24,7 +24,6 @@ router = APIRouter()
 def get_env_string(env_name: str) -> str:
     return str(os.getenv(env_name)).strip()
 
-
 HOSTNAME = get_env_string("HOSTNAME")
 ACCESS_CODE = get_env_string("ACCESS_CODE")
 PRINTER_SERIAL = get_env_string("PRINTER_SERIAL")
@@ -139,6 +138,25 @@ async def printer_get_led_state():
     return {"led_state": led_state} if (led_state := printerMQTTClient
                                         .get_light_state()) is not None else {}
 
+@router.post("/printer/led/on")
+async def printer_led_on():
+    """
+    Turn on the printer LED
+
+    Returns:
+        dict : led_state
+    """
+    return {"led_state": printerMQTTClient.turn_light_on()}
+
+@router.post("/printer/led/off")
+async def printer_led_off():
+    """
+    Turn off the printer LED
+
+    Returns:
+        dict : led_state
+    """
+    return {"led_state": printerMQTTClient.turn_light_off()}
 
 @router.post("/printer/upload/gcode")
 async def upload_gcode_file(file: UploadFile):
@@ -158,8 +176,7 @@ async def upload_gcode_file(file: UploadFile):
 @router.post("/printer/print/start")
 async def start_print():
     # TODO: Implement start print
-    # printerMQTTClient.start_print()
-    return
+    return printerMQTTClient.start_print()
 
 @router.post("/printer/print/stop")
 async def stop_print():
@@ -168,5 +185,12 @@ async def stop_print():
 
 @router.post("/printer/print/pause")
 async def pause_print():
-    # TODO: Implement pause print
-    return
+    return printerMQTTClient.pause_print()
+
+@router.post("/printer/print/resume")
+async def resume_print():
+    return printerMQTTClient.resume_print()
+
+@router.post("/printer/bed/temperature")
+async def set_bed_temperature(temperature: int):
+    return printerMQTTClient.set_bed_temperature(temperature)
