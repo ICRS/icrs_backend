@@ -4,6 +4,8 @@ import base64
 import struct
 import socket
 import ssl
+import logging
+
 from threading import Thread
 import time
 from fastapi import Response
@@ -30,7 +32,7 @@ class PrinterCamera:
             raise Exception("No frame available.")
         encoded_image = base64.b64encode(self.last_frame).decode("utf-8")
         return Response(encoded_image, media_type="image/png")
-
+    
     def retriever(self):
         print("Starting camera thread.")
 
@@ -79,6 +81,7 @@ class PrinterCamera:
                         connect_attempts += 1
                         sslSock = ctx.wrap_socket(sock,
                                                   server_hostname=self.__hostname)      # noqa
+                        logging.info("Attempting to connect...")
                         sslSock.write(auth_data)
                         img = None
                         payload_size = 0
@@ -91,26 +94,33 @@ class PrinterCamera:
                             pass
                     except socket.error as e:  # noqa
                         # LOGGER.error(f"{self._client._device.info.device_type}: Socket error: {e}")           # noqa
-                        pass
+                        logging.info("Error in socket:", e)
+                        continue
 
-                    sslSock.setblocking(False)
+                    sslSock.setblocking(0)
+                    sslSock.settimeout(5.0)
                     while True:
                         try:
+                            logging.info("Reading chunk...")
                             dr = sslSock.recv(read_chunk_size)
                             #LOGGER.debug(f"{self._client._device.info.device_type}: Received {len(dr)} bytes.")    # noqa
 
                         except ssl.SSLWantReadError:
-                            #LOGGER.debug(f"{self._client._device.info.device_type}: SSLWantReadError")             # noqa
+                            # logging.error(f"SSLWantReadError")             # noqa
                             time.sleep(1)
                             continue
 
                         except Exception as e:  # noqa
                             # LOGGER.error(f"{self._client._device.info.device_type}: A Chamber Image thread inner exception occurred:")    # noqa
                             # LOGGER.error(f"{self._client._device.info.device_type}: Exception. Type: {type(e)} Args: {e}")                # noqa
+                            logging.error(f"Exception. Type: {type(e)} Args: {e}")
                             time.sleep(1)
                             break
 
+                        logging.info(f"Read chunk {len(dr)}")
+
                         if img is not None and len(dr) > 0:
+                            logging.info("Appending to Image")
                             img += dr
                             if len(img) > payload_size:
                                 # We got more data than we expected.
@@ -138,6 +148,7 @@ class PrinterCamera:
                         elif len(dr) == 16:
                             # We got the header bytes. Get the expected payload size from it and create the image buffer bytearray.     # noqa
                             # Reset connect_attempts now we know the connect was successful.                                            # noqa
+                            logging.info("Got header")
                             connect_attempts = 0
                             img = bytearray()
                             payload_size = int.from_bytes(dr[0:3],
@@ -148,15 +159,20 @@ class PrinterCamera:
                             # LOGGER.error(f"{self._client._device.info.device_type}: Chamber image connection rejected by the printer. Check provided access code and IP address.")    # noqa
                             # Sleep for a short while and then re-attempt the connection.                                                                                               # noqa
                             time.sleep(5)
+                            logging.error("Wrong access code or IP")
                             break
 
                         else:
                             # LOGGER.error(f"{self._client._device.info.device_type}: UNEXPECTED DATA RECEIVED: {len(dr)}")             # noqa
+                            loggin.error("something bad happened")
                             time.sleep(1)
+                            break
 
             except Exception as e:  # noqa
-                pass
+                logging.error(f"Error occurred: {e}")
+                continue
                 # LOGGER.error(f"{self._client._device.info.device_type}: A Chamber Image thread outer exception occurred:")            # noqa
                 # LOGGER.error(f"{self._client._device.info.device_type}: Exception. Type: {type(e)} Args: {e}")                        # noqa
                 # if not self._stop_event.is_set():
                 #     time.sleep(1)  # Avoid a tight loop if this is a persistent error.                                                # noqa
+        logging.info("Thread Finished")
