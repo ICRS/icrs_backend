@@ -171,8 +171,8 @@ async def upload_gcode_file(file: UploadFile):
     return
 
 @router.post("/printer/print/start")
-async def start_print(filename: str):
-    return printerMQTTClient.start_print(filename)
+async def start_print(filename: str, plate_number: int):
+    return printerMQTTClient.start_print(filename, plate_number=plate_number)
 
 @router.post("/printer/print/stop")
 async def stop_print():
