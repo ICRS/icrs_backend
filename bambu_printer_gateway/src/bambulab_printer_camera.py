@@ -91,7 +91,7 @@ class PrinterCamera:
                         # LOGGER.debug(f"{self._client._device.info.device_type}: SOCKET STATUS: {status}")     # noqa
                         if status != 0:
                             # LOGGER.error(f"{self._client._device.info.device_type}: Socket error: {status}")  # noqa
-                            logging.warn(f"Socket error: {status}")
+                            logging.warning(f"Socket error: {status}")
                             pass
                     except socket.error as e:  # noqa
                         # LOGGER.error(f"{self._client._device.info.device_type}: Socket error: {e}")           # noqa
