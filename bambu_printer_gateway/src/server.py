@@ -1,5 +1,6 @@
 import os
 import dotenv
+import logging
 
 from .bambulab_printer_mqtt import PrinterMQTTClient
 from .bambulab_printer_camera import PrinterCamera
@@ -7,6 +8,13 @@ from .bambulab_printer_camera import PrinterCamera
 from fastapi import APIRouter
 
 dotenv.load_dotenv()
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(name)s [%(levelname)s]: %(message)s',
+                    datefmt='%d-%b-%y %H:%M:%S',
+                    handlers=[
+                        logging.StreamHandler()
+                    ])
 
 router = APIRouter()
 
