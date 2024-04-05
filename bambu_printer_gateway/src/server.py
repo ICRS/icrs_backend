@@ -200,3 +200,11 @@ async def resume_print():
 @router.post("/printer/bed/temperature")
 async def set_bed_temperature(temperature: int):
     return printerMQTTClient.set_bed_temperature(temperature)
+
+@router.post("/printer/calibration/home")
+async def home_printer():
+    return printerMQTTClient.auto_home()
+
+@router.post("/printer/axis/z")
+async def move_z_axis(distance: float):
+    return printerMQTTClient.set_bed_height(distance)

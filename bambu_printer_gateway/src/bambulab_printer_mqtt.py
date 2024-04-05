@@ -258,3 +258,10 @@ class PrinterMQTTClient:
             temperature (int): The temperature to set the bed to
         """
         return self.__send_gcode_line(f"M140 S{temperature}\n")
+
+    def set_bed_height(self, int) -> bool:
+        return self.__send_gcode_line(f"G90\nG0 Z{int}\n")
+    
+    def auto_home(self) -> bool:
+        return self.__send_gcode_line("G29\n")
+    
