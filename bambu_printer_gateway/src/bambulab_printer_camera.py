@@ -91,22 +91,24 @@ class PrinterCamera:
                         # LOGGER.debug(f"{self._client._device.info.device_type}: SOCKET STATUS: {status}")     # noqa
                         if status != 0:
                             # LOGGER.error(f"{self._client._device.info.device_type}: Socket error: {status}")  # noqa
+                            logging.warn(f"Socket error: {status}")
                             pass
                     except socket.error as e:  # noqa
                         # LOGGER.error(f"{self._client._device.info.device_type}: Socket error: {e}")           # noqa
-                        logging.info("Error in socket:", e)
+                        logging.warning(f"Error in socket: {e}")
                         continue
 
-                    sslSock.setblocking(0)
+                    sslSock.setblocking(False)
                     sslSock.settimeout(5.0)
+                    
                     while True:
                         try:
-                            logging.info("Reading chunk...")
+                            logging.debug("Reading chunk...")
                             dr = sslSock.recv(read_chunk_size)
                             #LOGGER.debug(f"{self._client._device.info.device_type}: Received {len(dr)} bytes.")    # noqa
 
                         except ssl.SSLWantReadError:
-                            # logging.error(f"SSLWantReadError")             # noqa
+                            # logging.warn(f"SSLWantReadError")             # noqa
                             time.sleep(1)
                             continue
 
@@ -117,10 +119,10 @@ class PrinterCamera:
                             time.sleep(1)
                             break
 
-                        logging.info(f"Read chunk {len(dr)}")
+                        logging.debug(f"Read chunk {len(dr)}")
 
                         if img is not None and len(dr) > 0:
-                            logging.info("Appending to Image")
+                            logging.debug("Appending to Image")
                             img += dr
                             if len(img) > payload_size:
                                 # We got more data than we expected.
@@ -148,7 +150,7 @@ class PrinterCamera:
                         elif len(dr) == 16:
                             # We got the header bytes. Get the expected payload size from it and create the image buffer bytearray.     # noqa
                             # Reset connect_attempts now we know the connect was successful.                                            # noqa
-                            logging.info("Got header")
+                            logging.debug("Got header")
                             connect_attempts = 0
                             img = bytearray()
                             payload_size = int.from_bytes(dr[0:3],
@@ -164,7 +166,7 @@ class PrinterCamera:
 
                         else:
                             # LOGGER.error(f"{self._client._device.info.device_type}: UNEXPECTED DATA RECEIVED: {len(dr)}")             # noqa
-                            loggin.error("something bad happened")
+                            logging.error("something bad happened")
                             time.sleep(1)
                             break
 
