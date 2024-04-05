@@ -6,6 +6,7 @@ from typing import Any
 import paho.mqtt.client as mqtt
 from paho.mqtt.enums import CallbackAPIVersion
 
+
 class PrinterMQTTClient:
     """
     Printer class for handling MQTT communication with the printer
@@ -156,7 +157,7 @@ class PrinterMQTTClient:
         logging.info(f"Published command: {payload}")
         command.wait_for_publish()
         return command.is_published()
-    
+
     def turn_light_off(self) -> bool:
         """
         Turn off the printer light
@@ -184,7 +185,7 @@ class PrinterMQTTClient:
 
         return light_report[0].get("mode", "unknown")
 
-    def start_print(self, filename: str) -> None:
+    def start_print(self, filename: str, plate_number: int) -> bool:
         """
         Start the print
 
@@ -192,9 +193,23 @@ class PrinterMQTTClient:
             str: print_status
         """
         # TODO: Implement this
-        self.__publish_command({"print": {"command": "project_file", "param": filename}})
-        return
-    
+        return self.__publish_command(
+            {
+                "print":
+                {
+                    "command": "project_file",
+                    "param": f"Metadata/plate_{plate_number}.gcode",
+                    "subtask_name": filename,
+                    "bed_leveling": True,
+                    "flow_calibration": True,
+                    "vibration_calibration": True,
+                    "url": f"ftp://{filename}",
+                    "layer_inspect": False,
+                    "use_ams": False,
+                }
+            })
+        
+
     def stop_print(self) -> bool:
         """
         Stop the print
@@ -203,7 +218,7 @@ class PrinterMQTTClient:
             str: print_status
         """
         return self.__publish_command({"print": {"command": "stop"}})
-    
+
     def pause_print(self) -> bool:
         """
         Pause the print
@@ -214,7 +229,7 @@ class PrinterMQTTClient:
         if self.get_printer_state() == "PAUSED":
             return True
         return self.__publish_command({"print": {"command": "pause"}})
-    
+
     def resume_print(self) -> bool:
         """
         Resume the print
@@ -226,7 +241,6 @@ class PrinterMQTTClient:
             return True
         return self.__publish_command({"print": {"command": "resume"}})
 
-    
     def __send_gcode_line(self, gcode_command: str) -> bool:
         """
         Send a G-code line command to the printer
@@ -234,8 +248,8 @@ class PrinterMQTTClient:
         Args:
             gcode_command (str): G-code command to send to the printer
         """
-        return self.__publish_command({"print": {"command": "gcode_line", "param":f"{gcode_command}"}})
-    
+        return self.__publish_command({"print": {"command": "gcode_line", "param": f"{gcode_command}"}})
+
     def set_bed_temperature(self, temperature: int) -> bool:
         """
         Set the bed temperature
@@ -243,4 +257,4 @@ class PrinterMQTTClient:
         Args:
             temperature (int): The temperature to set the bed to
         """
-        return self.__send_gcode_line(f"M140 S{temperature}")
+        return self.__send_gcode_line(f"M140 S{temperature}\n")
