@@ -6,7 +6,7 @@ from typing import Any
 import paho.mqtt.client as mqtt
 from paho.mqtt.enums import CallbackAPIVersion
 
-from .printer_states import CURRENT_STAGE_IDS
+from .printer_states import PrintStatus
 
 class PrinterMQTTClient:
     """
@@ -217,7 +217,7 @@ class PrinterMQTTClient:
         Returns:
             str: current_state
         """
-        return CURRENT_STAGE_IDS.get(self._data.get("stg_cur", -1), "UNKNOWN")
+        return PrintStatus(self._data.get("stg_cur", -1)).name
     
     def stop_print(self) -> bool:
         """
