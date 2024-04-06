@@ -1,6 +1,5 @@
 import json
 import logging
-from operator import le
 import ssl
 from typing import Any
 
@@ -193,14 +192,13 @@ class PrinterMQTTClient:
 
         return light_report[0].get("mode", "unknown")
 
-    def start_print(self, filename: str, plate_number: int) -> bool:
+    def start_print_3mf(self, filename: str, plate_number: int) -> bool:
         """
         Start the print
 
         Returns:
             str: print_status
         """
-        # TODO: Implement this
         return self.__publish_command(
             {
                 "print":
@@ -272,24 +270,71 @@ class PrinterMQTTClient:
 
         Args:
             temperature (int): The temperature to set the bed to
+
+        Returns:
+            bool: success of setting the bed temperature
         """
         return self.__send_gcode_line(f"M140 S{temperature}\n")
 
-    def set_bed_height(self, int) -> bool:
-        return self.__send_gcode_line(f"G90\nG0 Z{int}\n")
+    def set_bed_height(self, height: int) -> bool:
+        """
+        Set the absolute height of the bed (Z-axis). 
+        0 is the bed at the nozzle tip and 256 is the bed at the bottom of the printer.
+
+        Args:
+            height (int): height to set the bed to 
+
+        Returns:
+            bool: success of the bed height setting
+        """
+        return self.__send_gcode_line(f"G90\nG0 Z{height}\n")
 
     def auto_home(self) -> bool:
+        """
+        Auto home the printer
+
+        Returns:
+            bool: success of the auto home command
+        """
         return self.__send_gcode_line("G28\n")
 
-    def set_print_speed(self, speed_lvl: int = 1) -> bool:
+    def set_print_speed_lvl(self, speed_lvl: int = 1) -> bool:
+        """
+        Set the print speed
+
+        Args:
+            speed_lvl (int, optional): Set the speed level of printer. Defaults to 1.
+
+        Returns:
+            bool: success of setting the print speed
+        """
         return self.__publish_command(
             {"print": {"command": "print_speed", "param": f"{speed_lvl}"}}
         )
 
     def set_nozzle_temperature(self, temperature: int) -> bool:
+        """
+        Set the nozzle temperature
+
+        Args:
+            temperature (int): temperature to set the nozzle to
+
+        Returns:
+            bool: success of setting the nozzle temperature
+        """
         return self.__send_gcode_line(f"M104 S{temperature}\n")
 
     def set_printer_filament(self, filament_material: Filament, colour: str) -> bool:
+        """
+        Set the printer filament manually fed into the printer
+
+        Args:
+            filament_material (Filament): filament material to set
+            colour (str): colour of the filament
+
+        Returns:
+            bool: success of setting the printer filament
+        """
         assert len(colour) == 6, "Colour must be a 6 character hex string"
         
         return self.__publish_command(

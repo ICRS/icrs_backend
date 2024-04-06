@@ -1,18 +1,11 @@
-import os
 from typing import BinaryIO
-import dotenv
 import logging
-
+from typing import BinaryIO
 from fastapi import APIRouter, HTTPException, UploadFile
-import logging
 
-
+from .printer_transports import camera, printerFTPClient, printerMQTTClient
 from .filament import AMSFilamentSettings, Filament
-from .bambulab_printer_ftp import PrinterFTPClient
-from .bambulab_printer_mqtt import PrinterMQTTClient  # noqa
-from .bambulab_printer_camera import PrinterCamera
 
-dotenv.load_dotenv()
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s [%(levelname)s]: %(message)s',
@@ -22,6 +15,7 @@ logging.basicConfig(level=logging.INFO,
                     ])
 
 router = APIRouter()
+status_router = APIRouter(prefix="/printer/status", tags=["Printer Status"])
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s [%(levelname)s]: %(message)s',
@@ -31,24 +25,10 @@ logging.basicConfig(level=logging.INFO,
                     ])
 
 
-def get_env_string(env_name: str) -> str:
-    return str(os.getenv(env_name)).strip()
-
-HOSTNAME = get_env_string("HOSTNAME")
-ACCESS_CODE = get_env_string("ACCESS_CODE")
-PRINTER_SERIAL = get_env_string("PRINTER_SERIAL")
-
-print("Connecting to printer camera...")
-camera = PrinterCamera(HOSTNAME, ACCESS_CODE)
-
-print("Connecting to printer MQTT client...")
-printerMQTTClient = PrinterMQTTClient(HOSTNAME, ACCESS_CODE, PRINTER_SERIAL)
+logging.info("Connecting to printer MQTT client...")
 printerMQTTClient.connect()
 printerMQTTClient.start()
 
-status_router = APIRouter(prefix="/printer/status", tags=["Printer Status"])
-
-printerFTPClient = PrinterFTPClient(HOSTNAME, ACCESS_CODE)
 
 @status_router.get("/time")
 async def printer_get_time() -> dict:
@@ -185,7 +165,7 @@ async def upload_gcode_file(file: UploadFile):
 
 @router.post("/printer/print/start")
 async def start_print(filename: str, plate_number: int):
-    return printerMQTTClient.start_print(filename, plate_number=plate_number)
+    return printerMQTTClient.start_print_3mf(filename, plate_number=plate_number)
 
 @router.post("/printer/print/stop")
 async def stop_print():
@@ -208,7 +188,7 @@ async def home_printer():
     return printerMQTTClient.auto_home()
 
 @router.post("/printer/axis/z")
-async def move_z_axis(distance: float):
+async def move_z_axis(distance: int):
     return printerMQTTClient.set_bed_height(distance)
 
 @router.post("/printer/filament/printer")
@@ -224,3 +204,12 @@ async def set_filament_printer(
         raise ValueError("Filament must be a string or AMSFilamentSettings object")
     
     return printerMQTTClient.set_printer_filament(filament, color)
+
+@router.post("/printer/nozzle/temperature")
+async def set_nozzle_temperature(temperature: int) -> bool:
+    return printerMQTTClient.set_nozzle_temperature(temperature)
+
+@router.post("/printer/print/speed_lvl")
+async def set_print_speed(speed_lvl: int) -> bool:
+    assert 0 <= speed_lvl <= 3, "Speed level must be between 0 and 3"
+    return printerMQTTClient.set_print_speed_lvl(speed_lvl)
