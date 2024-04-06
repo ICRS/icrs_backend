@@ -128,6 +128,7 @@ async def printer_get_led_state():
     return {"led_state": led_state} if (led_state := printerMQTTClient
                                         .get_light_state()) is not None else {}
 
+
 @router.post("/printer/led/on")
 async def printer_led_on():
     """
@@ -137,6 +138,7 @@ async def printer_led_on():
         dict : led_state
     """
     return {"led_state": printerMQTTClient.turn_light_on()}
+
 
 @router.post("/printer/led/off")
 async def printer_led_off():
@@ -148,13 +150,14 @@ async def printer_led_off():
     """
     return {"led_state": printerMQTTClient.turn_light_off()}
 
+
 @router.post("/printer/upload/gcode")
 async def upload_gcode_file(file: UploadFile):
     try:
-        io_file: BinaryIO = file.file    
+        io_file: BinaryIO = file.file
         if file.filename:
             return printerFTPClient.upload_file(io_file, file.filename)
-    
+
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Exception occurred during file upload: {e}")
@@ -163,51 +166,62 @@ async def upload_gcode_file(file: UploadFile):
 
     return
 
+
 @router.post("/printer/print/start")
 async def start_print(filename: str, plate_number: int):
     return printerMQTTClient.start_print_3mf(filename, plate_number=plate_number)
+
 
 @router.post("/printer/print/stop")
 async def stop_print():
     return printerMQTTClient.stop_print()
 
+
 @router.post("/printer/print/pause")
 async def pause_print():
     return printerMQTTClient.pause_print()
+
 
 @router.post("/printer/print/resume")
 async def resume_print():
     return printerMQTTClient.resume_print()
 
+
 @router.post("/printer/bed/temperature")
 async def set_bed_temperature(temperature: int):
     return printerMQTTClient.set_bed_temperature(temperature)
+
 
 @router.post("/printer/calibration/home")
 async def home_printer():
     return printerMQTTClient.auto_home()
 
+
 @router.post("/printer/axis/z")
 async def move_z_axis(distance: int):
     return printerMQTTClient.set_bed_height(distance)
 
+
 @router.post("/printer/filament/printer")
-async def set_filament_printer( 
-                               color: str,
-                               filament: AMSFilamentSettings | str
-                               ):
+async def set_filament_printer(
+    color: str,
+    filament: AMSFilamentSettings | str
+):
     assert len(color) == 6, "Color must be a 6 character hex code"
-    
+
     if isinstance(filament, str) or isinstance(filament, AMSFilamentSettings):
         filament = Filament(filament)
     else:
-        raise ValueError("Filament must be a string or AMSFilamentSettings object")
-    
+        raise ValueError(
+            "Filament must be a string or AMSFilamentSettings object")
+
     return printerMQTTClient.set_printer_filament(filament, color)
+
 
 @router.post("/printer/nozzle/temperature")
 async def set_nozzle_temperature(temperature: int) -> bool:
     return printerMQTTClient.set_nozzle_temperature(temperature)
+
 
 @router.post("/printer/print/speed_lvl")
 async def set_print_speed(speed_lvl: int) -> bool:

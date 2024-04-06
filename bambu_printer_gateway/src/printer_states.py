@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class PrintStatus(Enum):
     PRINTING = 0
     AUTO_BED_LEVELING = 1
@@ -39,7 +40,7 @@ class PrintStatus(Enum):
     PAUSED_NOZZLE_CLOG = 35
     UNKNOWN = None
     IDLE = 255
-    
+
     @classmethod
     def _missing_(cls, value):
         return cls.UNKNOWN
