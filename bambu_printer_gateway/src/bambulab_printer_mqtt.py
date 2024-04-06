@@ -102,7 +102,7 @@ class PrinterMQTTClient:
         """
         self._client.loop_stop()
 
-    def __get(self, key: Any, default: Any = None) -> Any:
+    def __get(self, key: str, default: Any = None) -> Any:
         self.manual_update()
         return self._data.get(key, default)
 
@@ -352,3 +352,39 @@ class PrinterMQTTClient:
                 }
             }
         )
+
+    def load_filament_spool(self) -> bool:
+        """
+        Load the filament into the printer
+
+        Returns:
+            bool: success of loading the filament
+        """
+        return self.__publish_command(
+            {
+                "print": {
+                    "command": "ams_change_filament",
+                    "target": 254,
+                    "curr_temp": 215,
+                    "tar_temp": 215,
+                }
+            }
+        )
+
+    def unload_filament_spool(self) -> bool:
+        """
+        Unload the filament from the printer
+
+        Returns:
+            bool: success of unloading the filament
+        """
+        return self.__publish_command(
+            {
+                "print": {
+                    "command": "ams_change_filament",
+                    "target": 254,
+                    "curr_temp": 215,
+                    "tar_temp": 215,
+                }
+            }
+        )   
