@@ -1,4 +1,3 @@
-
 import logging
 import os
 import dotenv
@@ -8,6 +7,7 @@ from .bambulab_printer_ftp import PrinterFTPClient
 from .bambulab_printer_mqtt import PrinterMQTTClient
 
 dotenv.load_dotenv()
+
 
 def get_env_string(env_name: str) -> str:
     return str(os.getenv(env_name)).strip()

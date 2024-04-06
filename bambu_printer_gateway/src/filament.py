@@ -4,11 +4,12 @@ from enum import Enum
 
 @dataclass(frozen=True)
 class AMSFilamentSettings:
-    tray_info_idx: str 
-    nozzle_temp_min: int 
-    nozzle_temp_max: int 
-    tray_type: str 
-    
+    tray_info_idx: str
+    nozzle_temp_min: int
+    nozzle_temp_max: int
+    tray_type: str
+
+
 class Filament(AMSFilamentSettings, Enum):
     POLYLITE_PLA = "GFL00", 190, 250, "PLA"
     POLYTERRA_PLA = "GFL01", 190, 250, "PLA"
@@ -38,8 +39,5 @@ class Filament(AMSFilamentSettings, Enum):
             for filament in cls:
                 if value == filament.name:
                     return filament
-        
+
         raise ValueError(f"Filament {value} not found")
-        
-        
-    

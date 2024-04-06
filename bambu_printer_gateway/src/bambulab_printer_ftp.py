@@ -5,7 +5,6 @@ import logging
 from typing import Any, BinaryIO
 
 
-
 class ImplicitFTP_TLS(ftplib.FTP_TLS):
     """FTP_TLS subclass that automatically wraps sockets in SSL to support implicit FTPS."""
 
@@ -24,7 +23,7 @@ class ImplicitFTP_TLS(ftplib.FTP_TLS):
         if value is not None and not isinstance(value, ssl.SSLSocket):
             value = self.context.wrap_socket(value)
         self._sock = value
-        
+
     def storbinary(self, cmd, fp, blocksize=8192, callback=None, rest=None):
         self.voidcmd('TYPE I')
         conn = self.transfercmd(cmd, rest)
@@ -52,12 +51,12 @@ class PrinterFTPClient:
                  user: str = 'bblp',
                  port: int = 990) -> None:
         self.ftps = ImplicitFTP_TLS()
-        
+
         self.server_ip = server_ip
         self.port = port
         self.user = user
         self.access_code = access_code
-    
+
     @staticmethod
     def connect_and_run(func: function):
         """
@@ -66,32 +65,32 @@ class PrinterFTPClient:
         Args:
             func (function): the function to be decorated
         """
+
         def wrapper(self: PrinterFTPClient, *args, **kwargs) -> Any:
             logging.info("Connecting to FTP server...")
             self.ftps.connect(host=self.server_ip, port=self.port)
             self.ftps.login(self.user, self.access_code)
             logging.info("Connected to FTP server")
             logging.info(self.ftps.prot_p())
-            
+
             try:
-                func(self, *args, **kwargs) # type: ignore
+                func(self, *args, **kwargs)  # type: ignore
             except Exception as e:
                 logging.error(f"Failed to execute function: {e}")
             finally:
                 self.ftps.close()
                 logging.info("Connection to FTP server closed")
         return wrapper
-    
+
     @connect_and_run
     def upload_file(self, file: BinaryIO, file_path: str) -> str:
-        r = self.ftps.storbinary(f'STOR {file_path}', file, blocksize=32768, callback=lambda x: logging.info(f"Uploaded {x} bytes"))
+        r = self.ftps.storbinary(f'STOR {file_path}', file, blocksize=32768,
+                                 callback=lambda x: logging.info(f"Uploaded {x} bytes"))
         return r
-    
+
     @connect_and_run
     def delete_file(self, file_path: str) -> str:
         return self.ftps.delete(file_path)
-            
+
     def close(self) -> None:
         self.ftps.quit()
-    
-    

@@ -9,6 +9,7 @@ from paho.mqtt.enums import CallbackAPIVersion
 from .filament import Filament
 from .printer_states import PrintStatus
 
+
 class PrinterMQTTClient:
     """
     Printer class for handling MQTT communication with the printer
@@ -336,7 +337,7 @@ class PrinterMQTTClient:
             bool: success of setting the printer filament
         """
         assert len(colour) == 6, "Colour must be a 6 character hex string"
-        
+
         return self.__publish_command(
             {
                 "print": {
