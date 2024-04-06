@@ -1,11 +1,13 @@
 import json
 import logging
+from operator import le
 import ssl
 from typing import Any
 
 import paho.mqtt.client as mqtt
 from paho.mqtt.enums import CallbackAPIVersion
 
+from .filament import Filament
 from .printer_states import PrintStatus
 
 class PrinterMQTTClient:
@@ -51,8 +53,6 @@ class PrinterMQTTClient:
     def _on_message(self, client, userdata, msg) -> None:  # pylint: disable=unused-argument  # noqa
         # Current date and time
         doc = json.loads(msg.payload)
-
-        # print(doc)
 
         if "print" in doc:
             self._data |= doc["print"]
@@ -102,6 +102,13 @@ class PrinterMQTTClient:
         """
         self._client.loop_stop()
 
+    def __get(self, key: Any, default: Any = None) -> Any:
+        self.manual_update()
+        return self._data.get(key, default)
+
+    def manual_update(self) -> bool:
+        return self.__publish_command({"pushing": {"command": "pushall"}})
+
     def get_last_print_percentage(self) -> int | str | None:
         """
         Get the last print percentage
@@ -109,7 +116,7 @@ class PrinterMQTTClient:
         Returns:
             int | str | None: The last print percentage
         """
-        return self._data.get("mc_percent", None)
+        return self.__get("mc_percent", None)
 
     def get_remaining_time(self) -> int | str | None:
         """
@@ -118,7 +125,7 @@ class PrinterMQTTClient:
         Returns:
             int | str | None: The remaining time for the print
         """
-        return self._data.get("mc_remaining_time", None)
+        return self.__get("mc_remaining_time", None)
 
     def get_printer_state(self) -> str:
         """
@@ -127,7 +134,7 @@ class PrinterMQTTClient:
         Returns:
             str: gcode_state
         """
-        return self._data.get("gcode_state", "IDLE")
+        return self.__get("gcode_state", "IDLE")
 
     def get_file_name(self) -> str:
         """
@@ -136,7 +143,7 @@ class PrinterMQTTClient:
         Returns:
             str: file name
         """
-        return self._data.get("gcode_file", "")
+        return self.__get("gcode_file", "")
 
     def get_print_speed(self) -> int:
         """
@@ -145,7 +152,7 @@ class PrinterMQTTClient:
         Returns:
             int: print speed
         """
-        return int(self._data.get("spd_mag", 100))
+        return int(self.__get("spd_mag", 100))
 
     def __publish_command(self, payload: dict[Any, Any]) -> bool:
         """
@@ -178,7 +185,7 @@ class PrinterMQTTClient:
         Returns:
             str: led_mode
         """
-        light_report: list[dict[str, str]] = self._data.get(
+        light_report: list[dict[str, str]] = self.__get(
             "lights_report", [])
 
         if not light_report:
@@ -209,7 +216,7 @@ class PrinterMQTTClient:
                     "use_ams": False,
                 }
             })
-        
+
     def get_current_state(self) -> str:
         """
         Get the current printer state from stg_cur
@@ -217,8 +224,8 @@ class PrinterMQTTClient:
         Returns:
             str: current_state
         """
-        return PrintStatus(self._data.get("stg_cur", -1)).name
-    
+        return PrintStatus(self.__get("stg_cur", -1)).name
+
     def stop_print(self) -> bool:
         """
         Stop the print
@@ -270,7 +277,32 @@ class PrinterMQTTClient:
 
     def set_bed_height(self, int) -> bool:
         return self.__send_gcode_line(f"G90\nG0 Z{int}\n")
-    
+
     def auto_home(self) -> bool:
-        return self.__send_gcode_line("G29\n")
-    
+        return self.__send_gcode_line("G28\n")
+
+    def set_print_speed(self, speed_lvl: int = 1) -> bool:
+        return self.__publish_command(
+            {"print": {"command": "print_speed", "param": f"{speed_lvl}"}}
+        )
+
+    def set_nozzle_temperature(self, temperature: int) -> bool:
+        return self.__send_gcode_line(f"M104 S{temperature}\n")
+
+    def set_printer_filament(self, filament_material: Filament, colour: str) -> bool:
+        assert len(colour) == 6, "Colour must be a 6 character hex string"
+        
+        return self.__publish_command(
+            {
+                "print": {
+                    "command": "ams_filament_setting",
+                    "ams_id": 255,
+                    "tray_id": 254,
+                    "tray_info_idx": filament_material.tray_info_idx,
+                    "tray_color": f"{colour.upper()}FF",
+                    "nozzle_temp_min": filament_material.nozzle_temp_min,
+                    "nozzle_temp_max": filament_material.nozzle_temp_max,
+                    "tray_type": filament_material.tray_type
+                }
+            }
+        )

@@ -6,6 +6,8 @@ import logging
 from fastapi import APIRouter, HTTPException, UploadFile
 import logging
 
+
+from .filament import AMSFilamentSettings, Filament
 from .bambulab_printer_ftp import PrinterFTPClient
 from .bambulab_printer_mqtt import PrinterMQTTClient  # noqa
 from .bambulab_printer_camera import PrinterCamera
@@ -197,3 +199,17 @@ async def home_printer():
 @router.post("/printer/axis/z")
 async def move_z_axis(distance: float):
     return printerMQTTClient.set_bed_height(distance)
+
+@router.post("/printer/filament/printer")
+async def set_filament_printer( 
+                               color: str,
+                               filament: AMSFilamentSettings | str
+                               ):
+    assert len(color) == 6, "Color must be a 6 character hex code"
+    
+    if isinstance(filament, str) or isinstance(filament, AMSFilamentSettings):
+        filament = Filament(filament)
+    else:
+        raise ValueError("Filament must be a string or AMSFilamentSettings object")
+    
+    return printerMQTTClient.set_printer_filament(filament, color)
