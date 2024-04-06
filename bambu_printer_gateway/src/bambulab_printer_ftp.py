@@ -2,7 +2,7 @@ import ftplib
 import ssl
 
 import logging
-from typing import BinaryIO
+from typing import Any, BinaryIO
 
 
 
@@ -57,29 +57,39 @@ class PrinterFTPClient:
         self.port = port
         self.user = user
         self.access_code = access_code
-        
+    
+    @staticmethod
+    def connect_and_run(func: function):
+        """
+        A decorator that connects to the FTP server before running the function and closes the connection after running the function.
 
+        Args:
+            func (function): the function to be decorated
+        """
+        def wrapper(self: PrinterFTPClient, *args, **kwargs) -> Any:
+            logging.info("Connecting to FTP server...")
+            self.ftps.connect(host=self.server_ip, port=self.port)
+            self.ftps.login(self.user, self.access_code)
+            logging.info("Connected to FTP server")
+            logging.info(self.ftps.prot_p())
+            
+            try:
+                func(self, *args, **kwargs) # type: ignore
+            except Exception as e:
+                logging.error(f"Failed to execute function: {e}")
+            finally:
+                self.ftps.close()
+                logging.info("Connection to FTP server closed")
+        return wrapper
+    
+    @connect_and_run
     def upload_file(self, file: BinaryIO, file_path: str) -> str:
-        logging.info("Connecting to FTP server...")
-        self.ftps.connect(host=self.server_ip, port=self.port)
-        self.ftps.login(self.user, self.access_code)
-        logging.info("Connected to FTP server")
-        logging.info(self.ftps.prot_p())
-
         r = self.ftps.storbinary(f'STOR {file_path}', file, blocksize=32768, callback=lambda x: logging.info(f"Uploaded {x} bytes"))
-        self.ftps.close()        
-        logging.info(f"File uploaded: {r}")
         return r
     
-    def delete_file(self, file_path: str) -> None:
-        self.ftps.connect(host=self.server_ip, port=self.port)
-        self.ftps.login(self.user, self.access_code)
-        try:
-            self.ftps.delete(file_path)
-        except ftplib.error_perm as e:
-            logging.error(f"Failed to delete file: {e}")
-        finally:
-            self.ftps.close()
+    @connect_and_run
+    def delete_file(self, file_path: str) -> str:
+        return self.ftps.delete(file_path)
             
     def close(self) -> None:
         self.ftps.quit()
