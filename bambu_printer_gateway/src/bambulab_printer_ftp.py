@@ -58,15 +58,14 @@ class PrinterFTPClient:
         self.access_code = access_code
 
     @staticmethod
-    def connect_and_run(func: function):
+    def connect_and_run(func):
         """
         A decorator that connects to the FTP server before running the function and closes the connection after running the function.
 
         Args:
             func (function): the function to be decorated
         """
-
-        def wrapper(self: PrinterFTPClient, *args, **kwargs) -> Any:
+        def wrapper(self, *args, **kwargs) -> Any:
             logging.info("Connecting to FTP server...")
             self.ftps.connect(host=self.server_ip, port=self.port)
             self.ftps.login(self.user, self.access_code)
@@ -74,7 +73,7 @@ class PrinterFTPClient:
             logging.info(self.ftps.prot_p())
 
             try:
-                func(self, *args, **kwargs)  # type: ignore
+                return func(self, *args, **kwargs)  # type: ignore
             except Exception as e:
                 logging.error(f"Failed to execute function: {e}")
             finally:
@@ -84,13 +83,13 @@ class PrinterFTPClient:
 
     @connect_and_run
     def upload_file(self, file: BinaryIO, file_path: str) -> str:
-        r = self.ftps.storbinary(f'STOR {file_path}', file, blocksize=32768,
-                                 callback=lambda x: logging.info(f"Uploaded {x} bytes"))
-        return r
+        return self.ftps.storbinary(f'STOR {file_path}', file, blocksize=32768,
+                                 callback=lambda x: logging.debug(f"Uploaded {x} bytes"))
 
     @connect_and_run
     def delete_file(self, file_path: str) -> str:
+        logging.info(f"Deleting file: {file_path}")
         return self.ftps.delete(file_path)
-
+    
     def close(self) -> None:
         self.ftps.quit()

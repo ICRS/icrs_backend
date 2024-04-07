@@ -3,7 +3,7 @@ import logging
 from typing import BinaryIO
 from fastapi import APIRouter, HTTPException, UploadFile
 
-from .printer_transports import camera, printerFTPClient, printerMQTTClient
+from .printer_transports import printerCamera, printerFTPClient, printerMQTTClient
 from .filament import AMSFilamentSettings, Filament
 
 
@@ -17,17 +17,12 @@ logging.basicConfig(level=logging.INFO,
 router = APIRouter()
 status_router = APIRouter(prefix="/printer/status", tags=["Printer Status"])
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(name)s [%(levelname)s]: %(message)s',
-                    datefmt='%d-%b-%y %H:%M:%S',
-                    handlers=[
-                        logging.StreamHandler()
-                    ])
-
-
 logging.info("Connecting to printer MQTT client...")
 printerMQTTClient.connect()
 printerMQTTClient.start()
+
+logging.info("Connecting to printer camera...")
+printerCamera.start()
 
 
 @status_router.get("/time")
@@ -109,7 +104,7 @@ async def printer_get_camera():
         dict: frame of the camera
     """
     try:
-        last_frame = camera.get_frame()
+        last_frame = printerCamera.get_frame()
     except Exception as e:
         print(str(e))
         return {"error": str(e)}
@@ -227,3 +222,33 @@ async def set_nozzle_temperature(temperature: int) -> bool:
 async def set_print_speed(speed_lvl: int) -> bool:
     assert 0 <= speed_lvl <= 3, "Speed level must be between 0 and 3"
     return printerMQTTClient.set_print_speed_lvl(speed_lvl)
+
+
+@router.post("/printer/file/delete")
+async def delete_file(file_path: str) -> str:
+    # print(file_path.file_path)
+    return printerFTPClient.delete_file(file_path=file_path)
+
+
+@router.post("/printer/calibration")
+async def calibrate_printer(bed_level: bool = True, 
+                            motor_noise_calibration: bool = True, 
+                            vibration_compensation: bool = True):
+    return printerMQTTClient.calibration(
+        bed_level, 
+        motor_noise_calibration, 
+        vibration_compensation
+        )
+
+@router.post("/printer/filament/printer/load")
+async def load_filament_spool():
+    return printerMQTTClient.load_filament_spool()
+    
+@router.post("/printer/filament/printer/unload")
+async def unload_filament_spool():
+    return printerMQTTClient.unload_filament_spool()
+
+@router.post("/printer/filament/retry")
+async def retry_filament_action():
+    return printerMQTTClient.resume_filament_action()
+
