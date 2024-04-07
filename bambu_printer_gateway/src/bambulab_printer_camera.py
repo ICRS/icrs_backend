@@ -23,9 +23,11 @@ class PrinterCamera:
 
         self.__thread = Thread(target=self.retriever)
         self.__thread.daemon = True
-        self.__thread.start()
 
         self.last_frame = None
+    
+    def start(self):
+        self.__thread.start()
 
     def get_frame(self):
         if self.last_frame is None:

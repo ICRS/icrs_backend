@@ -17,9 +17,8 @@ HOSTNAME = get_env_string("HOSTNAME")
 ACCESS_CODE = get_env_string("ACCESS_CODE")
 PRINTER_SERIAL = get_env_string("PRINTER_SERIAL")
 
-logging.info("Connecting to printer camera...")
-camera = PrinterCamera(HOSTNAME, ACCESS_CODE)
-
 printerMQTTClient = PrinterMQTTClient(HOSTNAME, ACCESS_CODE, PRINTER_SERIAL)
+
+printerCamera = PrinterCamera(HOSTNAME, ACCESS_CODE)
 
 printerFTPClient = PrinterFTPClient(HOSTNAME, ACCESS_CODE)

@@ -47,7 +47,7 @@ class PrinterMQTTClient:
         self._client.on_message = self._on_message
 
         self.command_topic = f"device/{printer_serial}/request"
-        print(self.command_topic)
+        logging.info(f"{self.command_topic}")
         self._data = {}
 
     def _on_message(self, client, userdata, msg) -> None:  # pylint: disable=unused-argument  # noqa
@@ -56,7 +56,7 @@ class PrinterMQTTClient:
 
         if "print" in doc:
             self._data |= doc["print"]
-            print(self._data)
+            logging.debug(self._data)
 
     def _on_connect(self, client, serial, userdata, flags, rc) -> None:  # pylint: disable=unused-argument  # noqa
         """
@@ -364,7 +364,7 @@ class PrinterMQTTClient:
             {
                 "print": {
                     "command": "ams_change_filament",
-                    "target": 254,
+                    "target": 255,
                     "curr_temp": 215,
                     "tar_temp": 215,
                 }
@@ -387,4 +387,49 @@ class PrinterMQTTClient:
                     "tar_temp": 215,
                 }
             }
-        )   
+        )
+
+    def resume_filament_action(self) -> bool:
+        """
+        Resume the current filament action
+
+        Returns:
+            bool: success of resuming the filament action
+        """
+        return self.__publish_command(
+            {
+                "print": {
+                    "command": "ams_control",
+                    "param": "resume",
+                }
+            }
+        )
+
+    def calibration(
+            self,
+            bed_levelling: bool = True,
+            motor_noise_cancellation: bool = True,
+            vibration_compensation: bool = True) -> bool:
+        """
+        Start the full calibration process
+
+        Returns:
+            bool: success of starting the full calibration process
+        """
+        bitmask = 0
+
+        if bed_levelling:
+            bitmask |= 1 << 1
+        if vibration_compensation:
+            bitmask |= 1 << 2
+        if motor_noise_cancellation:
+            bitmask |= 1 << 3
+
+        return self.__publish_command(
+            {
+                "print": {
+                    "command": "calibration",
+                    "option": bitmask
+                }
+            }
+        )
