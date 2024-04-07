@@ -161,6 +161,10 @@ class PrinterMQTTClient:
         Args:
             payload (dict[Any, Any]): command to send to the printer
         """
+        if self._client.is_connected() is False:
+            logging.error("Not connected to the MQTT server")
+            return False
+    
         command = self._client.publish(self.command_topic, json.dumps(payload))
         logging.info(f"Published command: {payload}")
         command.wait_for_publish()
