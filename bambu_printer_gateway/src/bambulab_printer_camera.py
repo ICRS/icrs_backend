@@ -23,16 +23,18 @@ class PrinterCamera:
 
         self.__thread = Thread(target=self.retriever)
         self.__thread.daemon = True
-        self.__thread.start()
 
         self.last_frame = None
+    
+    def start(self):
+        self.__thread.start()
 
     def get_frame(self):
         if self.last_frame is None:
             raise Exception("No frame available.")
         encoded_image = base64.b64encode(self.last_frame).decode("utf-8")
         return Response(encoded_image, media_type="image/png")
-    
+
     def retriever(self):
         print("Starting camera thread.")
 
@@ -48,7 +50,8 @@ class PrinterCamera:
         for i in range(0, 32 - len(self.__username)):
             auth_data += struct.pack("<x")
         for i in range(0, len(self.__access_code)):
-            auth_data += struct.pack("<c", self.__access_code[i].encode('ascii'))
+            auth_data += struct.pack("<c",
+                                     self.__access_code[i].encode('ascii'))
         for i in range(0, 32 - len(self.__access_code)):
             auth_data += struct.pack("<x")
 
@@ -100,12 +103,12 @@ class PrinterCamera:
 
                     sslSock.setblocking(False)
                     sslSock.settimeout(5.0)
-                    
+
                     while True:
                         try:
                             logging.debug("Reading chunk...")
                             dr = sslSock.recv(read_chunk_size)
-                            #LOGGER.debug(f"{self._client._device.info.device_type}: Received {len(dr)} bytes.")    # noqa
+                            # LOGGER.debug(f"{self._client._device.info.device_type}: Received {len(dr)} bytes.")    # noqa
 
                         except ssl.SSLWantReadError:
                             # logging.warn(f"SSLWantReadError")             # noqa
@@ -115,7 +118,8 @@ class PrinterCamera:
                         except Exception as e:  # noqa
                             # LOGGER.error(f"{self._client._device.info.device_type}: A Chamber Image thread inner exception occurred:")    # noqa
                             # LOGGER.error(f"{self._client._device.info.device_type}: Exception. Type: {type(e)} Args: {e}")                # noqa
-                            logging.error(f"Exception. Type: {type(e)} Args: {e}")
+                            logging.error(
+                                f"Exception. Type: {type(e)} Args: {e}")
                             time.sleep(1)
                             break
 
