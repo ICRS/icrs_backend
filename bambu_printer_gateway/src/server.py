@@ -1,14 +1,14 @@
 from typing import BinaryIO
 import logging
-from typing import BinaryIO
-from fastapi import APIRouter, HTTPException, UploadFile
 
-from .printer_transports import printerCamera, printerFTPClient, printerMQTTClient
-from .filament import AMSFilamentSettings, Filament
+from fastapi import APIRouter, HTTPException, UploadFile, Response
+from bambulabs_api.filament_info import AMSFilamentSettings
+
+from .printer import printer
 
 
 logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(name)s [%(levelname)s]: %(message)s',
+                    format='%(asctime)s - %(name)s [%(levelname)s]: %(message)s',  # noqa
                     datefmt='%d-%b-%y %H:%M:%S',
                     handlers=[
                         logging.StreamHandler()
@@ -17,12 +17,8 @@ logging.basicConfig(level=logging.INFO,
 router = APIRouter()
 status_router = APIRouter(prefix="/printer/status", tags=["Printer Status"])
 
-logging.info("Connecting to printer MQTT client...")
-printerMQTTClient.connect()
-printerMQTTClient.start()
-
-logging.info("Connecting to printer camera...")
-printerCamera.start()
+logging.info("Connecting to printer...")
+printer.connect()
 
 
 @status_router.get("/time")
@@ -34,8 +30,8 @@ async def printer_get_time() -> dict:
         dict: time
     """
     print("Received Request")
-    return {"time": time} if (time := printerMQTTClient
-                              .get_remaining_time()) is not None else {}
+    return {"time": time} if (time := printer
+                              .get_time()) is not None else {}
 
 
 @status_router.get("/percentage")
@@ -46,8 +42,8 @@ async def printer_get_percentage() -> dict:
     Returns:
         dict : percentage
     """
-    return {"percentage": percentage} if (percentage := printerMQTTClient
-                                          .get_last_print_percentage()
+    return {"percentage": percentage} if (percentage := printer
+                                          .get_percentage()
                                           ) is not None else {}
 
 
@@ -70,7 +66,7 @@ async def printer_get_state():
     Returns:
         dict: printer_state
     """
-    return {"state": printerMQTTClient.get_printer_state()}
+    return {"state": printer.get_state()}
 
 
 @status_router.get("/print_speed")
@@ -81,7 +77,7 @@ async def get_print_speed():
     Returns:
         dict: print_speed
     """
-    return {"print_speed": printerMQTTClient.get_print_speed()}
+    return {"print_speed": printer.get_print_speed()}
 
 
 @status_router.get("/file_name")
@@ -92,7 +88,7 @@ async def get_file_name():
     Returns:
         dict: file_name
     """
-    return {"file_name": printerMQTTClient.get_file_name()}
+    return {"file_name": printer.get_file_name()}
 
 
 @router.get("/printer/camera")
@@ -104,9 +100,10 @@ async def printer_get_camera():
         dict: frame of the camera
     """
     try:
-        last_frame = printerCamera.get_frame()
-    except Exception as e:
-        print(str(e))
+        last_frame = Response(printer.get_camera_frame(),
+                              media_type="image/jpeg")
+    except Exception as e:  # noqa  # pylint: disable=broad-exception-caught
+        logging.error(f"Error occurred while getting camera frame: {e}")    # noqa  # pylint: disable=logging-fstring-interpolation
         return {"error": str(e)}
     return {"frame": frame} if (frame := last_frame
                                 ) is not None else {}
@@ -120,7 +117,7 @@ async def printer_get_led_state():
     Returns:
         dict : led_state
     """
-    return {"led_state": led_state} if (led_state := printerMQTTClient
+    return {"led_state": led_state} if (led_state := printer
                                         .get_light_state()) is not None else {}
 
 
@@ -132,7 +129,7 @@ async def printer_led_on():
     Returns:
         dict : led_state
     """
-    return {"led_state": printerMQTTClient.turn_light_on()}
+    return {"led_state": printer.turn_light_on()}
 
 
 @router.post("/printer/led/off")
@@ -143,7 +140,7 @@ async def printer_led_off():
     Returns:
         dict : led_state
     """
-    return {"led_state": printerMQTTClient.turn_light_off()}
+    return {"led_state": printer.turn_light_off()}
 
 
 @router.post("/printer/upload/gcode")
@@ -151,104 +148,92 @@ async def upload_gcode_file(file: UploadFile):
     try:
         io_file: BinaryIO = file.file
         if file.filename:
-            return printerFTPClient.upload_file(io_file, file.filename)
+            return printer.upload_file(io_file, file.filename)
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Exception occurred during file upload: {e}")
+        # noqa  # pylint: disable=raise-missing-from
+        raise HTTPException(status_code=500,
+                            detail=f"Exception occurred during file upload: {e}")  # noqa
     finally:
         file.file.close()
-
     return
 
 
 @router.post("/printer/print/start")
 async def start_print(filename: str, plate_number: int):
-    return printerMQTTClient.start_print_3mf(filename, plate_number=plate_number)
+    return printer.start_print(filename, plate_number)
 
 
 @router.post("/printer/print/stop")
 async def stop_print():
-    return printerMQTTClient.stop_print()
+    return printer.stop_print()
 
 
 @router.post("/printer/print/pause")
 async def pause_print():
-    return printerMQTTClient.pause_print()
+    return printer.pause_print()
 
 
 @router.post("/printer/print/resume")
 async def resume_print():
-    return printerMQTTClient.resume_print()
+    return printer.resume_print()
 
 
 @router.post("/printer/bed/temperature")
 async def set_bed_temperature(temperature: int):
-    return printerMQTTClient.set_bed_temperature(temperature)
+    return printer.set_bed_temperature(temperature)
 
 
 @router.post("/printer/calibration/home")
 async def home_printer():
-    return printerMQTTClient.auto_home()
+    return printer.home_printer()
 
 
 @router.post("/printer/axis/z")
 async def move_z_axis(distance: int):
-    return printerMQTTClient.set_bed_height(distance)
+    return printer.move_z_axis(distance)
 
 
 @router.post("/printer/filament/printer")
-async def set_filament_printer(
-    color: str,
-    filament: AMSFilamentSettings | str
-):
-    assert len(color) == 6, "Color must be a 6 character hex code"
-
-    if isinstance(filament, str) or isinstance(filament, AMSFilamentSettings):
-        filament = Filament(filament)
-    else:
-        raise ValueError(
-            "Filament must be a string or AMSFilamentSettings object")
-
-    return printerMQTTClient.set_printer_filament(filament, color)
+async def set_filament_printer(color: str,
+                               filament: AMSFilamentSettings | str):
+    return printer.set_filament_printer(color, filament)
 
 
 @router.post("/printer/nozzle/temperature")
 async def set_nozzle_temperature(temperature: int) -> bool:
-    return printerMQTTClient.set_nozzle_temperature(temperature)
+    return printer.set_nozzle_temperature(temperature)
 
 
 @router.post("/printer/print/speed_lvl")
 async def set_print_speed(speed_lvl: int) -> bool:
-    assert 0 <= speed_lvl <= 3, "Speed level must be between 0 and 3"
-    return printerMQTTClient.set_print_speed_lvl(speed_lvl)
+    return printer.set_print_speed(speed_lvl)
 
 
 @router.post("/printer/file/delete")
 async def delete_file(file_path: str) -> str:
-    # print(file_path.file_path)
-    return printerFTPClient.delete_file(file_path=file_path)
+    return printer.delete_file(file_path=file_path)
 
 
 @router.post("/printer/calibration")
-async def calibrate_printer(bed_level: bool = True, 
-                            motor_noise_calibration: bool = True, 
+async def calibrate_printer(bed_level: bool = True,
+                            motor_noise_calibration: bool = True,
                             vibration_compensation: bool = True):
-    return printerMQTTClient.calibration(
-        bed_level, 
-        motor_noise_calibration, 
-        vibration_compensation
-        )
+    return printer.calibrate_printer(bed_level,
+                                     motor_noise_calibration,
+                                     vibration_compensation)
+
 
 @router.post("/printer/filament/printer/load")
 async def load_filament_spool():
-    return printerMQTTClient.load_filament_spool()
-    
+    return printer.load_filament_spool()
+
+
 @router.post("/printer/filament/printer/unload")
 async def unload_filament_spool():
-    return printerMQTTClient.unload_filament_spool()
+    return printer.unload_filament_spool()
+
 
 @router.post("/printer/filament/retry")
 async def retry_filament_action():
-    return printerMQTTClient.resume_filament_action()
-
+    return printer.retry_filament_action()
