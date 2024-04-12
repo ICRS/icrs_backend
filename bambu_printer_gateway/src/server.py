@@ -4,7 +4,7 @@ import logging
 from fastapi import APIRouter, HTTPException, UploadFile, Response
 from bambulabs_api.filament_info import AMSFilamentSettings
 
-from printer import printer
+from .printer import printer
 
 
 logging.basicConfig(level=logging.INFO,
