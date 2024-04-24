@@ -1,11 +1,12 @@
 import base64
+from datetime import datetime
 from io import BytesIO
 from typing import BinaryIO
 import logging
 
 from fastapi import APIRouter, HTTPException, UploadFile, Response
 from bambulabs_api import AMSFilamentSettings
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 from .printer import printer
 
@@ -106,8 +107,18 @@ async def printer_get_camera():
         frame = printer.get_camera_frame()
         im = Image.open(BytesIO(base64.b64decode(frame)))
 
-        # Do some processing on the image
-        #
+        width, height = im.size
+        draw = ImageDraw.Draw(im)
+        # Create text in the form day-month-year hour:minute:second
+        text = str(datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
+        font = ImageFont.truetype('arial.ttf', 30)
+        textwidth, textheight = draw.textsize(text, font)
+        # calculate the x,y coordinates of the text
+        margin = 10
+        x = width - textwidth - margin
+        y = height - textheight - margin
+        # draw watermark in the bottom right corner
+        draw.text((x, y), text, font=font)
 
         buffered = BytesIO()
         im.save(buffered, format="JPEG")
