@@ -1,8 +1,12 @@
+import base64
+from datetime import datetime
+from io import BytesIO
 from typing import BinaryIO
 import logging
 
 from fastapi import APIRouter, HTTPException, UploadFile, Response
-from bambulabs_api.filament_info import AMSFilamentSettings
+from bambulabs_api import AMSFilamentSettings
+from PIL import Image, ImageDraw, ImageFont
 
 from .printer import printer
 
@@ -100,7 +104,29 @@ async def printer_get_camera():
         dict: frame of the camera
     """
     try:
-        last_frame = Response(printer.get_camera_frame(),
+        frame = printer.get_camera_frame()
+        im = Image.open(BytesIO(base64.b64decode(frame)))
+
+        width, height = im.size
+        draw = ImageDraw.Draw(im)
+        # Create text in the form day-month-year hour:minute:second
+        text = str(datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
+        FONT_SIZE = 50
+        font = ImageFont.load_default(FONT_SIZE) 
+        textwidth = draw.textlength(text, font)
+        # calculate the x,y coordinates of the text
+        margin = 10
+        x = width - textwidth - margin
+        y = height - FONT_SIZE - margin
+        # draw watermark in the bottom right corner
+        draw.text((x, y), text, font=font, fill=(0,0,100,255))
+
+        with BytesIO() as buffered:
+            im.save(buffered, format="JPEG")
+            contents = buffered.getvalue()
+            frame_b64 = base64.b64encode(buffered.getvalue())
+
+            last_frame = Response(frame_b64,
                               media_type="image/jpeg")
     except Exception as e:  # noqa  # pylint: disable=broad-exception-caught
         logging.error(f"Error occurred while getting camera frame: {e}")    # noqa  # pylint: disable=logging-fstring-interpolation
