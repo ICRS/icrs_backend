@@ -100,19 +100,22 @@ async def printer_get_camera():
         draw = ImageDraw.Draw(im)
         # Create text in the form day-month-year hour:minute:second
         text = str(datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
-        font = ImageFont.truetype('arial.ttf', 30)
-        textwidth, textheight = draw.textsize(text, font)
+        FONT_SIZE = 50
+        font = ImageFont.load_default(FONT_SIZE) 
+        textwidth = draw.textlength(text, font)
         # calculate the x,y coordinates of the text
         margin = 10
         x = width - textwidth - margin
-        y = height - textheight - margin
+        y = height - FONT_SIZE - margin
         # draw watermark in the bottom right corner
-        draw.text((x, y), text, font=font)
+        draw.text((x, y), text, font=font, fill=(0,0,100,255))
 
-        buffered = BytesIO()
-        im.save(buffered, format="JPEG")
-        frame_b64 = base64.b64encode(buffered.getvalue())
-        last_frame = Response(frame_b64,
+        with BytesIO() as buffered:
+            im.save(buffered, format="JPEG")
+            contents = buffered.getvalue()
+            frame_b64 = base64.b64encode(buffered.getvalue())
+
+            last_frame = Response(frame_b64,
                               media_type="image/jpeg")
     except Exception as e:  # noqa  # pylint: disable=broad-exception-caught
         logging.error(f"Error occurred while getting camera frame: {e}")    # noqa  # pylint: disable=logging-fstring-interpolation
