@@ -1,8 +1,11 @@
+import base64
+from io import BytesIO
 from typing import BinaryIO
 import logging
 
 from fastapi import APIRouter, HTTPException, UploadFile, Response
-from bambulabs_api.filament_info import AMSFilamentSettings
+from bambulabs_api import AMSFilamentSettings
+from PIL import Image
 
 from .printer import printer
 
@@ -100,7 +103,16 @@ async def printer_get_camera():
         dict: frame of the camera
     """
     try:
-        last_frame = Response(printer.get_camera_frame(),
+        frame = printer.get_camera_frame()
+        im = Image.open(BytesIO(base64.b64decode(frame)))
+
+        # Do some processing on the image
+        #
+
+        buffered = BytesIO()
+        im.save(buffered, format="JPEG")
+        frame_b64 = base64.b64encode(buffered.getvalue())
+        last_frame = Response(frame_b64,
                               media_type="image/jpeg")
     except Exception as e:  # noqa  # pylint: disable=broad-exception-caught
         logging.error(f"Error occurred while getting camera frame: {e}")    # noqa  # pylint: disable=logging-fstring-interpolation
