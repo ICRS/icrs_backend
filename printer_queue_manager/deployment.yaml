@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: icrsbot-printer-queue-manager-deployment
+spec:
+  replicas: 1  # Number of replicas you want to run
+  selector:
+    matchLabels:
+      app: icrsbot-printer-queue-manager
+  template:
+    metadata:
+      labels:
+        app: icrsbot-printer-queue-manager
+    spec:
+      containers:
+      - name: icrsbot-printer-queue-manager
+        image: localhost:32000/icrsbot-printer-queue-manager  # Replace with your Python Docker image and tag
+        ports:
+        - containerPort: 5000  # Port your Python application is listening on
+        imagePullPolicy: "Always"
+        volumeMounts:
+        - name: printer-config
+          mountPath: /app/settings.json
+          subPath: settings.json
+          readOnly: true
+      volumes:
+        - name: printer-config
+          configMap:
+            name: printer-config
+            items:
+              - key: printer_config
+                path: settings.json
