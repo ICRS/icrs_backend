@@ -176,7 +176,6 @@
     "filament_end_gcode": [
         "; filament end gcode \nM106 P3 S0\n"
     ],
-    "inherits": "Generic PLA @base",
     "nozzle_temperature_range_low": [
         "190"
     ],

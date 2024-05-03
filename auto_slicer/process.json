@@ -70,7 +70,6 @@
     "compatible_printers": [
         "Bambu Lab P1P 0.4 nozzle"
     ],
-    "inherits": "0.28mm Extra Draft @BBL P1P",
     "max_travel_detour_distance": "0",
     "bottom_surface_pattern": "monotonic",
     "bottom_shell_layers": "3",
