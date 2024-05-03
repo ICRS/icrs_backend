@@ -1,8 +1,7 @@
 import json
 import logging
-import os
-import signal
-import time
+
+from src.queue_handler import QueueManager
 
 
 settings = json.load(open("settings.json", "r", encoding="utf-8"))
@@ -18,4 +17,4 @@ logging.basicConfig(
     ])
 
 if __name__ == '__main__':
-    pass
+    queue_manager = QueueManager(PRINTER_NAMES, PRINTER_GATEWAY_ENDPOINT_SUFFIX)
