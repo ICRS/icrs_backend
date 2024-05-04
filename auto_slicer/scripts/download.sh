@@ -8,6 +8,7 @@ rm bambu.zip
 mv BambuStudio-01.09.01.58/resources/profiles/BBL BBL
 rm BambuStudio-01.09.01.58 -r
 
-python merge.py
+python3 merge.py
 
-<!-- rm -rf BBL -->
+rm BBL -r
+exit 0

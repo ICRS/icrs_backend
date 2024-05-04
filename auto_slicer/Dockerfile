@@ -14,6 +14,7 @@
 # most recent version of that image when you build your Dockerfile.
 # If reproducability is important, consider using a versioned tag
 # (e.g., alpine:3.17.2) or SHA (e.g., alpine@sha256:c41ab5c992deb4fe7e5da09f67a8804a46bd0592bfdf0b1847dde0e0889d2bff).
+ARG PYTHON_VERSION=3.10.12
 FROM ubuntu:22.04 as base
 
 ################################################################################
@@ -32,25 +33,14 @@ WORKDIR /app
 RUN apt-get update && apt-get install  -y \
     autoconf \
     build-essential \
-    cmake \
-    curl \
     eglexternalplatform-dev \
     extra-cmake-modules \
     file \
-    git \
-    gstreamer1.0-plugins-bad \
-    gstreamer1.0-libav \
     libcairo2-dev \
     libcurl4-openssl-dev \
     libdbus-1-dev \
     libglew-dev \ 
     libglu1-mesa-dev \
-    libglu1-mesa-dev \
-    libgstreamer1.0-dev \
-    libgstreamerd-3-dev \ 
-    libgstreamer-plugins-base1.0-dev \
-    libgstreamer-plugins-good1.0-dev \
-    libgtk-3-dev \
     libgtk-3-dev \
     libosmesa6-dev \
     libsecret-1-dev \
@@ -68,19 +58,41 @@ RUN apt-get update && apt-get install  -y \
     sudo \
     wayland-protocols \
     wget 
-
+RUN apt install -y python3 \
+    python3-pip  \
+    unzip 
+    
 RUN wget https://github.com/bambulab/BambuStudio/releases/download/v01.09.01.58/Bambu_Studio_linux_ubuntu-v01.09.01.58.AppImage
 RUN chmod +x Bambu_Studio_linux_ubuntu-v01.09.01.58.AppImage
 RUN ./Bambu_Studio_linux_ubuntu-v01.09.01.58.AppImage --appimage-extract 
 #RUN mv squashfs-root/bin/* . && rm -rf squashfs-root 
-RUN ls -al
 RUN chmod +x squashfs-root/bin/bambu-studio
 
 WORKDIR /app/squashfs-root/bin/
 
-COPY filament.json machine.json process.json ./ 
+COPY . .
+RUN ls -al; ls scripts
 
-COPY test.stl ./
+# FROM python:${PYTHON_VERSION}-slim as final
+
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Keeps Python from buffering stdout and stderr to avoid situations where
+# the application crashes without emitting any logs due to buffering.
+ENV PYTHONUNBUFFERED=1
+
+RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=bind,source=requirements.txt,target=requirements.txt \
+    python3 -m pip install -r requirements.txt
+
+
+RUN ls -al; ls scripts -al; ls /app/squashfs-root/bin; ls /app/ ; ls /;
+RUN cd scripts && ./download.sh
+
+#  && python3 merge.py
+RUN ls -al ; ls scripts -al
+# RUN cd scripts && python3 merge.py
+
 
 ################################################################################
 # Create a final stage for running your application.
@@ -106,6 +118,7 @@ COPY test.stl ./
 #    appuser
 #USER appuser
 
+EXPOSE 8000
 
 # What the container should run when it is started.
-ENTRYPOINT ["./bambu-studio"] 
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
