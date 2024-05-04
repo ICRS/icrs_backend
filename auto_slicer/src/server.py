@@ -1,3 +1,4 @@
+import os
 import logging
 import subprocess
 
@@ -22,22 +23,26 @@ def slice_file_bin(
     with requests.get(file_url) as f:
         with open(filename, "wb") as file:
             file.write(f.content)
-
-    subprocess.run(["./bambu-studio",
-                    "--curr-bed-type", "Textured PEI Plate",
+    
+    os.makedirs(f"tmp/{filename}", exist_ok=True)
+    command = ["./bambu-studio",
+            #'--curr-bed-type', 'Textured PEI Plate',
                     "--avoid-extrusion-cali-region",
                     "--allow-rotations",
                     "--avoid-extrusion-cali-region",
-                    "--orient", 1,
-                    "--arrange", 1,
+                    "--orient", "1",
+                    "--arrange", "1",
                     "--load-settings",
                     f"{machine_path};{process_path}",
-                    "--load-filaments", filament_path,
+                    "--load-filaments", f"\"{filament_path}\"",
                     "--ensure-on-bed",
-                    "--slice", 1,
-                    "--output-dir", f"tmp/{filename}",
-                    "--load-settings", f"{process_path};{machine_path}",
-                    filename])
+                    "--slice", "1",
+                    "--outputdir", f"tmp/{filename}",
+                    filename]
+
+    logging.info(command)
+    result = subprocess.run(command)
+    return result
 
 
 @router.post("/slice/file")
@@ -53,12 +58,16 @@ async def slice_file(
             layer_height=layer_height)
         machine_file_name = get_machine(printer_type)
 
+
         if file_url:
+            logging.info(f"{filament_file_name}")
+            logging.info(f"{process_file_name}")
+            logging.info(f"{machine_file_name}")
             slice_file_bin(file_url,
                            file_name,
-                           filament_path=filament_file_name,
-                           process_path=process_file_name,
-                           machine_path=machine_file_name)
+                           filament_path="assets/filament/" + filament_file_name,
+                           process_path="assets/process/" + process_file_name,
+                           machine_path="assets/machine/" + machine_file_name)
     except Exception as e:
         logging.exception(f"Slice file failed: {e}")
         pass
