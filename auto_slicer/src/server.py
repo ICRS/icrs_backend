@@ -9,13 +9,6 @@ from .printer_asset_utils import AVAILABLE_LAYER_HEIGHT, AVAILABLE_PRINTERS, \
     get_machine, process_from_machine_layer, printer_pla
 
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(name)s [%(levelname)s]: %(message)s',  # noqa
-                    datefmt='%d-%b-%y %H:%M:%S',
-                    handlers=[
-                        logging.StreamHandler()
-                    ])
-
 router = APIRouter()
 
 
@@ -56,14 +49,14 @@ async def slice_file(
     try:
         filament_file_name = printer_pla(printer_type)
         process_file_name = process_from_machine_layer(
-            machine_type=printer_type,
+            machine=printer_type,
             layer_height=layer_height)
         machine_file_name = get_machine(printer_type)
 
         if file_url:
             slice_file_bin(file_url,
                            file_name,
-                           filament_file_name=filament_file_name,
+                           filament_path=filament_file_name,
                            process_path=process_file_name,
                            machine_path=machine_file_name)
     except Exception as e:
