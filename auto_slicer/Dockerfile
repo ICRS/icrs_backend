@@ -70,9 +70,7 @@ RUN chmod +x squashfs-root/bin/bambu-studio
 
 WORKDIR /app/squashfs-root/bin/
 
-COPY . .
-RUN ls -al; ls scripts
-
+COPY requirements.txt .
 # FROM python:${PYTHON_VERSION}-slim as final
 
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -85,12 +83,13 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
     python3 -m pip install -r requirements.txt
 
-
-RUN ls -al; ls scripts -al; ls /app/squashfs-root/bin; ls /app/ ; ls /;
+COPY scripts/ scripts/
+# RUN ls -al; ls scripts -al; ls /app/squashfs-root/bin; ls /app/ ; ls /;
 RUN cd scripts && ./download.sh
+COPY . . 
 
 #  && python3 merge.py
-RUN ls -al ; ls scripts -al
+# RUN ls -al ; ls scripts -al
 # RUN cd scripts && python3 merge.py
 
 
@@ -118,7 +117,7 @@ RUN ls -al ; ls scripts -al
 #    appuser
 #USER appuser
 
-EXPOSE 8000
+EXPOSE 80
 
 # What the container should run when it is started.
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
