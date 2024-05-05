@@ -4,4 +4,4 @@ uvicorn
 python-multipart
 requests
 pika
-
+gcode2image
