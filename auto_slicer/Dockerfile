@@ -70,7 +70,6 @@ RUN chmod +x squashfs-root/bin/bambu-studio
 
 WORKDIR /app/squashfs-root/bin/
 
-COPY requirements.txt .
 # FROM python:${PYTHON_VERSION}-slim as final
 
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -79,19 +78,17 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # the application crashes without emitting any logs due to buffering.
 ENV PYTHONUNBUFFERED=1
 
-RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=bind,source=requirements.txt,target=requirements.txt \
-    python3 -m pip install -r requirements.txt
 
 COPY scripts/ scripts/
 # RUN ls -al; ls scripts -al; ls /app/squashfs-root/bin; ls /app/ ; ls /;
 RUN cd scripts && ./download.sh
-COPY . . 
+COPY requirements.txt . 
 
-#  && python3 merge.py
-# RUN ls -al ; ls scripts -al
-# RUN cd scripts && python3 merge.py
+RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=bind,source=requirements.txt,target=requirements.txt \
+    python3 -m pip install -r requirements.txt
 
+COPY . .
 
 ################################################################################
 # Create a final stage for running your application.
