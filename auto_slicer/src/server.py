@@ -3,6 +3,7 @@ import logging
 import subprocess
 import threading
 import requests
+import shutil
 
 import xml.etree.ElementTree as ET
 from fastapi import APIRouter, Query
@@ -60,17 +61,18 @@ def generate_foldername(filename: str, url: str, shortcode: str) -> str:
     Returns:
         str: shortcode + url_params + filename
     """
-    return "_".join([shortcode, url.split("?"), filename])
+    return "_".join([shortcode, url.split("?")[-1], filename])
 
 
 def slice_file_bin(
     url: str,
     filename: str,
     shortcode: str,
+    infill: int = 15,
     filament_path: str = "assets/filament/Generic PLA.json",
     machine_path: str = "assets/machine/Bambu Lab P1P 0.4 nozzle.json",
     process_path: str = "assets/process/0.28mm Extra Draft @BBL P1P.json",
-    timeout: int = 300,
+    timeout: int = 60,
 ) -> None:
     folder_name = "tmp/" + generate_foldername(
         filename=filename,
@@ -85,6 +87,7 @@ def slice_file_bin(
 
     command = ["./bambu-studio",
                '--curr-bed-type', 'Textured PEI Plate',
+               "--sparse-infill-density", f"{infill}",
                "--avoid-extrusion-cali-region",
                "--allow-rotations",
                "--avoid-extrusion-cali-region",
@@ -104,7 +107,10 @@ def slice_file_bin(
 
     os.remove(temporary_file_path)
 
-    threading.Timer(timeout, lambda: os.removedirs(folder_name)).start()
+    threading.Timer(
+        timeout, lambda:
+            shutil.rmtree(folder_name, ignore_errors=True)
+    ).start()
 
     return result
 
@@ -132,14 +138,20 @@ async def slice_file(
             result = slice_file_bin(
                 shortcode=shortcode,
                 url=url,
+                infill=infill,
                 filename=filename,
                 filament_path="assets/filament/"+filament_file_name,
                 process_path="assets/process/"+process_file_name,
                 machine_path="assets/machine/"+machine_file_name)
             logging.debug(f"Slicing Result: {result}")
 
+            folder_name = "tmp/" + generate_foldername(
+                filename=filename,
+                url=url,
+                shortcode=shortcode)
+
             model_time, estimated_time = gcode_time(
-                f"tmp/{filename}/plate_1.gcode")
+                f"{folder_name}/plate_1.gcode")
 
             return {"slice_result": result,
                     "filename": filename,
