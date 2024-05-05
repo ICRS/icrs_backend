@@ -1,6 +1,7 @@
 import os
 import logging
 import subprocess
+import threading
 import requests
 
 import xml.etree.ElementTree as ET
@@ -46,10 +47,6 @@ def weight(filename: str) -> float:
     )
 
 
-def delete_file(file_path: str) -> bool:
-    raise NotImplementedError
-
-
 def generate_foldername(filename: str, url: str, shortcode: str) -> str:
     """
     Generates the folder name for storing temporary files,
@@ -73,6 +70,7 @@ def slice_file_bin(
     filament_path: str = "assets/filament/Generic PLA.json",
     machine_path: str = "assets/machine/Bambu Lab P1P 0.4 nozzle.json",
     process_path: str = "assets/process/0.28mm Extra Draft @BBL P1P.json",
+    timeout: int = 300,
 ) -> None:
     folder_name = "tmp/" + generate_foldername(
         filename=filename,
@@ -106,6 +104,8 @@ def slice_file_bin(
 
     os.remove(temporary_file_path)
 
+    threading.Timer(timeout, lambda: os.removedirs(folder_name)).start()
+
     return result
 
 
@@ -117,7 +117,7 @@ async def slice_file(
         layer_height: float = AVAILABLE_LAYER_HEIGHT,
         infill: int = Query(15, ge=5, le=30),
         printer_type: str = AVAILABLE_PRINTERS,
-        ):
+):
     try:
         filament_file_name = printer_pla(printer_type)
         process_file_name = process_from_machine_layer(
