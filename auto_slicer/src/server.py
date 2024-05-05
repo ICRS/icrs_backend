@@ -158,6 +158,7 @@ async def slice_file(
                     "url": url,
                     "printer_type": printer_type,
                     "layer_height": layer_height,
+                    "infill": infill,
                     "plates": 1,
                     "model_time": model_time,
                     "estimated_time": estimated_time,
