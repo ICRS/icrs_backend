@@ -181,4 +181,8 @@ async def release_file(
 
         pass
 
+    folder_name = "tmp/" + \
+        generate_foldername(filename=filename, url=url, shortcode=shortcode)
+    shutil.rmtree(folder_name, ignore_errors=True)
+
     return {}
