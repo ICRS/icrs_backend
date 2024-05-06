@@ -20,6 +20,14 @@ from .printer_asset_utils import AVAILABLE_LAYER_HEIGHT, AVAILABLE_PRINTERS, \
 router = APIRouter()
 
 
+class Args:
+    def __init__(self, arguments: dict):
+        self.arguments = arguments
+
+    def __getattr__(self, name: str):
+        return self.arguments.get(name, None)
+
+
 def render_gcode(filename: str) -> np.array:
     """
     Render gcode file to html
@@ -29,11 +37,14 @@ def render_gcode(filename: str) -> np.array:
     """
     with open(filename, "r") as file:
         args = {
-            "gcode": file.read(),
+            "gcode": file,
             "showorigin": True,
             "grid": True,
+            "resolution": None,
+            "maxintensity": None,
         }
-        img = gcode2image.gcode2image(args)
+        a = Args(args)
+        img = gcode2image.gcode2image(a)
     return img
 
 
@@ -178,6 +189,7 @@ async def slice_file(
             img = render_gcode(f"{folder_name}/plate_1.gcode")
             # convert np.array to image in base64
             img = Image.fromarray(img)
+            # img.save("tmp/plate_1.jpg")
 
             with BytesIO() as output:
                 img.save(output, format="JPEG")
