@@ -202,6 +202,7 @@ async def slice_file(slice_request: SliceRequest) -> dict:
                 # "slice_result": dict(result),
                     "filename": str(filename),
                     "url": str(url),
+                    "shortcode": str(shortcode),
                     "printer_type": str(printer_type),
                     "layer_height": float(layer_height),
                     "infill": int(infill),
