@@ -190,6 +190,7 @@ async def slice_file(
             return {"slice_result": result,
                     "filename": filename,
                     "url": url,
+                    "shortcode": shortcode,
                     "printer_type": printer_type,
                     "layer_height": layer_height,
                     "infill": infill,
