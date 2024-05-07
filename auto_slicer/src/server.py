@@ -189,21 +189,29 @@ async def slice_file(slice_request: SliceRequest) -> dict:
         pass
 
 
+class ReleaseRequest(BaseModel):
+    shortcode: str
+    filename: str
+    url: str
+    release: bool = False
+
 @router.post("/slice/release")
-async def release_file(
-        filename: str,
-        url: str,
-        shortcode: str = Query(max_length=7),
-        release: bool = True) -> dict:
+async def release_file(release_request: ReleaseRequest) -> dict:
+    filename = release_request.filename
+    url = release_request.url
+    shortcode = release_request.shortcode
+    release = release_request.release
+    logging.info(f"Release Request: {release}")
 
-    with open(filename, "r") as f:
-        content = {}
-        content["content"] = f.read()
-
-        pass
-
-    folder_name = "tmp/" + \
-        generate_foldername(filename=filename, url=url, shortcode=shortcode)
-    shutil.rmtree(folder_name, ignore_errors=True)
-
-    return {}
+    try:
+        if release:
+            folder_name = "tmp/" + \
+                generate_foldername(filename=filename, url=url, shortcode=shortcode)
+            shutil.move(folder_name, "sliced")
+            with open(filename, "r") as f:
+                content = {}
+                content["content"] = f.read()
+        return {"status": "success"}
+    except Exception as e:
+        logging.exception(f"Release file failed: {e}")
+        return {"status": "failed"}
