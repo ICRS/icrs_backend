@@ -202,6 +202,11 @@ async def slice_file(slice_request: SliceRequest) -> dict:
             img = Image.fromarray(img)
             # img.save("tmp/plate_1.jpg")
 
+            img = render_gcode(f"{folder_name}/plate_1.gcode")
+            # convert np.array to image in base64
+            img = Image.fromarray(img)
+            # img.save("tmp/plate_1.jpg")
+
             with BytesIO() as output:
                 img.save(output, format="JPEG")
                 contents = output.getvalue()
