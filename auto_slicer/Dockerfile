@@ -34,6 +34,7 @@ RUN apt-get update && apt-get install  -y \
     autoconf \
     bash \
     build-essential \
+    dos2unix \
     eglexternalplatform-dev \
     extra-cmake-modules \
     file \
@@ -82,6 +83,7 @@ ENV PYTHONUNBUFFERED=1
 
 COPY scripts/ scripts/
 # RUN ls -al; ls scripts -al; ls /app/squashfs-root/bin; ls /app/ ; ls /;
+RUN dos2unix scripts/download.sh
 RUN cd scripts && bash ./download.sh
 COPY requirements.txt . 
 
