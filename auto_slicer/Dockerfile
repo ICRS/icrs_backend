@@ -32,6 +32,7 @@ WORKDIR /app
 # RUN chmod +x ./Bambu_Studio_linux_ubuntu_01.09.00.60.AppImage
 RUN apt-get update && apt-get install  -y \
     autoconf \
+    bash \
     build-essential \
     eglexternalplatform-dev \
     extra-cmake-modules \
@@ -81,7 +82,7 @@ ENV PYTHONUNBUFFERED=1
 
 COPY scripts/ scripts/
 # RUN ls -al; ls scripts -al; ls /app/squashfs-root/bin; ls /app/ ; ls /;
-RUN cd scripts && ./download.sh
+RUN cd scripts && bash ./download.sh
 COPY requirements.txt . 
 
 RUN --mount=type=cache,target=/root/.cache/pip \
