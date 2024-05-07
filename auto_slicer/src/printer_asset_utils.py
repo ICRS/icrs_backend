@@ -1,7 +1,6 @@
 import os
 from fastapi import Query
 
-
 from functools import cache
 
 __all__ = [
@@ -12,8 +11,8 @@ __all__ = [
     "printer_pla",
 ]
 
-AVAILABLE_PRINTERS = Query(enum=["p1p", "p1s"])
-AVAILABLE_LAYER_HEIGHT = Query(enum=[0.12, 0.16, 0.20, 0.24, 0.28])
+AVAILABLE_PRINTERS = Query(default="p1p", enum=["p1p", "p1s"])
+AVAILABLE_LAYER_HEIGHT = Query(default=0.20, enum=[0.12, 0.16, 0.20, 0.24, 0.28])
 
 
 @cache

@@ -1,16 +1,22 @@
+import json
 import os
 import logging
 import subprocess
 import threading
+from pydantic import BaseModel
 import requests
 import shutil
 
 import xml.etree.ElementTree as ET
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
 
 from .printer_asset_utils import AVAILABLE_LAYER_HEIGHT, AVAILABLE_PRINTERS, \
     get_machine, process_from_machine_layer, printer_pla
 
+settings = json.load(open(os.path.abspath("endpoints.json"),
+                          "r", encoding="utf-8"))
+
+BOT_ENDPOINT = str(settings["BOT_ENDPOINT"])
 
 router = APIRouter()
 
@@ -115,15 +121,24 @@ def slice_file_bin(
     return result
 
 
+class SliceRequest(BaseModel):
+    shortcode: str
+    filename: str
+    url: str
+    layer_height: float = AVAILABLE_LAYER_HEIGHT,
+    infill: int = Query(default=15, ge=5, le=30),
+    printer_type: str = AVAILABLE_PRINTERS,
+
+
 @router.post("/slice/file")
-async def slice_file(
-        shortcode: str,
-        filename: str,
-        url: str,
-        layer_height: float = AVAILABLE_LAYER_HEIGHT,
-        infill: int = Query(15, ge=5, le=30),
-        printer_type: str = AVAILABLE_PRINTERS,
-):
+async def slice_file(slice_request: SliceRequest) -> dict:
+    logging.info(slice_request)
+    printer_type = slice_request.printer_type
+    layer_height = slice_request.layer_height
+    infill = slice_request.infill
+    url = slice_request.url
+    filename = slice_request.filename
+    shortcode = slice_request.shortcode
     try:
         filament_file_name = printer_pla(printer_type)
         process_file_name = process_from_machine_layer(
@@ -152,17 +167,23 @@ async def slice_file(
 
             model_time, estimated_time = gcode_time(
                 f"{folder_name}/plate_1.gcode")
-
-            return {"slice_result": result,
-                    "filename": filename,
-                    "url": url,
-                    "printer_type": printer_type,
-                    "layer_height": layer_height,
-                    "infill": infill,
+            
+            return_object = {
+                # "slice_result": dict(result),
+                    "filename": str(filename),
+                    "url": str(url),
+                    "printer_type": str(printer_type),
+                    "layer_height": float(layer_height),
+                    "infill": int(infill),
                     "plates": 1,
-                    "model_time": model_time,
-                    "estimated_time": estimated_time,
+                    "model_time": str(model_time),
+                    "estimated_time": str(estimated_time),
                     }
+            
+            # requests.post(BOT_ENDPOINT+"/confirm", json=return_object)
+
+            return return_object
+        
     except Exception as e:
         logging.exception(f"Slice file failed: {e}")
         pass
