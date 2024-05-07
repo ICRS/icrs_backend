@@ -13,10 +13,6 @@ from fastapi import APIRouter, Query, Request
 from .printer_asset_utils import AVAILABLE_LAYER_HEIGHT, AVAILABLE_PRINTERS, \
     get_machine, process_from_machine_layer, printer_pla
 
-settings = json.load(open(os.path.abspath("endpoints.json"),
-                          "r", encoding="utf-8"))
-
-BOT_ENDPOINT = str(settings["BOT_ENDPOINT"])
 
 router = APIRouter()
 
