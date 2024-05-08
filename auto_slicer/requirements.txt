@@ -4,5 +4,7 @@ uvicorn
 python-multipart
 requests
 pika
-gcode2image
+click
+mayavi
 numpy
+vtk==9.2.6
