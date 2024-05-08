@@ -49,29 +49,37 @@ class QueueManager:
 
     
     def rabbit_callback(self, ch: pika.channel.Channel, method, properties, body: bytes):
+        # Decode bytes sent from rabbitmq queue
         data = body.decode()
         try:
+            # Parse bytes to json and then to dict
             request = dict(json.loads(data))
             logging.info(f"Received {request}")
         except json.JSONDecodeError:
+            # If data is not valid json, log error and reject message without requeueing (The object in the queue might be invalid)
             logging.error(f"Received invalid data: {data}")
             ch.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
             return
         
+        # Get all required fields from the request
         gcode = request.get("gcode", None)
         filename = request.get("filename", None)
         printer_type = request.get("printer_type", None)
+        # Check if any of the required fields are missing. If so, log error and reject message without requeueing
         if not gcode or not filename or not printer_type:
             logging.error(f"Received invalid request: {request}")
             ch.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
             return
         
+        # Queue the job to a printer. If the job is not queued, log error and reject message with requeueing. Everything was valid but couldn't queue job
         if not self.queue_printer(printer_type, filename, gcode):
             logging.error(f"Failed to queue printer: {printer_type}")
             ch.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
             return
 
+        # If everything was successful, acknowledge the message
         ch.basic_ack(delivery_tag=method.delivery_tag)
+        return
     
     def queue_printer(self, printer_type: str, filename: str, gcode: str) -> bool:
         # Find available rinter and send gcode and start
