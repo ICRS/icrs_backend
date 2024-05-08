@@ -12,30 +12,38 @@ import shutil
 
 import xml.etree.ElementTree as ET
 from fastapi import APIRouter, Query, Request, Response
-import gcode2image
+
 from PIL import Image
 
 from .printer_asset_utils import AVAILABLE_LAYER_HEIGHT, AVAILABLE_PRINTERS, \
     get_machine, process_from_machine_layer, printer_pla
 
+from .gcode2png import GcodeRenderer
 
 router = APIRouter()
 
 
 def render_gcode(filename: str) -> np.array:
     """
-    Render gcode file to html
+    Render gcode file to img
 
-    Args:
+    Args
+    ----
         filename (str): filename of the gcode file
     """
-    with open(filename, "r") as file:
-        args = {
-            "gcode": file.read(),
-            "showorigin": True,
-            "grid": True,
-        }
-        img = gcode2image.gcode2image(args)
+    renderer = GcodeRenderer()
+    # img = renderer.run(
+    #     path=filename,
+    #     support=True,
+    #     moves=True,
+    #     bed=True,
+    #     show=False,
+    #     target="output.png",
+    #     imgx=600,
+    #     imgy=400,
+    # )
+    # print(img)
+    img = None
     return img
 
 
@@ -186,17 +194,21 @@ async def slice_file(slice_request: SliceRequest) -> dict:
             model_time, estimated_time = gcode_time(
                 f"{folder_name}/plate_1.gcode")
             
-            img = render_gcode(f"{folder_name}/plate_1.gcode")
-            # convert np.array to image in base64
-            img = Image.fromarray(img)
+            try:
+                img = render_gcode(f"{folder_name}/plate_1.gcode")
+                # convert np.array to image in base64
+                img = Image.fromarray(img)
 
-            with BytesIO() as output:
-                img.save(output, format="JPEG")
-                contents = output.getvalue()
-                render_b64 = base64.b64encode(contents)
+                with BytesIO() as output:
+                    img.save(output, format="JPEG")
+                    contents = output.getvalue()
+                    render_b64 = base64.b64encode(contents)
 
-            render_response = Response(render_b64,
-                                       media_type="image/jpeg")
+                render_response = Response(render_b64,
+                                        media_type="image/jpeg")
+            except Exception as e:
+                logging.exception(f"Render image failed: {e}")
+                render_response = None
 
             return_object = {
                 # "slice_result": dict(result),
