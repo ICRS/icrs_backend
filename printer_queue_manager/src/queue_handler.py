@@ -1,9 +1,12 @@
+import json
 import logging
 import os
 import time
 import sys
 
 import pika
+import pika.channel
+import pika.delivery_mode
 
 from src.printer_farm import PrinterFarm
 
@@ -45,7 +48,32 @@ class QueueManager:
         self.rabbitmq_channel.start_consuming()
 
     
-    def rabbit_callback(self, ch, method, properties, body):
+    def rabbit_callback(self, ch: pika.channel.Channel, method, properties, body: bytes):
         data = body.decode()
-        logging.info(f"Received {data}")
+        try:
+            request = dict(json.loads(data))
+            logging.info(f"Received {request}")
+        except json.JSONDecodeError:
+            logging.error(f"Received invalid data: {data}")
+            ch.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
+            return
+        
+        gcode = request.get("gcode", None)
+        filename = request.get("filename", None)
+        printer_type = request.get("printer_type", None)
+        if not gcode or not filename or not printer_type:
+            logging.error(f"Received invalid request: {request}")
+            ch.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
+            return
+        
+        if not self.queue_printer(printer_type, filename, gcode):
+            logging.error(f"Failed to queue printer: {printer_type}")
+            ch.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
+            return
+
         ch.basic_ack(delivery_tag=method.delivery_tag)
+    
+    def queue_printer(self, printer_type: str, filename: str, gcode: str) -> bool:
+        # Find available rinter and send gcode and start
+        pass
+        
