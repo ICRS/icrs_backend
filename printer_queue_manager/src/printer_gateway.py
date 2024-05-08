@@ -1,5 +1,7 @@
 import requests
 
+import bambulabs_api as blapi
+
 __all__ = ['PrinterGateway']
 
 
@@ -11,6 +13,10 @@ class PrinterGateway:
 
     def __init__(self, printer_url):
         self.printer_url = printer_url
+        self.data = {}
+
+    def __str__(self):
+        return f"PrinterGateway({self.printer_url}, {self.data})"
 
     def get_remaining_time(self) -> int:
         """
@@ -22,12 +28,13 @@ class PrinterGateway:
             The remaining time of the print job
         """
         response = requests.get(
-            f"http://{self.printer_url}/printer/status/time"
+            f"http://{self.printer_url}/time"
         )
         if response.status_code != 200:
             return -1
         r = response.json()
-        return r['time'] if 'time' in r else -1
+        self.data.update({"time": r['time'] if 'time' in r else -1})
+        return self.data.get("time", -1)
 
     def get_percentage(self) -> int:
         """
@@ -39,11 +46,12 @@ class PrinterGateway:
             The percentage of the print job
         """
         response = requests.get(
-            f"http://{self.printer_url}/printer/status/percentage")
+            f"http://{self.printer_url}/percentage")
         if response.status_code != 200:
             return -1
         r = response.json()
-        return r['percentage'] if 'percentage' in r else -1
+        self.data.update({"percentage": r['percentage'] if 'percentage' in r else -1})
+        return self.data.get("percentage", -1)
 
     def get_frame(self) -> str | None:
         """
@@ -58,7 +66,8 @@ class PrinterGateway:
         if response.status_code != 200:
             return None
         r: dict = response.json()
-        return r['frame'].get("body", "") if 'frame' in r else None
+        self.data.update({"frame": r['frame'].get("body", "") if 'frame' in r else None})
+        return self.data.get("frame", None)
 
     def get_state(self) -> str:
         """
@@ -70,8 +79,74 @@ class PrinterGateway:
             The state of the printer
         """
         response = requests.get(
-            f"http://{self.printer_url}/printer/status/state")
+            f"http://{self.printer_url}/state")
         if response.status_code != 200:
             return "UNKNOWN"
         r: dict = response.json()
-        return r.get("state", "IDLE")
+        self.data.update({"state": blapi.GcodeState(r.get("state", "IDLE"))})
+        return r.get("state", blapi.GcodeState.IDLE)
+    
+    def upload_gcode(self, gcode: str) -> None:
+        """
+        Upload the gcode to the printer
+
+        Parameters
+        ----------
+        gcode : str
+            The gcode to upload
+        """
+        response = requests.post(
+            f"http://{self.printer_url}/printer/upload/gcode",
+            json={"file": gcode}
+        )
+        if response.status_code != 200:
+            raise Exception("Error uploading gcode")
+    
+    def start_print(self, filename: str, plater_number: int) -> None:
+        """
+        Start the print job
+
+        Parameters
+        ----------
+        filename : str
+            The filename of the gcode
+        plater_number : int
+            The plate number of the print job
+        """
+        response = requests.post(
+            f"http://{self.printer_url}/printer/print/start",
+            json={"filename": filename, "plate_number": plater_number}
+        )
+        if response.status_code != 200:
+            raise Exception("Error starting print job")
+        self.data.update({"state": blapi.GcodeState.RUNNING})
+    
+    def stop_print(self) -> None:
+        """
+        Stop the print job
+        """
+        response = requests.post(
+            f"http://{self.printer_url}/printer/print/stop"
+        )
+        if response.status_code != 200:
+            raise Exception("Error stopping print job")
+    
+    def pause_print(self) -> None:
+        """
+        Pause the print job
+        """
+        response = requests.post(
+            f"http://{self.printer_url}/printer/print/pause"
+        )
+        if response.status_code != 200:
+            raise Exception("Error pausing print job")
+    
+    def resume_print(self) -> None:
+        """
+        Resume the print job
+        """
+        response = requests.post(
+            f"http://{self.printer_url}/printer/print/resume"
+        )
+        if response.status_code != 200:
+            raise Exception("Error resuming print job")

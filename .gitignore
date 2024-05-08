@@ -167,3 +167,5 @@ test.ipynb
 
 *.ini
 *.avi
+
+.DS_Store
