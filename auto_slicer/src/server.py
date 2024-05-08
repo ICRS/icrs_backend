@@ -1,20 +1,55 @@
 import json
+import base64
+from io import BytesIO
 import os
 import logging
 import subprocess
 import threading
 from pydantic import BaseModel
+import numpy as np
 import requests
 import shutil
 
 import xml.etree.ElementTree as ET
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Query, Request, Response
+
+from PIL import Image
 
 from .printer_asset_utils import AVAILABLE_LAYER_HEIGHT, AVAILABLE_PRINTERS, \
     get_machine, process_from_machine_layer, printer_pla
 
+from .gcode2png import GcodeRenderer
 
 router = APIRouter()
+
+
+class Args:
+    def __init__(self, arguments: dict):
+        self.arguments = arguments
+
+    def __getattr__(self, name: str):
+        return self.arguments.get(name, None)
+
+
+def render_gcode(filename: str) -> np.array:
+    """
+    Render gcode file to img
+
+    Args
+    ----
+        filename (str): filename of the gcode file
+    """
+    with open(filename, "r") as file:
+        args = {
+            "gcode": file,
+            "showorigin": True,
+            "grid": True,
+            "resolution": None,
+            "maxintensity": None,
+        }
+        a = Args(args)
+        img = gcode2image.gcode2image(a)
+    return img
 
 
 def gcode_time(filename: str) -> tuple[str] | None:
@@ -75,7 +110,7 @@ def slice_file_bin(
     machine_path: str = "assets/machine/Bambu Lab P1P 0.4 nozzle.json",
     process_path: str = "assets/process/0.28mm Extra Draft @BBL P1P.json",
     timeout: int = 60,
-) -> None:
+) -> subprocess.CompletedProcess[bytes]:
     folder_name = "tmp/" + generate_foldername(
         filename=filename,
         url=url,
@@ -164,16 +199,34 @@ async def slice_file(slice_request: SliceRequest) -> dict:
             model_time, estimated_time = gcode_time(
                 f"{folder_name}/plate_1.gcode")
             
+            try:
+                img = render_gcode(f"{folder_name}/plate_1.gcode")
+                # convert np.array to image in base64
+                img = Image.fromarray(img)
+
+                with BytesIO() as output:
+                    img.save(output, format="JPEG")
+                    contents = output.getvalue()
+                    render_b64 = base64.b64encode(contents)
+
+                render_response = Response(render_b64,
+                                        media_type="image/jpeg")
+            except Exception as e:
+                logging.exception(f"Render image failed: {e}")
+                render_response = None
+
             return_object = {
                 # "slice_result": dict(result),
                     "filename": str(filename),
                     "url": str(url),
+                    "shortcode": str(shortcode),
                     "printer_type": str(printer_type),
                     "layer_height": float(layer_height),
                     "infill": int(infill),
                     "plates": 1,
                     "model_time": str(model_time),
                     "estimated_time": str(estimated_time),
+                    "thumbnail": render_response,
                     }
             
             # requests.post(BOT_ENDPOINT+"/confirm", json=return_object)
