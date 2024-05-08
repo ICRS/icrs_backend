@@ -42,18 +42,10 @@ class QueueManager:
         self.rabbitmq_channel.basic_consume(queue=self.rabbitmq_queue,
                                             on_message_callback=self.rabbit_callback)
 
-        self.start()
+        self.rabbitmq_channel.start_consuming()
 
     
     def rabbit_callback(self, ch, method, properties, body):
-        print(f" [x] Received {body.decode()}")
-        time.sleep(body.count(b'.'))
-        print(" [x] Done")
+        data = body.decode()
+        logging.info(f"Received {data}")
         ch.basic_ack(delivery_tag=method.delivery_tag)
-
-    def start(self):
-        self.rabbitmq_channel.start_consuming()
-        while self.running:
-            for printer_name in self.printer_farm.get_printers():
-                logging.info(f"Printer {printer_name}: {self.printer_farm.get(printer_name, 'state')}")
-            time.sleep(1)
