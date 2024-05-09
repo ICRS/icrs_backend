@@ -3,6 +3,7 @@ from typing import BinaryIO
 import dotenv
 import logging
 
+from pydantic import BaseModel
 import uvicorn
 from fastapi import APIRouter, FastAPI, HTTPException, UploadFile
 
@@ -10,6 +11,8 @@ import bambulabs_api as blapi
 from bambulabs_api import AMSFilamentSettings
 
 dotenv.load_dotenv()
+
+logging.basicConfig(level=logging.INFO)
 
 router = APIRouter()
 
@@ -117,6 +120,7 @@ async def printer_led_off():
 @router.post("/printer/upload/gcode")
 async def upload_gcode_file(file: UploadFile):
     try:
+        logging.info(f"Uploaded gcode file: {file}")
         io_file: BinaryIO = file.file
         if file.filename:
             return True
@@ -130,9 +134,14 @@ async def upload_gcode_file(file: UploadFile):
     return
 
 
+class StartPrintRequest(BaseModel):
+    filename: str
+    plate_number: int
+
 @router.post("/printer/print/start")
-async def start_print(filename: str, plate_number: int):
+async def start_print(request: StartPrintRequest):
     global state
+    logging.info(f"Starting {request.filename} on plate {request.plate_number}")
     state=blapi.GcodeState.RUNNING
 
 
