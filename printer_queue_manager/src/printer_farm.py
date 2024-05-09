@@ -34,8 +34,8 @@ class PrinterFarm:
             return func(self, printer_name, attr)               # noqa # pylint: disable=not-callable
         return wrapper
     
-    def get_printers(self):
-        return self.printers.keys()
+    def get_printers(self, printer_type: str = None) -> list[PrinterGateway]:      # noqa # pylint: disable=redefined-builtin
+        return [name for name, printer in self.printers.items() if printer_type is not None and printer.type == printer_type]
 
     @printer_exists
     def get(self, printer_name: str, attr: str) -> any:
