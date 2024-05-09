@@ -1,6 +1,8 @@
+import json
 import requests
 
 import bambulabs_api as blapi
+from fastapi import UploadFile
 
 __all__ = ['PrinterGateway']
 
@@ -11,12 +13,13 @@ class PrinterGateway:
     to get information about the printers
     """
 
-    def __init__(self, printer_url):
+    def __init__(self, printer_url, type="p1p"):
         self.printer_url = printer_url
+        self.type = type
         self.data = {}
 
     def __str__(self):
-        return f"PrinterGateway({self.printer_url}, {self.data})"
+        return f"PrinterGateway({self.printer_url}, {self.type}, {self.data})"
 
     def get_remaining_time(self) -> int:
         """
@@ -86,7 +89,7 @@ class PrinterGateway:
         self.data.update({"state": blapi.GcodeState(r.get("state", "IDLE"))})
         return r.get("state", blapi.GcodeState.IDLE)
     
-    def upload_gcode(self, gcode: str) -> None:
+    def upload_gcode(self, gcode: UploadFile) -> None:
         """
         Upload the gcode to the printer
 
@@ -97,7 +100,7 @@ class PrinterGateway:
         """
         response = requests.post(
             f"http://{self.printer_url}/printer/upload/gcode",
-            json={"file": gcode}
+            files={"file": gcode}
         )
         if response.status_code != 200:
             raise Exception("Error uploading gcode")
