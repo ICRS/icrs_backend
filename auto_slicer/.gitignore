@@ -2,3 +2,4 @@ assets/filament/**
 assets/machine/**
 assets/process/**
 endpoints.json
+rabbitmq.json

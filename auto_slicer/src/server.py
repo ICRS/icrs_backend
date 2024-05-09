@@ -10,6 +10,7 @@ import numpy as np
 import requests
 import shutil
 
+import pika
 import xml.etree.ElementTree as ET
 from fastapi import APIRouter, Query, Request, Response
 
@@ -21,6 +22,17 @@ from .printer_asset_utils import AVAILABLE_LAYER_HEIGHT, AVAILABLE_PRINTERS, \
 from .gcode2png import GcodeRenderer
 
 router = APIRouter()
+
+rabbitmq_settings = json.load(open("rabbitmq.json", "r", encoding="utf-8"))
+RABBITMQ_HOST = rabbitmq_settings["ENDPOINT"]
+RABBITMQ_PORT = rabbitmq_settings["PORT"]
+RABBITMQ_QUEUE = rabbitmq_settings["QUEUE"]
+
+
+connection = pika.BlockingConnection(
+    pika.ConnectionParameters(host=str(RABBITMQ_HOST), port=int(RABBITMQ_PORT)))
+channel = connection.channel()
+channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
 
 
 def render_gcode(filename: str) -> np.array:
@@ -252,9 +264,28 @@ async def release_file(release_request: ReleaseRequest) -> dict:
             folder_name = "tmp/" + \
                 generate_foldername(filename=filename, url=url, shortcode=shortcode)
             shutil.move(folder_name, "sliced")
-            with open(filename, "r") as f:
-                content = {}
-                content["content"] = f.read()
+            # =================================================================================
+            data = {
+                "gcode": "",            # gcode should be str or bytes
+                "filename": "",         # filename should be the file we want saved on the printer
+                "printer_type": "",     # printer_type should be the printer type ("p1p" or "p1s" atm)
+            }
+            data["filename"] = filename
+            data["printer_type"] = "p1p"        # TODO: Confirm printer type
+            with open(filename, "r") as f:      # TODO: Confirm file path
+                gcode = f.read()
+                data["gcode"] = str(gcode)
+            
+            channel.basic_publish(
+                exchange='',
+                routing_key=RABBITMQ_QUEUE,
+                body=json.dumps(data),
+                properties=pika.BasicProperties(
+                    delivery_mode=pika.DeliveryMode.Persistent
+                ))
+            # =================================================================================
+            logging.info(f" [x] Sent Data({data["filename"]}) to RabbitMQ({RABBITMQ_QUEUE})")
+
         return {"status": "success"}
     except Exception as e:
         logging.exception(f"Release file failed: {e}")
