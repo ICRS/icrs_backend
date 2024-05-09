@@ -7,6 +7,7 @@ import logging
 from fastapi import APIRouter, HTTPException, UploadFile, Response
 from bambulabs_api import AMSFilamentSettings
 from PIL import Image, ImageDraw, ImageFont
+from pydantic import BaseModel
 
 from .printer import printer
 
@@ -182,9 +183,13 @@ async def upload_gcode_file(file: UploadFile):
     return
 
 
+class StartPrintRequest(BaseModel):
+    filename: str
+    plate_number: int
+
 @router.post("/printer/print/start")
-async def start_print(filename: str, plate_number: int):
-    return printer.start_print(filename, plate_number)
+async def start_print(request: StartPrintRequest):
+    return printer.start_print(request.filename, request.plate_number)
 
 
 @router.post("/printer/print/stop")
@@ -202,9 +207,12 @@ async def resume_print():
     return printer.resume_print()
 
 
+class BedTemperatureRequest(BaseModel):
+    temperature: int
+
 @router.post("/printer/bed/temperature")
-async def set_bed_temperature(temperature: int):
-    return printer.set_bed_temperature(temperature)
+async def set_bed_temperature(request: BedTemperatureRequest):
+    return printer.set_bed_temperature(request.temperature)
 
 
 @router.post("/printer/calibration/home")
@@ -212,39 +220,58 @@ async def home_printer():
     return printer.home_printer()
 
 
-@router.post("/printer/axis/z")
-async def move_z_axis(distance: int):
-    return printer.move_z_axis(distance)
+class MoveAxisRequest(BaseModel):
+    distance: int
 
+@router.post("/printer/axis/z")
+async def move_z_axis(request: MoveAxisRequest):
+    return printer.move_z_axis(request.distance)
+
+
+class FilamentRequest(BaseModel):
+    color: str
+    filament: AMSFilamentSettings | str
 
 @router.post("/printer/filament/printer")
-async def set_filament_printer(color: str,
-                               filament: AMSFilamentSettings | str):
-    return printer.set_filament_printer(color, filament)
+async def set_filament_printer(request: FilamentRequest):
+    return printer.set_filament_printer(request.color,
+                                        request.filament)
 
+
+class NozzleTemperatureRequest(BaseModel):
+    temperature: int
 
 @router.post("/printer/nozzle/temperature")
-async def set_nozzle_temperature(temperature: int) -> bool:
-    return printer.set_nozzle_temperature(temperature)
+async def set_nozzle_temperature(request: NozzleTemperatureRequest) -> bool:
+    return printer.set_nozzle_temperature(request.temperature)
 
+
+class PrintSpeedRequest(BaseModel):
+    speed_lvl: int
 
 @router.post("/printer/print/speed_lvl")
-async def set_print_speed(speed_lvl: int) -> bool:
-    return printer.set_print_speed(speed_lvl)
+async def set_print_speed(request: PrintSpeedRequest) -> bool:
+    return printer.set_print_speed(request.speed_lvl)
 
+
+class DeleteFileRequest(BaseModel):
+    file_path: str
 
 @router.post("/printer/file/delete")
-async def delete_file(file_path: str) -> str:
-    return printer.delete_file(file_path=file_path)
+async def delete_file(request: DeleteFileRequest) -> str:
+    return printer.delete_file(file_path=request.file_path)
 
+
+class CalibrationRequest(BaseModel):
+    bed_level: bool = True
+    motor_noise_calibration: bool = True
+    vibration_compensation: bool = True
 
 @router.post("/printer/calibration")
-async def calibrate_printer(bed_level: bool = True,
-                            motor_noise_calibration: bool = True,
-                            vibration_compensation: bool = True):
-    return printer.calibrate_printer(bed_level,
-                                     motor_noise_calibration,
-                                     vibration_compensation)
+async def calibrate_printer(request: CalibrationRequest):
+    return printer.calibrate_printer(request.bed_level,
+                                     request.motor_noise_calibration,
+                                     request.vibration_compensation)
 
 
 @router.post("/printer/filament/printer/load")
