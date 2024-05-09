@@ -15,13 +15,18 @@ channel = connection.channel()
 
 channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
 
-message = ' '.join(sys.argv[1:]) or "Hello World!"
+data = {
+    "gcode": "G28",
+    "filename": "test.gcode",
+    "printer_type": "p1p"
+}
+
 channel.basic_publish(
     exchange='',
     routing_key=RABBITMQ_QUEUE,
-    body=message,
+    body=json.dumps(data),
     properties=pika.BasicProperties(
         delivery_mode=pika.DeliveryMode.Persistent
     ))
-print(f" [x] Sent {message}")
+print(f" [x] Sent {data}")
 connection.close()
