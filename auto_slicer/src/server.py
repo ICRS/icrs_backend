@@ -19,7 +19,6 @@ from PIL import Image
 from .printer_asset_utils import AVAILABLE_LAYER_HEIGHT, AVAILABLE_PRINTERS, \
     get_machine, process_from_machine_layer, printer_pla
 
-from .gcode2png import GcodeRenderer
 
 router = APIRouter()
 
@@ -53,7 +52,19 @@ def render_gcode(filename: str) -> np.array:
     ----
         filename (str): filename of the gcode file
     """
-    renderer = GcodeRenderer()  # noqa: F841
+    # renderer = GcodeRenderer()  # noqa: F841
+    # img = renderer.run(
+    #     path=filename,
+    #     support=True,
+    #     moves=True,
+    #     bed=True,
+    #     show=False,
+    #     target="output.png",
+    #     imgx=600,
+    #     imgy=400,
+    # )
+    # print(img)
+    img = None
     return img
 
 
