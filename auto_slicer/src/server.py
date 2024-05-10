@@ -12,7 +12,7 @@ import shutil
 
 import pika
 import xml.etree.ElementTree as ET
-from fastapi import APIRouter, Query, Request, Response
+from fastapi import APIRouter, Query, Response
 
 from PIL import Image
 
@@ -30,7 +30,9 @@ RABBITMQ_QUEUE = rabbitmq_settings["QUEUE"]
 
 
 connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host=str(RABBITMQ_HOST), port=int(RABBITMQ_PORT)))
+    pika.ConnectionParameters(
+        host=str(RABBITMQ_HOST),
+        port=int(RABBITMQ_PORT)))
 channel = connection.channel()
 channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
 
@@ -43,7 +45,7 @@ def render_gcode(filename: str) -> np.array:
     ----
         filename (str): filename of the gcode file
     """
-    renderer = GcodeRenderer()
+    renderer = GcodeRenderer()  # noqa: F841
     # img = renderer.run(
     #     path=filename,
     #     support=True,
@@ -60,6 +62,16 @@ def render_gcode(filename: str) -> np.array:
 
 
 def gcode_time(filename: str) -> tuple[str] | None:
+    """
+    Get the model print time and estimated time from the gcode file
+
+    Args:
+        filename (str): filename of the gcode file
+
+    Returns:
+        tuple[str] | None: model print time and estimated time,
+            None if not found
+    """
     with open(filename, "r") as file:
         lines = file.readlines()[:4]
         for line in lines:
@@ -118,6 +130,28 @@ def slice_file_bin(
     process_path: str = "assets/process/0.28mm Extra Draft @BBL P1P.json",
     timeout: int = 60,
 ) -> subprocess.CompletedProcess[bytes]:
+    """
+    Slice the file using the bambu-studio binary
+
+    Args:
+        url (str): url of the file to download and print
+        filename (str): filename of the file
+        shortcode (str): shortcode of the user
+        infill (int, optional): infill percentage. Defaults to 15.
+        filament_path (str, optional): filament settings path.
+            Defaults to "assets/filament/Generic PLA.json".
+        machine_path (str, optional): machine settings path.
+            Defaults to "assets/machine/Bambu Lab P1P 0.4 nozzle.json".
+        process_path (str, optional): process settings path.
+            Defaults to "assets/process/0.28mm Extra Draft @BBL P1P.json".
+        timeout (int, optional): timeout of the process -
+            after timeout delete produced files. Defaults to 60.
+
+    Returns:
+        subprocess.CompletedProcess[bytes]: details of the completed
+            job/process
+    """
+
     folder_name = "tmp/" + generate_foldername(
         filename=filename,
         url=url,
@@ -205,7 +239,7 @@ async def slice_file(slice_request: SliceRequest) -> dict:
 
             model_time, estimated_time = gcode_time(
                 f"{folder_name}/plate_1.gcode")
-            
+
             try:
                 img = render_gcode(f"{folder_name}/plate_1.gcode")
                 # convert np.array to image in base64
@@ -217,29 +251,29 @@ async def slice_file(slice_request: SliceRequest) -> dict:
                     render_b64 = base64.b64encode(contents)
 
                 render_response = Response(render_b64,
-                                        media_type="image/jpeg")
+                                           media_type="image/jpeg")
             except Exception as e:
                 logging.exception(f"Render image failed: {e}")
                 render_response = None
 
             return_object = {
                 # "slice_result": dict(result),
-                    "filename": str(filename),
-                    "url": str(url),
-                    "shortcode": str(shortcode),
-                    "printer_type": str(printer_type),
-                    "layer_height": float(layer_height),
-                    "infill": int(infill),
-                    "plates": 1,
-                    "model_time": str(model_time),
-                    "estimated_time": str(estimated_time),
-                    "thumbnail": render_response,
-                    }
-            
+                "filename": str(filename),
+                "url": str(url),
+                "shortcode": str(shortcode),
+                "printer_type": str(printer_type),
+                "layer_height": float(layer_height),
+                "infill": int(infill),
+                "plates": 1,
+                "model_time": str(model_time),
+                "estimated_time": str(estimated_time),
+                "thumbnail": render_response,
+            }
+
             # requests.post(BOT_ENDPOINT+"/confirm", json=return_object)
 
             return return_object
-        
+
     except Exception as e:
         logging.exception(f"Slice file failed: {e}")
         pass
@@ -250,6 +284,7 @@ class ReleaseRequest(BaseModel):
     filename: str
     url: str
     release: bool = False
+
 
 @router.post("/slice/release")
 async def release_file(release_request: ReleaseRequest) -> dict:
@@ -262,20 +297,21 @@ async def release_file(release_request: ReleaseRequest) -> dict:
     try:
         if release:
             folder_name = "tmp/" + \
-                generate_foldername(filename=filename, url=url, shortcode=shortcode)
+                generate_foldername(filename=filename,
+                                    url=url, shortcode=shortcode)
             shutil.move(folder_name, "sliced")
             # =================================================================================
             data = {
-                "gcode": "",            # gcode should be str or bytes
-                "filename": "",         # filename should be the file we want saved on the printer
-                "printer_type": "",     # printer_type should be the printer type ("p1p" or "p1s" atm)
+                "gcode": "",        # noqa: gcode should be str or bytes
+                "filename": "",     # noqa: filename should be the file we want saved on the printer
+                "printer_type": "",  # noqa: printer_type should be the printer type ("p1p" or "p1s" atm)
             }
             data["filename"] = filename
             data["printer_type"] = "p1p"        # TODO: Confirm printer type
             with open(filename, "r") as f:      # TODO: Confirm file path
                 gcode = f.read()
                 data["gcode"] = str(gcode)
-            
+
             channel.basic_publish(
                 exchange='',
                 routing_key=RABBITMQ_QUEUE,
@@ -284,7 +320,9 @@ async def release_file(release_request: ReleaseRequest) -> dict:
                     delivery_mode=pika.DeliveryMode.Persistent
                 ))
             # =================================================================================
-            logging.info(f" [x] Sent Data({data["filename"]}) to RabbitMQ({RABBITMQ_QUEUE})")
+            logging.info(
+                f" [x] Sent Data({data['filename']}) to RabbitMQ({RABBITMQ_QUEUE})"  # noqa
+            )
 
         return {"status": "success"}
     except Exception as e:
