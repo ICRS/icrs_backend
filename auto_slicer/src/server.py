@@ -306,16 +306,14 @@ async def release_file(release_request: ReleaseRequest) -> dict:
             folder_name = "tmp/" + \
                 generate_foldername(filename=filename,
                                     url=url, shortcode=shortcode)
-            shutil.move(folder_name, "sliced")
             # =================================================================================
             data = {
                 "gcode": "",        # noqa: gcode should be str or bytes
-                "filename": "",     # noqa: filename should be the file we want saved on the printer
+                "filename": filename,
                 "printer_type": "",  # noqa: printer_type should be the printer type ("p1p" or "p1s" atm)
             }
-            data["filename"] = filename
             data["printer_type"] = "p1p"        # TODO: Confirm printer type
-            with open(filename, "r") as f:      # TODO: Confirm file path
+            with open(f"{folder_name}/plate_1.gcode", "r") as f:
                 gcode = f.read()
                 data["gcode"] = str(gcode)
 
