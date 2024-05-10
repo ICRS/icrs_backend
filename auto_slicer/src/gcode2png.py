@@ -9,6 +9,7 @@ from tvtk.api import tvtk
 
 from .gcodeParser import GcodeParser, preg_match
 
+
 logger = logging.getLogger(__name__)
 FORMAT = (
     "[%(asctime)s %(filename)s->%(funcName)s():%(lineno)s]%(levelname)s: %(message)s" # noqa
