@@ -23,15 +23,24 @@ from .printer_asset_utils import AVAILABLE_LAYER_HEIGHT, AVAILABLE_PRINTERS, \
 router = APIRouter()
 
 rabbitmq_settings = json.load(open("rabbitmq.json", "r", encoding="utf-8"))
-RABBITMQ_HOST = rabbitmq_settings["ENDPOINT"]
-RABBITMQ_PORT = rabbitmq_settings["PORT"]
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST")
+RABBITMQ_PORT = os.getenv("RABBITMQ_PORT")
+RABBITMQ_USERNAME = os.getenv("RABBITMQ_USERNAME")
+RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD")
 RABBITMQ_QUEUE = rabbitmq_settings["QUEUE"]
 
+credentials = pika.PlainCredentials(
+    username=str(RABBITMQ_USERNAME), 
+    password=str(RABBITMQ_PASSWORD)
+)
 
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(
         host=str(RABBITMQ_HOST),
-        port=int(RABBITMQ_PORT)))
+        port=int(RABBITMQ_PORT),
+        credentials=credentials
+    )
+)
 channel = connection.channel()
 channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
 
