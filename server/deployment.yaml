@@ -34,6 +34,12 @@ spec:
             secretKeyRef:
               name: access-server-secret
               key: env
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: imperial-secret
+              key: api_key
+
       volumes:
         - name: postgres-ini 
           secret:
