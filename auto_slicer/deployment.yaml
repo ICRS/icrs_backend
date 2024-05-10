@@ -18,6 +18,8 @@ spec:
         ports:
         - containerPort: 80  # Port your Python application is listening on
         imagePullPolicy: "Always"
+      nodeSelector:
+        kubernetes.io/arch: arm64
 
 ---
 apiVersion: v1
