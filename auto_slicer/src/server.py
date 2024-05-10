@@ -34,16 +34,6 @@ credentials = pika.PlainCredentials(
     password=str(RABBITMQ_PASSWORD)
 )
 
-connection = pika.BlockingConnection(
-    pika.ConnectionParameters(
-        host=str(RABBITMQ_HOST),
-        port=int(RABBITMQ_PORT),
-        credentials=credentials
-    )
-)
-channel = connection.channel()
-channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
-
 
 def render_gcode(filename: str) -> np.array:
     """
@@ -251,7 +241,8 @@ async def slice_file(slice_request: SliceRequest) -> dict:
             try:
                 img = render_gcode(f"{folder_name}/plate_1.gcode")
                 # convert np.array to image in base64
-                img = Image.fromarray(img)
+                if img:
+                    img = Image.fromarray(img)
 
                 with BytesIO() as output:
                     img.save(output, format="JPEG")
@@ -318,13 +309,27 @@ async def release_file(release_request: ReleaseRequest) -> dict:
                 gcode = f.read()
                 data["gcode"] = str(gcode)
 
+            connection = pika.BlockingConnection(
+                pika.ConnectionParameters(
+                    host=str(RABBITMQ_HOST),
+                    port=int(RABBITMQ_PORT),
+                    credentials=credentials
+                )
+            )
+            
+            channel = connection.channel()
+            channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
+
             channel.basic_publish(
                 exchange='',
                 routing_key=RABBITMQ_QUEUE,
                 body=json.dumps(data),
                 properties=pika.BasicProperties(
                     delivery_mode=pika.DeliveryMode.Persistent
-                ))
+                )
+            )
+            
+            connection.close()
             # =================================================================================
             logging.info(
                 f" [x] Sent Data({data['filename']}) to RabbitMQ({RABBITMQ_QUEUE})"  # noqa
