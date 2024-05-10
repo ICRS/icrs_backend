@@ -1,6 +1,6 @@
 import math
 import re
-import numpy as np
+import logging
 
 
 def preg_match(rex, s, m, opts={}):
@@ -39,9 +39,9 @@ class GcodeParser:
 
     def parseLine(self):
         # strip comments:
-        ## first handle round brackets
-        command = re.sub("\([^)]*\)", "", self.line)
-        ## then semicolons
+        # # first handle round brackets
+        command = re.sub("\([^)]*\)", "", self.line) # noqa
+        # # then semicolons
         idx = command.find(";")
         if idx >= 0:  # -- any comment to parse?
             m = []
@@ -59,7 +59,7 @@ class GcodeParser:
             # elif preg_match(r'; (\w+):\s*"?(\d+)"?',command,m):
             # 	self.metadata[m[1]] = m[2]
             command = command[0:idx].strip()
-        ## detect unterminated round bracket comments, just in case
+        # # detect unterminated round bracket comments, just in case
         idx = command.find("(")
         if idx >= 0:
             self.warn("Stripping unterminated round-bracket comment")
@@ -143,10 +143,10 @@ class GcodeParser:
         self.model.do_G92(self.parseArgs(args))
 
     def warn(self, msg):
-        print("[WARN] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line))
+        logging.warning("Line %d: %s (Text:'%s')", self.lineNb, msg, self.line)
 
     def error(self, msg):
-        print("[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line))
+        logging.error("Line %d: %s (Text:'%s')", self.lineNb, msg, self.line)
         raise Exception(
             "[ERROR] Line %d: %s (Text:'%s')" % (self.lineNb, msg, self.line)
         )
@@ -257,7 +257,8 @@ class GcodeModel:
         yp = self.relative["Y"] + coords["J"]
         es = self.relative["E"]
         ep = coords["E"] - es
-        as_ = math.atan2(-coords["J"], -coords["I"])  # -- angle start (current pos)
+        # -- angle start (current pos)
+        as_ = math.atan2(-coords["J"], -coords["I"])
         ae_ = math.atan2(
             coords["Y"] - yp, coords["X"] - xp
         )  # -- angle end (new position)
@@ -271,7 +272,9 @@ class GcodeModel:
                 as_ += math.pi * 2
             al = abs(ae_ - as_) * dir
         n = int(abs(al) * da / 0.5)
-        # if coords['Z']<0.4 or coords['Z']==2.3: print(type,dir,n,np.degrees(as_),np.degrees(ae_),al,coords['Z'],"\n",self.relative,"\n",args)
+        # if coords['Z']<0.4 or coords['Z']==2.3:
+        # print(type,dir,n,np.degrees(as_),
+        # np.degrees(ae_),al,coords['Z'],"\n",self.relative,"\n",args)
         if n > 0:
             for i in range(1, n + 1):
                 f = i / n
@@ -287,7 +290,8 @@ class GcodeModel:
                     "F": coords["F"],  # no feedrate offset
                     "E": self.offset["E"] + coords["E"],
                 }
-                seg = Segment(type, absolute, self.parser.lineNb, self.parser.line)
+                seg = Segment(type, absolute, self.parser.lineNb,
+                              self.parser.line)
                 self.addSegment(seg)
                 # update model coords
                 self.relative = coords
@@ -298,7 +302,8 @@ class GcodeModel:
 
     def do_G92(self, args):
         # G92: Set Position
-        # this changes the current coords, without moving, so do not generate a segment
+        # this changes the current coords, without moving,
+        # so do not generate a segment
 
         # no axes mentioned == all axes to 0
         if not len(args.keys()):
@@ -347,16 +352,21 @@ class GcodeModel:
                 and (seg.coords["Y"] == coords["Y"])
                 and (seg.coords["E"] != coords["E"])
             ):
-                style = "retract" if (seg.coords["E"] < coords["E"]) else "restore"
+                style = "retract" if (
+                    seg.coords["E"] < coords["E"]) else "restore"
 
-            # some horizontal movement, and positive extruder movement: extrusion
+            # some horizontal movement, and positive extruder movement:
+            # extrusion
             if (
-                (seg.coords["X"] != coords["X"]) or (seg.coords["Y"] != coords["Y"])
+                (seg.coords["X"] != coords["X"]) or (
+                    seg.coords["Y"] != coords["Y"])
             ) and (seg.coords["E"] > coords["E"]):
                 style = "extrude"
 
-            # positive extruder movement in a different Z signals a layer change for this segment
-            if (seg.coords["E"] > coords["E"]) and (seg.coords["Z"] != currentLayerZ):
+            # positive extruder movement in a different Z signals a
+            # layer change for this segment
+            if (seg.coords["E"] > coords["E"]) and (seg.coords["Z"] !=
+                                                    currentLayerZ):
                 currentLayerZ = seg.coords["Z"]
                 currentLayerIdx += 1
 
@@ -440,8 +450,10 @@ class GcodeModel:
                 seg.distance = math.sqrt(d)
 
                 # for k in ['X','Y','Z']:
-                # 	if layer.range[k].max < coords[k]: layer.range[k].max = coords[k]
-                # 	if layer.range[k].min > coords[k]: layer.range[k].min = coords[k]
+                # 	if layer.range[k].max < coords[k]:
+                # layer.range[k].max = coords[k]
+                # 	if layer.range[k].min > coords[k]:
+                # layer.range[k].min = coords[k]
 
                 # calc extrudate
                 seg.extrudate = seg.coords["E"] - coords["E"]
@@ -457,7 +469,8 @@ class GcodeModel:
                 extend(self.bbox, coords)
 
                 if seg.extrudate > 0:
-                    extend(layer.bbox, coords)  # -- layer bbox is only when extruding
+                    # -- layer bbox is only when extruding
+                    extend(layer.bbox, coords)
 
             layer.end = coords
 
@@ -472,14 +485,10 @@ class GcodeModel:
 
     def __str__(self):
         return (
-            "<GcodeModel: len(segments)=%d, len(layers)=%d, distance=%f, extrudate=%f, bbox=%s>"
-            % (
-                len(self.segments),
-                len(self.layers),
-                self.distance,
-                self.extrudate,
-                self.bbox,
-            )
+            f"<GcodeModel: len(segments)={len(self.segments)}, " +
+            f"len(layers)={len(self.layers)}, " +
+            f"distance={self.distance}, extrudate={self.extrudate}, " +
+            f"bbox={self.bbox}>"
         )
 
 
@@ -496,15 +505,9 @@ class Segment:
 
     def __str__(self):
         return (
-            "<Segment: type=%s, lineNb=%d, style=%s, layerIdx=%d, distance=%f, extrudate=%f>"
-            % (
-                self.type,
-                self.lineNb,
-                self.style,
-                self.layerIdx,
-                self.distance,
-                self.extrudate,
-            )
+            f"<Segment: type={self.type}, lineNb={self.lineNb}," +
+            f"style={self.style}, layerIdx={self.layerIdx}," +
+            f"distance={self.distance}, extrudate={self.extrudate}>"
         )
 
 
