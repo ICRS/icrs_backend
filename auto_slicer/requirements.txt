@@ -4,7 +4,4 @@ uvicorn
 python-multipart
 requests
 pika
-click
-mayavi
 numpy
-vtk==9.2.6
