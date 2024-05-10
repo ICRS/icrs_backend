@@ -21,6 +21,26 @@ spec:
         env:
         - name: TZ
           value: Europe/London
+        - name: RABBITMQ_HOST
+          valueFrom:
+            secretKeyRef:
+              name:  print-queue-default-user 
+              key: host
+        - name: RABBITMQ_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name:  print-queue-default-user 
+              key: username
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name:  print-queue-default-user 
+              key: password
+        - name: RABBITMQ_PORT
+          valueFrom:
+            secretKeyRef:
+              name:  print-queue-default-user 
+              key: port
         volumeMounts:
           - name: rabbitmq-config 
             mountPath: /app/squashfs-root/bin/rabbitmq.json
