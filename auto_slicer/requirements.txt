@@ -1,0 +1,7 @@
+python-dotenv==1.0.0
+fastapi
+uvicorn
+python-multipart
+requests
+pika
+numpy
