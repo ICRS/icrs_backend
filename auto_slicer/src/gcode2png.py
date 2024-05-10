@@ -1,21 +1,20 @@
+import os
 import click
 import logging
 import math
 import sys
-import os
-import re
 
 from mayavi import mlab
 from tvtk.api import tvtk
 
-from .gcodeParser import *
+from .gcodeParser import GcodeParser, preg_match
 
 logger = logging.getLogger(__name__)
 FORMAT = (
-    "[%(asctime)s %(filename)s->%(funcName)s():%(lineno)s]%(levelname)s: %(message)s"
+    "[%(asctime)s %(filename)s->%(funcName)s():%(lineno)s]%(levelname)s: %(message)s" # noqa
 )
 logging.basicConfig(format=FORMAT)
-logger.setLevel(os.environ.get("LOGLEVEL", "INFO"))  # notice, DEBUG is SUPER slow
+logger.setLevel(os.environ.get("LOGLEVEL", "INFO"))  # noqa: notice, DEBUG is SUPER slow 
 
 logger2 = logging.getLogger("tvtk")
 logger2.setLevel(level=logging.CRITICAL)
@@ -48,15 +47,11 @@ class GcodeRenderer:
         self.coords["support"]["z"] = [0]
 
         self.bedsize = [250, 210]  # should match bed_texture.jpg
-        black = (0, 0, 0)
-        white = (1, 1, 1)
         red = (1, 0, 0)
-        orange = (1, 0.5, 0)
         lightgrey = (0.7529, 0.7529, 0.7529)
         blue = (0, 0.4980, 0.9960)
         mediumgrey = (0.7, 0.7, 0.7)
         darkgrey1 = (0.4509, 0.4509, 0.4509)
-        darkgrey2 = (0.5490, 0.5490, 0.5490)
 
         self.bgcolor = darkgrey1
         self.supportcolor = lightgrey
@@ -84,7 +79,8 @@ class GcodeRenderer:
             support(bool): render supports
             moves(bool): render moves
             bed(bool): render bed
-            show(bool): if set to true then show only window with preview, without file save
+            show(bool): if set to true then show only window with preview,
+                without file save
             target(str): filename to write output image, if set
             imgx(int): image size x to render (pixels)
             imgy(int): image size y to render (pixels)
@@ -112,8 +108,6 @@ class GcodeRenderer:
         self.plotSupport()
         self.generateScene()
 
-        # self.save()
-
         self.showScene()
 
         mlab.close(all=True)
@@ -139,7 +133,7 @@ class GcodeRenderer:
             rule = "support"
 
         elif preg_match(
-            r"(bridge|external|fill|infill|overhang|perimeter|skin|solid|top|wal)",
+            r"(bridge|external|fill|infill|overhang|perimeter|skin|solid|top|wal)",  # noqa
             segment.type,
             m,
         ):
@@ -178,7 +172,8 @@ class GcodeRenderer:
     def createScene(self):
         """Create 3D scene in mayavi"""
         logger.info("creating scene")
-        fig1 = mlab.figure(bgcolor=self.bgcolor, size=(self.imgwidth, self.imgheight))
+        fig1 = mlab.figure(bgcolor=self.bgcolor, size=(
+            self.imgwidth, self.imgheight))
         fig1.scene.parallel_projection = False
         fig1.scene.render_window.point_smoothing = False
         fig1.scene.render_window.line_smoothing = False
@@ -224,8 +219,10 @@ class GcodeRenderer:
 
         logger.info("done")
 
-    def plotModel(self):
-        """Generate layers defined as objects without supports or other moves"""
+    def plotModel(self) -> None:
+        """
+        Generate layers defined as objects without supports or other moves
+        """
         logger.info(
             "object x/y/z = %s/%s/%s"
             % (
@@ -240,7 +237,7 @@ class GcodeRenderer:
             return
 
         logger.info(
-            "dropping first 5 lines from model to avoid rendering weird purge lines"
+            "dropping first 5 lines from model to avoid rendering weird purge lines"  # noqa
         )
         for i in range(5):
             if len(self.coords["object"]["x"]) > 0:
@@ -329,7 +326,8 @@ class GcodeRenderer:
 
         # get printed object min/max dimensions, will be used to
         # calculate automatically best camera position
-        # notice that if model is misplaced then it will be not on the bed, but we still want to see the preview.
+        # notice that if model is misplaced then it will be not on the bed,
+        # but we still want to see the preview.
 
         x_min = min(self.coords["object"]["x"])
         x_max = max(self.coords["object"]["x"])
@@ -350,8 +348,12 @@ class GcodeRenderer:
             + math.pow(dimension_z, 2)
         )
         focalpoint = (obj_pos_x, obj_pos_y, obj_pos_z)
-        # 225,45 is standard PrusaSlicer preview angle from point 0,0 but way higher, towards the center of the print object
-        mlab.view(azimuth=225, elevation=45, distance=distance, focalpoint=focalpoint)
+        # 225,45 is standard PrusaSlicer preview angle from point 0,0
+        # but way higher, towards the center of the print object
+        mlab.view(azimuth=225,
+                  elevation=45,
+                  distance=distance,
+                  focalpoint=focalpoint)
         logger.info("done")
 
     def showScene(self):
