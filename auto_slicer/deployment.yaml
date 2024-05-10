@@ -18,8 +18,24 @@ spec:
         ports:
         - containerPort: 80  # Port your Python application is listening on
         imagePullPolicy: "Always"
+        env:
+        - name: TZ
+          value: Europe/London
+        volumeMounts:
+          - name: rabbitmq-config 
+            mountPath: /app/squashfs-root/bin/rabbitmq.json
+            subPath: rabbitmq.json
       nodeSelector:
         kubernetes.io/arch: amd64
+
+      volumes:
+        - name: rabbitmq-config 
+          secret:
+            secretName: rabbitmq-secret 
+            items:
+              - key: rabbitmq.json
+                path: rabbitmq.json
+
 
 ---
 apiVersion: v1
