@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auto-slicer-deployment
+spec:
+  replicas: 1  # Number of replicas you want to run
+  selector:
+    matchLabels:
+      app: auto-slicer
+  template:
+    metadata:
+      labels:
+        app: auto-slicer
+    spec:
+      containers:
+      - name: auto-slicer
+        image: localhost:32000/auto-slicer  # Replace with your Python Docker image and tag
+        ports:
+        - containerPort: 80  # Port your Python application is listening on
+        imagePullPolicy: "Always"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auto-slicer-service
+spec:
+  selector:
+    app: auto-slicer
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
