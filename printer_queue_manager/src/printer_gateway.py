@@ -1,4 +1,5 @@
 import requests
+import logging
 
 import bambulabs_api as blapi
 from fastapi import UploadFile
@@ -30,7 +31,7 @@ class PrinterGateway:
             The remaining time of the print job
         """
         response = requests.get(
-            f"http://{self.printer_url}/time"
+            f"http://{self.printer_url}/printer/status/time"
         )
         if response.status_code != 200:
             return -1
@@ -48,7 +49,7 @@ class PrinterGateway:
             The percentage of the print job
         """
         response = requests.get(
-            f"http://{self.printer_url}/percentage")
+            f"http://{self.printer_url}/printer/status/percentage")
         if response.status_code != 200:
             return -1
         r = response.json()
@@ -65,8 +66,9 @@ class PrinterGateway:
         str
             The state of the printer
         """
-        response = requests.get(
-            f"http://{self.printer_url}/state")
+        url = f"http://{self.printer_url}/printer/status/state"
+        response = requests.get(url)
+        logging.info(f"Update State {url}: {response}")
         if response.status_code != 200:
             return "UNKNOWN"
         r: dict = response.json()
