@@ -241,16 +241,18 @@ async def slice_file(slice_request: SliceRequest) -> dict:
             try:
                 img = render_gcode(f"{folder_name}/plate_1.gcode")
                 # convert np.array to image in base64
+                render_response = None
+                
                 if img:
                     img = Image.fromarray(img)
 
-                with BytesIO() as output:
-                    img.save(output, format="JPEG")
-                    contents = output.getvalue()
-                    render_b64 = base64.b64encode(contents)
+                    with BytesIO() as output:
+                        img.save(output, format="JPEG")
+                        contents = output.getvalue()
+                        render_b64 = base64.b64encode(contents)
 
-                render_response = Response(render_b64,
-                                           media_type="image/jpeg")
+                    render_response = Response(render_b64,
+                                            media_type="image/jpeg")
             except Exception as e:
                 logging.exception(f"Render image failed: {e}")
                 render_response = None
