@@ -1,5 +1,5 @@
-import json
 import requests
+import logging
 
 import bambulabs_api as blapi
 from fastapi import UploadFile
@@ -31,7 +31,7 @@ class PrinterGateway:
             The remaining time of the print job
         """
         response = requests.get(
-            f"http://{self.printer_url}/time"
+            f"http://{self.printer_url}/printer/status/time"
         )
         if response.status_code != 200:
             return -1
@@ -49,28 +49,13 @@ class PrinterGateway:
             The percentage of the print job
         """
         response = requests.get(
-            f"http://{self.printer_url}/percentage")
+            f"http://{self.printer_url}/printer/status/percentage")
         if response.status_code != 200:
             return -1
         r = response.json()
-        self.data.update({"percentage": r['percentage'] if 'percentage' in r else -1})
+        self.data.update(
+            {"percentage": r['percentage'] if 'percentage' in r else -1})
         return self.data.get("percentage", -1)
-
-    def get_frame(self) -> str | None:
-        """
-        Get the frame of the print job
-
-        Returns
-        -------
-        str
-            The frame of the print job
-        """
-        response = requests.get(f"http://{self.printer_url}/printer/camera")
-        if response.status_code != 200:
-            return None
-        r: dict = response.json()
-        self.data.update({"frame": r['frame'].get("body", "") if 'frame' in r else None})
-        return self.data.get("frame", None)
 
     def get_state(self) -> str:
         """
@@ -81,14 +66,15 @@ class PrinterGateway:
         str
             The state of the printer
         """
-        response = requests.get(
-            f"http://{self.printer_url}/state")
+        url = f"http://{self.printer_url}/printer/status/state"
+        response = requests.get(url)
+        logging.info(f"Update State {url}: {response}")
         if response.status_code != 200:
             return "UNKNOWN"
         r: dict = response.json()
         self.data.update({"state": blapi.GcodeState(r.get("state", "IDLE"))})
         return r.get("state", blapi.GcodeState.IDLE)
-    
+
     def upload_gcode(self, gcode: UploadFile) -> None:
         """
         Upload the gcode to the printer
@@ -104,7 +90,7 @@ class PrinterGateway:
         )
         if response.status_code != 200:
             raise Exception("Error uploading gcode")
-    
+
     def start_print(self, filename: str, plater_number: int) -> None:
         """
         Start the print job
@@ -123,33 +109,3 @@ class PrinterGateway:
         if response.status_code != 200:
             raise Exception("Error starting print job")
         self.data.update({"state": blapi.GcodeState.RUNNING})
-    
-    def stop_print(self) -> None:
-        """
-        Stop the print job
-        """
-        response = requests.post(
-            f"http://{self.printer_url}/printer/print/stop"
-        )
-        if response.status_code != 200:
-            raise Exception("Error stopping print job")
-    
-    def pause_print(self) -> None:
-        """
-        Pause the print job
-        """
-        response = requests.post(
-            f"http://{self.printer_url}/printer/print/pause"
-        )
-        if response.status_code != 200:
-            raise Exception("Error pausing print job")
-    
-    def resume_print(self) -> None:
-        """
-        Resume the print job
-        """
-        response = requests.post(
-            f"http://{self.printer_url}/printer/print/resume"
-        )
-        if response.status_code != 200:
-            raise Exception("Error resuming print job")

@@ -1,6 +1,5 @@
 import json
 import pika
-import sys
 
 
 rabbitmq_settings = json.load(open("rabbitmq.json", "r", encoding="utf-8"))
