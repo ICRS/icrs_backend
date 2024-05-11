@@ -24,9 +24,16 @@ __all__ = ["QueueManager"]
 class QueueManager:
     def __init__(self, printer_names: list[str],
                  printer_suffix: str,
+                 rabbitmq_username: str,
+                 rabbitmq_password: str,
                  rabbitmq_host: str = "localhost",
                  rabbitmq_port: int = 5672,
-                 rabbitmq_queue: str = "print_queue") -> None:
+                 rabbitmq_queue: str = "print_queue"
+                 ) -> None:
+
+        self.rabbitmq_username = rabbitmq_username
+        self.rabbitmq_password = rabbitmq_password
+
         self.rabbitmq_host = rabbitmq_host
         self.rabbitmq_port = rabbitmq_port
         self.rabbitmq_queue = rabbitmq_queue
@@ -34,12 +41,19 @@ class QueueManager:
             printer_names, printer_suffix, address=DEBUG)
         logging.info(str(self.printer_farm))
         self.running = True
+
+        self.rabbitmq_credentials = pika.PlainCredentials(
+            username=self.rabbitmq_username,
+            password=self.rabbitmq_password
+        )
         self.rabbitmq_connection = pika.BlockingConnection(
             pika.ConnectionParameters(
                 host=str(self.rabbitmq_host),
-                port=int(self.rabbitmq_port)
+                port=int(self.rabbitmq_port),
+                credentials=self.rabbitmq_credentials,
             )
         )
+
         self.rabbitmq_channel = self.rabbitmq_connection.channel()
         self.rabbitmq_channel.queue_declare(queue=self.rabbitmq_queue,
                                             durable=True)
