@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: icrsbot-printer-queue-manager-deployment
 spec:
-  replicas: 1  # Number of replicas you want to run
+  replicas: 1 # Number of replicas you want to run
   selector:
     matchLabels:
       app: icrsbot-printer-queue-manager
@@ -13,16 +13,43 @@ spec:
         app: icrsbot-printer-queue-manager
     spec:
       containers:
-      - name: icrsbot-printer-queue-manager
-        image: localhost:32000/icrsbot-printer-queue-manager  # Replace with your Python Docker image and tag
-        ports:
-        - containerPort: 5000  # Port your Python application is listening on
-        imagePullPolicy: "Always"
-        volumeMounts:
-        - name: printer-config
-          mountPath: /app/settings.json
-          subPath: settings.json
-          readOnly: true
+        - name: icrsbot-printer-queue-manager
+          image: localhost:32000/icrsbot-printer-queue-manager # Replace with your Python Docker image and tag
+          ports:
+            - containerPort: 5000 # Port your Python application is listening on
+          imagePullPolicy: "Always"
+          env:
+            - name: TZ
+              value: Europe/London
+            - name: RABBITMQ_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: print-queue-default-user
+                  key: host
+            - name: RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: print-queue-default-user
+                  key: username
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: print-queue-default-user
+                  key: password
+            - name: RABBITMQ_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: print-queue-default-user
+                  key: port
+          volumeMounts:
+            - name: printer-config
+              mountPath: /app/settings.json
+              subPath: settings.json
+              readOnly: true
+            - name: rabbitmq-config
+              mountPath: /app/squashfs-root/bin/rabbitmq.json
+              subPath: rabbitmq.json
+
       volumes:
         - name: printer-config
           configMap:
@@ -30,3 +57,23 @@ spec:
             items:
               - key: printer_config
                 path: settings.json
+        - name: rabbitmq-config
+          secret:
+            secretName: rabbitmq-secret
+            items:
+              - key: rabbitmq.json
+                path: rabbitmq.json
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: icrsbot-printer-queue-manager-service
+spec:
+  selector:
+    app: icrsbot-printer-queue-manager
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
