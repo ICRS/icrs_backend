@@ -56,23 +56,6 @@ class PrinterGateway:
             {"percentage": r['percentage'] if 'percentage' in r else -1})
         return self.data.get("percentage", -1)
 
-    def get_frame(self) -> str | None:
-        """
-        Get the frame of the print job
-
-        Returns
-        -------
-        str
-            The frame of the print job
-        """
-        response = requests.get(f"http://{self.printer_url}/printer/camera")
-        if response.status_code != 200:
-            return None
-        r: dict = response.json()
-        self.data.update({"frame": r['frame'].get(
-            "body", "") if 'frame' in r else None})
-        return self.data.get("frame", None)
-
     def get_state(self) -> str:
         """
         Get the state of the printer
@@ -124,33 +107,3 @@ class PrinterGateway:
         if response.status_code != 200:
             raise Exception("Error starting print job")
         self.data.update({"state": blapi.GcodeState.RUNNING})
-
-    def stop_print(self) -> None:
-        """
-        Stop the print job
-        """
-        response = requests.post(
-            f"http://{self.printer_url}/printer/print/stop"
-        )
-        if response.status_code != 200:
-            raise Exception("Error stopping print job")
-
-    def pause_print(self) -> None:
-        """
-        Pause the print job
-        """
-        response = requests.post(
-            f"http://{self.printer_url}/printer/print/pause"
-        )
-        if response.status_code != 200:
-            raise Exception("Error pausing print job")
-
-    def resume_print(self) -> None:
-        """
-        Resume the print job
-        """
-        response = requests.post(
-            f"http://{self.printer_url}/printer/print/resume"
-        )
-        if response.status_code != 200:
-            raise Exception("Error resuming print job")
