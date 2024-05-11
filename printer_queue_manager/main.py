@@ -30,8 +30,12 @@ logging.basicConfig(
     ])
 
 if __name__ == '__main__':
-    queue_manager = QueueManager(PRINTER_NAMES,
-                                 PRINTER_GATEWAY_ENDPOINT_SUFFIX,
-                                 RABBITMQ_HOST,
-                                 RABBITMQ_PORT,
-                                 RABBITMQ_QUEUE)
+    queue_manager = QueueManager(
+        printer_names=PRINTER_NAMES,
+        printer_suffix=PRINTER_GATEWAY_ENDPOINT_SUFFIX,
+        rabbitmq_username=RABBITMQ_USERNAME,
+        rabbitmq_password=RABBITMQ_PASSWORD,
+        rabbitmq_host=RABBITMQ_HOST,
+        rabbitmq_port=RABBITMQ_PORT,
+        rabbitmq_queue=RABBITMQ_QUEUE
+    )
