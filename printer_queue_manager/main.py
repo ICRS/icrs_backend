@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 
@@ -8,10 +9,17 @@ settings = json.load(open("endpoints.json", "r", encoding="utf-8"))
 PRINTER_NAMES = list(settings["PRINTER_NAMES"])
 PRINTER_GATEWAY_ENDPOINT_SUFFIX = settings["PRINTER_GATEWAY_ENDPOINT_SUFFIX"]
 
+# =============================================================================
+# RabbitMQ Settings
+# =============================================================================
 rabbitmq_settings = json.load(open("rabbitmq.json", "r", encoding="utf-8"))
-RABBITMQ_HOST = rabbitmq_settings["ENDPOINT"]
-RABBITMQ_PORT = rabbitmq_settings["PORT"]
 RABBITMQ_QUEUE = rabbitmq_settings["QUEUE"]
+
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST")
+RABBITMQ_PORT = os.getenv("RABBITMQ_PORT")
+RABBITMQ_USERNAME = os.getenv("RABBITMQ_USERNAME")
+RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD")
+# =============================================================================
 
 logging.basicConfig(
     level=logging.INFO,
