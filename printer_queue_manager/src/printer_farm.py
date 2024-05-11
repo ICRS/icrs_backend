@@ -34,11 +34,11 @@ class PrinterFarm:
                         "Error handling printer %s: %s", printer, str(e))
             time.sleep(5)
 
-    def printer_exists(func):                                   # noqa # pylint: disable=missing-function-docstring, no-self-argument
+    def printer_exists(func):  # noqa # pylint: disable=missing-function-docstring, no-self-argument
         def wrapper(self, printer_name, attr):
             if printer_name not in self.printers:
                 raise Exception("Printer not found")
-            return func(self, printer_name, attr)               # noqa # pylint: disable=not-callable
+            return func(self, printer_name, attr)  # noqa # pylint: disable=not-callable
         return wrapper
 
     def get_printers(self, printer_type: str = None) -> list[PrinterGateway]:      # noqa # pylint: disable=redefined-builtin

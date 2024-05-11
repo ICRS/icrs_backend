@@ -6,6 +6,7 @@ import time
 
 import pika
 import pika.channel
+import pika.spec
 import pika.delivery_mode
 import bambulabs_api as blapi
 
@@ -66,9 +67,10 @@ class QueueManager:
         self.rabbitmq_channel.start_consuming()
 
     def rabbit_callback(
-            self, ch: pika.channel.Channel,
-            method,
-            properties,
+            self,
+            ch: pika.channel.Channel,
+            method: pika.spec.Basic.Deliver,
+            properties: pika.spec.BasicProperties,
             body: bytes):
         # Decode bytes sent from rabbitmq queue
         data: str = body.decode()
@@ -100,6 +102,8 @@ class QueueManager:
         if not self.queue_printer(printer_type, filename, gcode):
             logging.error(f"No available printers: {printer_type}")
             ch.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
+            # Sleep for 5 seconds before returning to avoid
+            # overloading the queue
             time.sleep(5)
             return
 
@@ -112,7 +116,7 @@ class QueueManager:
             printer_type: str,
             filename: str,
             gcode: str) -> bool:
-        # Find available rinter and send gcode and start
+        # Find available printer and send gcode and start
         printers: list[str] = self.printer_farm.get_printers(
             printer_type=printer_type)
         if not printers:
