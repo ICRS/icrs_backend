@@ -1,4 +1,3 @@
-import os
 from typing import BinaryIO
 import dotenv
 import logging
@@ -17,6 +16,7 @@ logging.basicConfig(level=logging.INFO)
 router = APIRouter()
 
 state = blapi.GcodeState.IDLE
+
 
 @router.get("/time")
 async def printer_get_time() -> dict:
@@ -121,7 +121,7 @@ async def printer_led_off():
 async def upload_gcode_file(file: UploadFile):
     try:
         logging.info(f"Uploaded gcode file: {file}")
-        io_file: BinaryIO = file.file
+        io_file: BinaryIO = file.file  # noqa: F841
         if file.filename:
             return True
 
@@ -138,29 +138,31 @@ class StartPrintRequest(BaseModel):
     filename: str
     plate_number: int
 
+
 @router.post("/printer/print/start")
 async def start_print(request: StartPrintRequest):
     global state
-    logging.info(f"Starting {request.filename} on plate {request.plate_number}")
-    state=blapi.GcodeState.RUNNING
+    logging.info(
+        f"Starting {request.filename} on plate {request.plate_number}")
+    state = blapi.GcodeState.RUNNING
 
 
 @router.post("/printer/print/stop")
 async def stop_print():
     global state
-    state=blapi.GcodeState.IDLE
+    state = blapi.GcodeState.IDLE
 
 
 @router.post("/printer/print/pause")
 async def pause_print():
     global state
-    state=blapi.GcodeState.PAUSE
+    state = blapi.GcodeState.PAUSE
 
 
 @router.post("/printer/print/resume")
 async def resume_print():
     global state
-    state=blapi.GcodeState.RUNNING
+    state = blapi.GcodeState.RUNNING
 
 
 @router.post("/printer/bed/temperature")
