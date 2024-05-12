@@ -78,6 +78,7 @@ class PrinterGateway:
         return r.get("state", blapi.GcodeState.IDLE)
 
     def create_zip_archive_in_memory(
+        self, 
         text_content, 
         text_file_name='file.txt'):
         
@@ -98,8 +99,8 @@ class PrinterGateway:
         """
         
         filename += ".3mf"
-        gcode_location = "plate_1.gcode"
-        p = create_zip_archive_in_memory(gcode, gcode_location)
+        gcode_location = "Metadata/plate_1.gcode"
+        p = self.create_zip_archive_in_memory(gcode, gcode_location)
 
         response = requests.post(
             f"http://{self.printer_url}/printer/upload/gcode",
@@ -108,7 +109,7 @@ class PrinterGateway:
         if response.status_code != 200:
             raise Exception("Error uploading gcode")
 
-        return filename, gcode_location
+        return filename, 1
         
     def start_print(self, filename: str, plater_number: int) -> None:
         """
@@ -123,7 +124,7 @@ class PrinterGateway:
         """
         response = requests.post(
             f"http://{self.printer_url}/printer/print/start",
-            json={"filename": filename, "plate_number": plater_number}
+            params={"filename": filename, "plate_number": plater_number}
         )
         if response.status_code != 200:
             raise Exception("Error starting print job")
