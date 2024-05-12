@@ -132,12 +132,9 @@ class QueueManager:
                 if state in [blapi.GcodeState.IDLE, blapi.GcodeState.FINISH]:
                     printer: PrinterGateway = self.printer_farm.printers.get(
                         name)
-                    file = io.BytesIO(gcode.encode())
-                    file.name = filename
                     logging.info(f"Uploading gcode to printer {name}")
-                    printer.upload_gcode(file)
-                    file.close()
-                    printer.start_print(filename, 0)
+                    printer.upload_gcode(gcode, filename=filename + ".gcode")
+                    # printer.start_print(filename, 0)
                     logging.info(f"Started printer {name} with {filename}")
                     return True
 
