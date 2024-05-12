@@ -12,7 +12,8 @@ __all__ = [
 ]
 
 AVAILABLE_PRINTERS = Query(default="p1p", enum=["p1p", "p1s"])
-AVAILABLE_LAYER_HEIGHT = Query(default=0.20, enum=[0.12, 0.16, 0.20, 0.24, 0.28])
+AVAILABLE_LAYER_HEIGHT = Query(default=0.20,
+                               enum=[0.12, 0.16, 0.20, 0.24, 0.28])
 
 
 @cache

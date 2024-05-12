@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auto-slicer-deployment
+spec:
+  replicas: 1  # Number of replicas you want to run
+  selector:
+    matchLabels:
+      app: auto-slicer
+  template:
+    metadata:
+      labels:
+        app: auto-slicer
+    spec:
+      containers:
+      - name: auto-slicer
+        image: localhost:32000/auto-slicer  # Replace with your Python Docker image and tag
+        ports:
+        - containerPort: 80  # Port your Python application is listening on
+        imagePullPolicy: "Always"
+        env:
+        - name: TZ
+          value: Europe/London
+        - name: RABBITMQ_HOST
+          valueFrom:
+            secretKeyRef:
+              name:  print-queue-default-user 
+              key: host
+        - name: RABBITMQ_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name:  print-queue-default-user 
+              key: username
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name:  print-queue-default-user 
+              key: password
+        - name: RABBITMQ_PORT
+          valueFrom:
+            secretKeyRef:
+              name:  print-queue-default-user 
+              key: port
+        volumeMounts:
+          - name: rabbitmq-config 
+            mountPath: /app/squashfs-root/bin/rabbitmq.json
+            subPath: rabbitmq.json
+      nodeSelector:
+        kubernetes.io/arch: amd64
+
+      volumes:
+        - name: rabbitmq-config 
+          secret:
+            secretName: rabbitmq-secret 
+            items:
+              - key: rabbitmq.json
+                path: rabbitmq.json
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auto-slicer-service
+spec:
+  selector:
+    app: auto-slicer
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
