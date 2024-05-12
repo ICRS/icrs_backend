@@ -19,22 +19,20 @@ from PIL import Image
 from .printer_asset_utils import AVAILABLE_LAYER_HEIGHT, AVAILABLE_PRINTERS, \
     get_machine, process_from_machine_layer, printer_pla
 
-from .gcode2png import GcodeRenderer
 
 router = APIRouter()
 
 rabbitmq_settings = json.load(open("rabbitmq.json", "r", encoding="utf-8"))
-RABBITMQ_HOST = rabbitmq_settings["ENDPOINT"]
-RABBITMQ_PORT = rabbitmq_settings["PORT"]
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST")
+RABBITMQ_PORT = os.getenv("RABBITMQ_PORT")
+RABBITMQ_USERNAME = os.getenv("RABBITMQ_USERNAME")
+RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD")
 RABBITMQ_QUEUE = rabbitmq_settings["QUEUE"]
 
-
-connection = pika.BlockingConnection(
-    pika.ConnectionParameters(
-        host=str(RABBITMQ_HOST),
-        port=int(RABBITMQ_PORT)))
-channel = connection.channel()
-channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
+credentials = pika.PlainCredentials(
+    username=str(RABBITMQ_USERNAME), 
+    password=str(RABBITMQ_PASSWORD)
+)
 
 
 def render_gcode(filename: str) -> np.array:
@@ -45,7 +43,7 @@ def render_gcode(filename: str) -> np.array:
     ----
         filename (str): filename of the gcode file
     """
-    renderer = GcodeRenderer()  # noqa: F841
+    # renderer = GcodeRenderer()  # noqa: F841
     # img = renderer.run(
     #     path=filename,
     #     support=True,
@@ -243,15 +241,18 @@ async def slice_file(slice_request: SliceRequest) -> dict:
             try:
                 img = render_gcode(f"{folder_name}/plate_1.gcode")
                 # convert np.array to image in base64
-                img = Image.fromarray(img)
+                render_response = None
+                
+                if img:
+                    img = Image.fromarray(img)
 
-                with BytesIO() as output:
-                    img.save(output, format="JPEG")
-                    contents = output.getvalue()
-                    render_b64 = base64.b64encode(contents)
+                    with BytesIO() as output:
+                        img.save(output, format="JPEG")
+                        contents = output.getvalue()
+                        render_b64 = base64.b64encode(contents)
 
-                render_response = Response(render_b64,
-                                           media_type="image/jpeg")
+                    render_response = Response(render_b64,
+                                            media_type="image/jpeg")
             except Exception as e:
                 logging.exception(f"Render image failed: {e}")
                 render_response = None
@@ -299,18 +300,27 @@ async def release_file(release_request: ReleaseRequest) -> dict:
             folder_name = "tmp/" + \
                 generate_foldername(filename=filename,
                                     url=url, shortcode=shortcode)
-            shutil.move(folder_name, "sliced")
             # =================================================================================
             data = {
                 "gcode": "",        # noqa: gcode should be str or bytes
-                "filename": "",     # noqa: filename should be the file we want saved on the printer
+                "filename": filename,
                 "printer_type": "",  # noqa: printer_type should be the printer type ("p1p" or "p1s" atm)
             }
-            data["filename"] = filename
             data["printer_type"] = "p1p"        # TODO: Confirm printer type
-            with open(filename, "r") as f:      # TODO: Confirm file path
+            with open(f"{folder_name}/plate_1.gcode", "r") as f:
                 gcode = f.read()
                 data["gcode"] = str(gcode)
+
+            connection = pika.BlockingConnection(
+                pika.ConnectionParameters(
+                    host=str(RABBITMQ_HOST),
+                    port=int(RABBITMQ_PORT),
+                    credentials=credentials
+                )
+            )
+            
+            channel = connection.channel()
+            channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
 
             channel.basic_publish(
                 exchange='',
@@ -318,7 +328,10 @@ async def release_file(release_request: ReleaseRequest) -> dict:
                 body=json.dumps(data),
                 properties=pika.BasicProperties(
                     delivery_mode=pika.DeliveryMode.Persistent
-                ))
+                )
+            )
+            
+            connection.close()
             # =================================================================================
             logging.info(
                 f" [x] Sent Data({data['filename']}) to RabbitMQ({RABBITMQ_QUEUE})"  # noqa
