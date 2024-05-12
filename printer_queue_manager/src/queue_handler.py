@@ -133,8 +133,8 @@ class QueueManager:
                     printer: PrinterGateway = self.printer_farm.printers.get(
                         name)
                     logging.info(f"Uploading gcode to printer {name}")
-                    printer.upload_gcode(gcode, filename=filename)
-                    # printer.start_print(filename, 0)
+                    filename, plate_num = printer.upload_gcode(gcode, filename=filename)
+                    printer.start_print(filename, plate_num)
                     logging.info(f"Started printer {name} with {filename}")
                     return True
 
