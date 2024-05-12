@@ -1,6 +1,8 @@
 from io import BytesIO
 import requests
 import logging
+import zipfile
+import io
 
 import bambulabs_api as blapi
 
@@ -75,7 +77,17 @@ class PrinterGateway:
         self.data.update({"state": blapi.GcodeState(r.get("state", "IDLE"))})
         return r.get("state", blapi.GcodeState.IDLE)
 
-    def upload_gcode(self, gcode: str, filename: str) -> None:
+    def create_zip_archive_in_memory(
+        text_content, 
+        text_file_name='file.txt'):
+        
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            zipf.writestr(text_file_name, text_content)
+        zip_buffer.seek(0)
+        return zip_buffer
+
+    def upload_gcode(self, gcode: str, filename: str):
         """
         Upload the gcode to the printer
 
@@ -84,13 +96,20 @@ class PrinterGateway:
         gcode : str
             The gcode to upload
         """
+        
+        filename += ".3mf"
+        gcode_location = "plate_1.gcode"
+        p = create_zip_archive_in_memory(gcode, gcode_location)
+
         response = requests.post(
             f"http://{self.printer_url}/printer/upload/gcode",
-            files={"file": (filename, gcode)}
+            files={"file": (filename, p.read())}
         )
         if response.status_code != 200:
             raise Exception("Error uploading gcode")
 
+        return filename, gcode_location
+        
     def start_print(self, filename: str, plater_number: int) -> None:
         """
         Start the print job
