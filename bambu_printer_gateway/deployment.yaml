@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: ${printer-name}-printer-gateway-deployment
 spec:
-  replicas: 3  # Number of replicas you want to run
+  replicas: 1  # Number of replicas you want to run
   selector:
     matchLabels:
       app: ${printer-name}-printer-gateway
@@ -19,6 +19,8 @@ spec:
         - containerPort: 8000  # Port your Python application is listening on
         imagePullPolicy: "Always"
         env:
+        - name: TZ
+          value: Europe/London
         - name: HOSTNAME
           valueFrom:
             secretKeyRef:
