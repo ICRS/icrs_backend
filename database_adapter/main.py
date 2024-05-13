@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from server import router
+from src.server import router
 import logging
 
 logging.basicConfig(level=logging.INFO,
