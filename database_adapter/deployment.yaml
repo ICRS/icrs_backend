@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: icrs-access-deployment
+spec:
+  replicas: 3 # Number of replicas you want to run
+  selector:
+    matchLabels:
+      app: database-adapter
+  template:
+    metadata:
+      labels:
+        app: database-adapter
+    spec:
+      containers:
+      - name: database-adapter
+        image: localhost:32000/database_adapter
+        ports:
+        - containerPort: 80  # Port your Python application is listening on
+        imagePullPolicy: "Always"
+        volumeMounts:
+          - name: postgres-ini 
+            mountPath: /app/postgres.ini
+            subPath: postgres.ini
+            readOnly: true
+      volumes:
+        - name: postgres-ini 
+          secret:
+            secretName: postgres-ini-secret 
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: database-adapter-service
+spec:
+  selector:
+    app: database-adapter
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
