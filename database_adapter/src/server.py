@@ -3,10 +3,17 @@ from src.database import DB_CONFIG
 from fastapi import APIRouter, Query, HTTPException
 import psycopg2 as pg
 
-router = APIRouter()
+discord_id_router = APIRouter(
+    prefix="/discord-id",
+    tags=["discord-id"]
+)
+shortcode_router = APIRouter(
+    prefix="/shortcode",
+    tags=["shortcode"]
+)
 
 
-@router.get("/shortcode/discord_id")
+@shortcode_router.get("/discord-id")
 def get_discord_id_from_shortcode(
         shortcode: str = Query(min_length=3, max_length=7)
 ) -> dict:
@@ -40,7 +47,7 @@ def get_discord_id_from_shortcode(
             detail=error_msg)
 
 
-@router.get("/discord_id/shortcode")
+@discord_id_router.get("/shortcode")
 def get_shortcode_from_discord_id(
         id: str = Query(min_length=17, max_length=19)) -> dict:
     """
@@ -73,7 +80,7 @@ def get_shortcode_from_discord_id(
             detail=error_msg)
 
 
-@router.get("/shortcode/can_print")
+@shortcode_router.get("/permissions/print")
 def get_can_print_from_shortcode(
     shortcode: str = Query(min_length=3, max_length=7)
 ) -> dict:
