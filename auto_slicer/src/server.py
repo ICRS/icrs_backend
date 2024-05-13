@@ -5,7 +5,6 @@ import os
 import logging
 import subprocess
 import threading
-from pydantic import BaseModel
 import numpy as np
 import requests
 import shutil
@@ -30,7 +29,7 @@ RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD")
 RABBITMQ_QUEUE = rabbitmq_settings["QUEUE"]
 
 credentials = pika.PlainCredentials(
-    username=str(RABBITMQ_USERNAME), 
+    username=str(RABBITMQ_USERNAME),
     password=str(RABBITMQ_PASSWORD)
 )
 
@@ -199,24 +198,16 @@ def slice_file_bin(
     return result
 
 
-class SliceRequest(BaseModel):
-    shortcode: str
-    filename: str
-    url: str
+@router.post("/slice/file")
+async def slice_file(
+    shortcode: str,
+    filename: str,
+    url: str,
     layer_height: float = AVAILABLE_LAYER_HEIGHT,
     infill: int = Query(default=15, ge=5, le=30),
     printer_type: str = AVAILABLE_PRINTERS,
-
-
-@router.post("/slice/file")
-async def slice_file(slice_request: SliceRequest) -> dict:
-    logging.info(slice_request)
-    printer_type = slice_request.printer_type
-    layer_height = slice_request.layer_height
-    infill = slice_request.infill
-    url = slice_request.url
-    filename = slice_request.filename
-    shortcode = slice_request.shortcode
+) -> dict:
+    # logging.info(slice_request)
     try:
         filament_file_name = printer_pla(printer_type)
         process_file_name = process_from_machine_layer(
@@ -250,7 +241,7 @@ async def slice_file(slice_request: SliceRequest) -> dict:
                 img = render_gcode(f"{folder_name}/plate_1.gcode")
                 # convert np.array to image in base64
                 render_response = None
-                
+
                 if img:
                     img = Image.fromarray(img)
 
@@ -260,7 +251,7 @@ async def slice_file(slice_request: SliceRequest) -> dict:
                         render_b64 = base64.b64encode(contents)
 
                     render_response = Response(render_b64,
-                                            media_type="image/jpeg")
+                                               media_type="image/jpeg")
             except Exception as e:
                 logging.exception(f"Render image failed: {e}")
                 render_response = None
@@ -288,27 +279,32 @@ async def slice_file(slice_request: SliceRequest) -> dict:
         pass
 
 
-class ReleaseRequest(BaseModel):
-    shortcode: str
-    filename: str
-    url: str
-    release: bool = False
-
-
 @router.post("/slice/release")
-async def release_file(release_request: ReleaseRequest) -> dict:
-    filename = release_request.filename
-    url = release_request.url
-    shortcode = release_request.shortcode
-    release = release_request.release
-    logging.info(f"Release Request: {release}")
+async def release_file(
+    shortcode: str,
+    filename: str,
+    url: str,
+    release: bool = False
+) -> dict:
+    """
+    Release the file to the printer queue
 
+    Args:
+        shortcode (str): shortcode of the user
+        filename (str): filename of the file
+        url (str): url of the stl file to be printed
+        release (bool, optional): whether to print release the file to the
+            queue. Defaults to False.
+
+    Returns:
+        dict: whether or not the file was released
+    """
     try:
         if release:
             folder_name = "tmp/" + \
                 generate_foldername(filename=filename,
                                     url=url, shortcode=shortcode)
-            # =================================================================================
+            # =================================================================
             data = {
                 "gcode": "",        # noqa: gcode should be str or bytes
                 "filename": filename,
@@ -326,7 +322,7 @@ async def release_file(release_request: ReleaseRequest) -> dict:
                     credentials=credentials
                 )
             )
-            
+
             channel = connection.channel()
             channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
 
@@ -338,7 +334,7 @@ async def release_file(release_request: ReleaseRequest) -> dict:
                     delivery_mode=pika.DeliveryMode.Persistent
                 )
             )
-            
+
             connection.close()
             # =================================================================================
             logging.info(

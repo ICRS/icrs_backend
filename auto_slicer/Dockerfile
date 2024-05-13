@@ -62,7 +62,8 @@ RUN apt-get update && apt-get install  -y \
     wget 
 RUN apt install -y python3 \
     python3-pip  \
-    unzip 
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
     
 RUN wget https://github.com/bambulab/BambuStudio/releases/download/v01.09.01.58/Bambu_Studio_linux_ubuntu-v01.09.01.58.AppImage
 RUN chmod +x Bambu_Studio_linux_ubuntu-v01.09.01.58.AppImage
@@ -85,7 +86,6 @@ COPY scripts/ scripts/
 # RUN ls -al; ls scripts -al; ls /app/squashfs-root/bin; ls /app/ ; ls /;
 RUN dos2unix scripts/download.sh
 RUN cd scripts && bash ./download.sh
-COPY requirements.txt . 
 
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=bind,source=requirements.txt,target=requirements.txt \
