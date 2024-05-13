@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: icrs-access-deployment
+  name: database-adapter
 spec:
   replicas: 3 # Number of replicas you want to run
   selector:
@@ -16,8 +16,11 @@ spec:
       - name: database-adapter
         image: localhost:32000/database_adapter
         ports:
-        - containerPort: 80  # Port your Python application is listening on
+        - containerPort: 8000  # Port your Python application is listening on
         imagePullPolicy: "Always"
+        env:
+        - name: TZ
+          value: Europe/London
         volumeMounts:
           - name: postgres-ini 
             mountPath: /app/postgres.ini
@@ -40,5 +43,5 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 80
+      targetPort: 8000
   type: ClusterIP
