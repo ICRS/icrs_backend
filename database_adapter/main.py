@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from src.server import router
+from src.server import discord_id_router, shortcode_router
 import logging
 
 logging.basicConfig(level=logging.INFO,
@@ -10,4 +10,5 @@ logging.basicConfig(level=logging.INFO,
                     ])
 
 app = FastAPI()
-app.include_router(router)
+app.include_router(discord_id_router)
+app.include_router(shortcode_router)
