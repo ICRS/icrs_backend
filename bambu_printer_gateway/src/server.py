@@ -5,7 +5,7 @@ from typing import BinaryIO
 import logging
 
 from fastapi import APIRouter, HTTPException, UploadFile, Response
-from bambulabs_api import AMSFilamentSettings
+from bambulabs_api import AMSFilamentSettings, PrintStatus
 from PIL import Image, ImageDraw, ImageFont
 
 from .printer import printer
@@ -101,22 +101,22 @@ async def printer_get_camera():
         # Create text in the form day-month-year hour:minute:second
         text = str(datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
         FONT_SIZE = 50
-        font = ImageFont.load_default(FONT_SIZE) 
+        font = ImageFont.load_default(FONT_SIZE)
         textwidth = draw.textlength(text, font)
         # calculate the x,y coordinates of the text
         margin = 10
         x = width - textwidth - margin
         y = height - FONT_SIZE - margin
         # draw watermark in the bottom right corner
-        draw.text((x, y), text, font=font, fill=(0,0,100,255))
+        draw.text((x, y), text, font=font, fill=(0, 0, 100, 255))
 
         with BytesIO() as buffered:
             im.save(buffered, format="JPEG")
             contents = buffered.getvalue()
-            frame_b64 = base64.b64encode(buffered.getvalue())
+            frame_b64 = base64.b64encode(contents)
 
             last_frame = Response(frame_b64,
-                              media_type="image/jpeg")
+                                  media_type="image/jpeg")
     except Exception as e:  # noqa  # pylint: disable=broad-exception-caught
         logging.error(f"Error occurred while getting camera frame: {e}")    # noqa  # pylint: disable=logging-fstring-interpolation
         return {"error": str(e)}
@@ -176,6 +176,8 @@ async def upload_gcode_file(file: UploadFile):
 
 @router.post("/printer/print/start")
 async def start_print(filename: str, plate_number: int):
+    global printer_available
+    printer_available = False
     return printer.start_print(filename, plate_number)
 
 
@@ -252,3 +254,41 @@ async def unload_filament_spool():
 @router.post("/printer/filament/retry")
 async def retry_filament_action():
     return printer.retry_filament_action()
+
+
+printer_available = False
+
+
+@router.get("/printer/available")
+async def is_printer_available() -> bool:
+    """
+    Get the availability of the printer for printing.
+    Requires that the printer is available (manual setting) and not printing.
+
+    Returns:
+        bool: whether the printer is available for printing
+    """
+    return printer_available and \
+        printer.get_current_state() is PrintStatus.IDLE
+
+
+@router.post("/printer/available")
+async def set_printer_available(
+        available: bool = True,
+        uid: str = "") -> bool:
+    """
+    Endpoint to set the availability of the printer for printing.
+    (For card scanning system, etc.)
+
+    Args:
+        available (bool, optional): availability of the printer.
+            Defaults to True.
+        uid (str, optional): uid of the user's card. Defaults to "".
+
+    Returns:
+        bool: the availability of the printer set by the user
+    """
+    logging.info(f"User: {uid} set printer availability to {available}")
+    global printer_available
+    printer_available = available
+    return printer_available
