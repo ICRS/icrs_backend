@@ -21,7 +21,7 @@ PRINTER_GATEWAY_ENDPOINT_SUFFIX = str(
 async def update_availability(
     uid: str = "",
     printer_name: str = Query(enum=PRINTER_NAMES),
-    available: bool = True,
+    available: bool = False,
 ):
     logging.info(f"Updating availability for {uid} to {available}")
     uid = uid.strip().replace(" ", "").rjust(8, "0")
