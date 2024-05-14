@@ -186,10 +186,11 @@ async def upload_gcode_file(file: UploadFile):
 
 
 @router.post("/printer/print/start")
-async def start_print(filename: str, plate_number: int):
+async def start_print(filename: str, plate_number: int,
+                      use_ams: bool = True, ams_mapping: list[int] = [0]):
     global printer_available
     printer_available = False
-    return printer.start_print(filename, plate_number)
+    return printer.start_print(filename, plate_number, use_ams, ams_mapping)
 
 
 @router.post("/printer/print/stop")

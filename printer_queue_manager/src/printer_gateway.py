@@ -111,7 +111,10 @@ class PrinterGateway:
 
         return filename, 1
         
-    def start_print(self, filename: str, plater_number: int) -> None:
+    def start_print(self, filename: str,
+                    plater_number: int,
+                    use_ams: bool = True,
+                    ams_mapping: list[int] = [0]) -> None:
         """
         Start the print job
 
@@ -121,10 +124,18 @@ class PrinterGateway:
             The filename of the gcode
         plater_number : int
             The plate number of the print job
+        use_ams : bool
+            Use AMS
+        ams_mapping : list[int]
+            AMS trays to use
         """
         response = requests.post(
             f"http://{self.printer_url}/printer/print/start",
-            params={"filename": filename, "plate_number": plater_number}
+            params={"filename": filename,
+                    "plate_number": plater_number,
+                    "use_ams": use_ams,
+                    "ams_mapping": ams_mapping
+                    }
         )
         if response.status_code != 200:
             raise Exception("Error starting print job")

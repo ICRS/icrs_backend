@@ -133,11 +133,18 @@ class QueueManager:
                     printer: PrinterGateway = self.printer_farm.printers.get(
                         name)
                     logging.info(f"Uploading gcode to printer {name}")
-                    filename, plate_num = printer.upload_gcode(gcode, filename=filename)
-                    printer.start_print(filename, plate_num)
+                    filename, plate_num = printer.upload_gcode(gcode,
+                                                               filename=filename)
+                    use_ams = True
+                    ams_mapping = [0]
+                    printer.start_print(filename,
+                                        plate_num,
+                                        use_ams,
+                                        ams_mapping)
                     logging.info(f"Started printer {name} with {filename}")
                     return True
 
             except Exception as e:
                 logging.error(f"Failed to queue printer {name}: {str(e)}")
                 return False
+        return False
