@@ -25,7 +25,9 @@ async def update_availability(
 ):
     logging.info(f"Updating availability for {uid} to {available}")
     uid = uid.strip().replace(" ", "").rjust(8, "0")
-    return requests.post(
+    r = requests.post(
         f"http://{printer_name}{PRINTER_GATEWAY_ENDPOINT_SUFFIX}/printer/available", # noqa
         params={"uid": uid, "available": available},
     )
+
+    return r.status_code
