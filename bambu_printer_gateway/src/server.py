@@ -5,7 +5,7 @@ from typing import BinaryIO
 import logging
 
 from fastapi import APIRouter, HTTPException, UploadFile, Response
-from bambulabs_api import AMSFilamentSettings, PrintStatus
+from bambulabs_api import AMSFilamentSettings, GcodeState
 from PIL import Image, ImageDraw, ImageFont
 
 from .printer import printer
@@ -280,7 +280,9 @@ async def is_printer_available() -> bool:
         bool: whether the printer is available for printing
     """
     return printer_available and \
-        printer.get_current_state() is PrintStatus.IDLE
+        printer.get_state() in [GcodeState.IDLE, 
+                GcodeState.FINISH, 
+                GcodeState.FAILED]
 
 
 @router.post("/printer/available")
