@@ -143,7 +143,6 @@ class QueueManager:
                                         ams_mapping)
                     logging.info(f"Started printer {name} with {filename}")
                     return True
-                return False
 
             except Exception as e:
                 logging.error(f"Failed to queue printer {name}: {str(e)}")
