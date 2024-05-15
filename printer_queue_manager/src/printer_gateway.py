@@ -87,6 +87,6 @@ class PrinterGateway:
     def printer_availability(self) -> bool:
         logging.info(f"Getting availability of printer on {self.printer_url}")
         response = requests.get(
-            f"http://{self.printer_url}/printer/availability"
+            f"http://{self.printer_url}/printer/available"
         )
         return response.json() if response.status_code == 200 else False
