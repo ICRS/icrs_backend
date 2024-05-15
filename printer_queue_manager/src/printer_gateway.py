@@ -22,40 +22,28 @@ class PrinterGateway:
 
     def create_zip_archive_in_memory(
             self,
-            text_content,
-            text_file_name='file.txt'):
+            text_content: str,
+            text_file_name: str = 'file.txt') -> io.BytesIO:
+        """
+        Create a zip archive in memory
 
+        Args:
+            text_content (str): content of the text file
+            text_file_name (str, optional): location of the text file.
+                Defaults to 'file.txt'.
+
+        Returns:
+            io.BytesIO: zip archive in memory
+        """
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
             zipf.writestr(text_file_name, text_content)
         zip_buffer.seek(0)
         return zip_buffer
 
-    def upload_gcode(self, gcode: str, filename: str):
-        """
-        Upload the gcode to the printer
-
-        Parameters
-        ----------
-        gcode : str
-            The gcode to upload
-        """
-
-        filename += ".3mf"
-        gcode_location = "Metadata/plate_1.gcode"
-        p = self.create_zip_archive_in_memory(gcode, gcode_location)
-
-        response = requests.post(
-            f"http://{self.printer_url}/printer/upload/gcode",
-            files={"file": (filename, p.read())}
-        )
-        if response.status_code != 200:
-            raise Exception("Error uploading gcode")
-
-        return filename, 1
-
-    def start_print(self, filename: str,
-                    plater_number: int,
+    def start_print(self,
+                    gcode: str,
+                    filename: str,
                     use_ams: bool = True,
                     ams_mapping: list[int] = [0]) -> None:
         """
@@ -63,24 +51,30 @@ class PrinterGateway:
 
         Parameters
         ----------
+        gcode : str
+            The gcode to print
         filename : str
-            The filename of the gcode
-        plater_number : int
-            The plate number of the print job
+            The filename to use
         use_ams : bool
             Use AMS
         ams_mapping : list[int]
             AMS trays to use
         """
+        filename += ".3mf"
+        gcode_location = "Metadata/plate_1.gcode"
+        p = self.create_zip_archive_in_memory(gcode, gcode_location)
+
         logging.info(f"Starting print on {self.printer_url}")
         response = requests.post(
-            f"http://{self.printer_url}/printer/print/start",
+            f"http://{self.printer_url}/printer/print/3mf",
             params={"filename": filename,
-                    "plate_number": plater_number,
+                    "plate_number": 1,
                     "use_ams": use_ams,
-                    "ams_mapping": ams_mapping
-                    }
+                    },
+            files={"file": (filename, p.read())},
+            json={"ams_mapping": ams_mapping}
         )
+
         if response.status_code != 200:
             raise Exception("Error starting print job")
 
