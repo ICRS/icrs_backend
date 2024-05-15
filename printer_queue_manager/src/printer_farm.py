@@ -45,15 +45,13 @@ class PrinterFarm:
             try:
                 if printer.printer_availability():
                     logging.info(f"Uploading gcode to printer {name}")
-                    filename, plate_num = printer.upload_gcode(
-                        gcode,
-                        filename=filename)
                     use_ams = True
                     ams_mapping = [0]
-                    printer.start_print(filename,
-                                        plate_num,
-                                        use_ams,
-                                        ams_mapping)
+                    printer.start_print(
+                        gcode=gcode,
+                        filename=filename,
+                        use_ams=use_ams,
+                        ams_mapping=ams_mapping)
                     logging.info(f"Started printer {name} with {filename}")
                     return True
 

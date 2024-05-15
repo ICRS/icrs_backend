@@ -4,7 +4,7 @@ from io import BytesIO
 from typing import BinaryIO
 import logging
 
-from fastapi import APIRouter, HTTPException, UploadFile, Response
+from fastapi import APIRouter, HTTPException, Query, UploadFile, Response
 from bambulabs_api import AMSFilamentSettings, GcodeState
 from PIL import Image, ImageDraw, ImageFont
 
@@ -20,6 +20,7 @@ logging.basicConfig(level=logging.INFO,
 
 router = APIRouter()
 status_router = APIRouter(prefix="/printer/status", tags=["Printer Status"])
+print_router = APIRouter(prefix="/printer/print", tags=["Print"])
 
 logging.info("Connecting to printer...")
 printer.connect()
@@ -174,25 +175,63 @@ async def upload_gcode_file(file: UploadFile):
     return
 
 
-@router.post("/printer/print/start")
+@print_router.post("/start")
 async def start_print(filename: str, plate_number: int,
                       use_ams: bool = True, ams_mapping: list[int] = [0]):
     global printer_available
     printer_available = False
     return printer.start_print(filename, plate_number, use_ams, ams_mapping)
 
+user_shortcode = ""
 
-@router.post("/printer/print/stop")
+
+@print_router.post("/3mf")
+async def start_print_3mf(
+    file: UploadFile,
+    shortcode: str = Query("", min_length=0, max_length=7),
+    plate_number: int = Query(1, ge=0),
+    use_ams: bool = True,
+    ams_mapping: list[int] = [0]
+):
+    try:
+        io_file: BinaryIO = file.file
+        if file.filename:
+            result = printer.upload_file(io_file, file.filename)
+            if "226" not in result:
+                raise HTTPException(
+                    status_code=500,
+                    detail="File upload failed.")
+
+            global printer_available
+            printer_available = False
+
+            global user_shortcode
+            user_shortcode = shortcode
+            return printer.start_print(
+                file.filename,
+                plate_number,
+                use_ams, ams_mapping)
+
+    except Exception as e:
+        # noqa  # pylint: disable=raise-missing-from
+        raise HTTPException(
+            status_code=500,
+            detail=f"Exception occurred during file upload: {e}")
+    finally:
+        file.file.close()
+
+
+@print_router.post("/stop")
 async def stop_print():
     return printer.stop_print()
 
 
-@router.post("/printer/print/pause")
+@print_router.post("/pause")
 async def pause_print():
     return printer.pause_print()
 
 
-@router.post("/printer/print/resume")
+@print_router.post("/resume")
 async def resume_print():
     return printer.resume_print()
 
@@ -270,9 +309,9 @@ async def is_printer_available() -> bool:
         bool: whether the printer is available for printing
     """
     return printer_available and \
-        printer.get_state() in [GcodeState.IDLE, 
-                GcodeState.FINISH, 
-                GcodeState.FAILED]
+        printer.get_state() in [GcodeState.IDLE,
+                                GcodeState.FINISH,
+                                GcodeState.FAILED]
 
 
 @router.post("/printer/available")
