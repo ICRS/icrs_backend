@@ -301,6 +301,7 @@ async def release_file(
                 "gcode": "",        # noqa: gcode should be str or bytes
                 "filename": filename,
                 "printer_type": "",  # noqa: printer_type should be the printer type ("p1p" or "p1s" atm)
+                "shortcode": shortcode,
             }
             data["printer_type"] = "p1p"        # TODO: Confirm printer type
             with open(f"{folder_name}/plate_1.gcode", "r") as f:
