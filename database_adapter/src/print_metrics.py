@@ -34,8 +34,10 @@ async def add_print_entry(printer_name: str = Query(enum=PRINTER_NAMES),
                             VALUES (%s,%s,%s,%s)",
                     (shortcode, print_time, print_weight, printer_name)
                 )
+                conn.commit()
 
-                return
+                return f"Successfully added entry for {shortcode}"
+
     except Exception:
         error_msg = f"Could not add entry for {shortcode}"
         logging.error(error_msg)
