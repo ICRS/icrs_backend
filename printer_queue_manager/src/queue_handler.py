@@ -86,6 +86,9 @@ class QueueManager:
         gcode = request.get("gcode", None)
         filename = request.get("filename", None)
         printer_type = request.get("printer_type", None)
+        shortcode = request.get("shortcode", "")
+        print_time = request.get("print_time", 0)
+        print_weight = request.get("print_weight", 0)
         # Check if any of the required fields are missing. If so, log error
         # and reject message without requeueing
         if not gcode or not filename or not printer_type:
@@ -96,7 +99,13 @@ class QueueManager:
         # Queue the job to a printer. If the job is not queued, log error and
         # reject message with requeueing. Everything was valid but couldn't
         # queue job
-        if not self.printer_farm.queue_print(printer_type, filename, gcode):
+        if not self.printer_farm.queue_print(printer_type,
+                                             filename,
+                                             gcode,
+                                             shortcode,
+                                             print_time=print_time,
+                                             print_weight=print_weight,
+                                             ):
             logging.error(f"No available printers: {printer_type}")
             ch.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
             # Sleep for 5 seconds before returning to avoid
