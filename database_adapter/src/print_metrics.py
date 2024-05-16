@@ -1,4 +1,3 @@
-import datetime
 from src.database import DB_CONFIG
 import logging
 from fastapi import APIRouter, Query, HTTPException
@@ -21,7 +20,7 @@ PRINTER_NAMES = list(PRINTER_CONFIG["PRINTER_NAMES"])
 @print_metrics_router.post("/print")
 async def add_print_entry(printer_name: str = Query(enum=PRINTER_NAMES),
                           shortcode: str = Query(min_length=3, max_length=7),
-                          print_time: datetime.timedelta = Query(ge=0),
+                          print_time: int = Query(ge=0),
                           print_weight: int = Query(ge=0)):
     logging.info(f"Adding entry {printer_name, print_time, print_weight} \
                  submitted by{shortcode}")
