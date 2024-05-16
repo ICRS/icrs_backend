@@ -356,7 +356,8 @@ async def release_file(
                     f"{folder_name}/slice_info.config")
             )
             data["print_time"] = bambu_time_conversion(
-                extract_print_time(data["gcode"].split("\n")[:4])[1]).seconds()
+                extract_print_time(data["gcode"].split("\n")[:4])[1]
+                ).total_seconds()
 
             connection = pika.BlockingConnection(
                 pika.ConnectionParameters(
