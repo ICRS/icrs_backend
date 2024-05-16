@@ -8,6 +8,8 @@ import threading
 import numpy as np
 import requests
 import shutil
+from datetime import timedelta
+
 
 import pika
 import xml.etree.ElementTree as ET
@@ -101,7 +103,7 @@ def extract_print_time(lines: list[str]) -> tuple[str] | None:
             return model_time, estimated_time
 
 
-def bambu_time_conversion(time: str) -> int:
+def bambu_time_conversion(time: str) -> timedelta:
     """
     Convert time from bambu format to minutes.
     Expected Bambu format: "10d 1h 30m 15s"
@@ -110,7 +112,7 @@ def bambu_time_conversion(time: str) -> int:
         time (str): time in bambu format
 
     Returns:
-        int: time in seconds
+        timedelta: resulting timedelta
     """
     t = time.split(" ")
     c = 0
@@ -123,7 +125,8 @@ def bambu_time_conversion(time: str) -> int:
             c += int(i[:-1])*3600
         elif "d" in i:
             c += int(i[:-1])*86400
-    return c
+
+    return timedelta(seconds=c)
 
 
 def extract_weight(filename: str) -> float:
@@ -361,7 +364,7 @@ async def release_file(
                     f"{folder_name}/slice_info.config")
             )
             data["print_time"] = bambu_time_conversion(
-                extract_print_time(data["gcode"].split("\n")[:4])[1])
+                extract_print_time(data["gcode"].split("\n")[:4])[1]).seconds()
 
             connection = pika.BlockingConnection(
                 pika.ConnectionParameters(
