@@ -1,8 +1,8 @@
 import requests
 import logging
+import zipfile
+import io
 
-import bambulabs_api as blapi
-from fastapi import UploadFile
 
 __all__ = ['PrinterGateway']
 
@@ -16,96 +16,71 @@ class PrinterGateway:
     def __init__(self, printer_url, type="p1p"):
         self.printer_url = printer_url
         self.type = type
-        self.data = {}
 
     def __str__(self):
-        return f"PrinterGateway({self.printer_url}, {self.type}, {self.data})"
+        return f"PrinterGateway({self.printer_url}, {self.type})"
 
-    def get_remaining_time(self) -> int:
+    def create_zip_archive_in_memory(
+            self,
+            text_content: str,
+            text_file_name: str = 'file.txt') -> io.BytesIO:
         """
-        Get the remaining time of the print job
+        Create a zip archive in memory
 
-        Returns
-        -------
-        int
-            The remaining time of the print job
+        Args:
+            text_content (str): content of the text file
+            text_file_name (str, optional): location of the text file.
+                Defaults to 'file.txt'.
+
+        Returns:
+            io.BytesIO: zip archive in memory
         """
-        response = requests.get(
-            f"http://{self.printer_url}/printer/status/time"
-        )
-        if response.status_code != 200:
-            return -1
-        r = response.json()
-        self.data.update({"time": r['time'] if 'time' in r else -1})
-        return self.data.get("time", -1)
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            zipf.writestr(text_file_name, text_content)
+        zip_buffer.seek(0)
+        return zip_buffer
 
-    def get_percentage(self) -> int:
-        """
-        Get the percentage of the print job
-
-        Returns
-        -------
-        int
-            The percentage of the print job
-        """
-        response = requests.get(
-            f"http://{self.printer_url}/printer/status/percentage")
-        if response.status_code != 200:
-            return -1
-        r = response.json()
-        self.data.update(
-            {"percentage": r['percentage'] if 'percentage' in r else -1})
-        return self.data.get("percentage", -1)
-
-    def get_state(self) -> str:
-        """
-        Get the state of the printer
-
-        Returns
-        -------
-        str
-            The state of the printer
-        """
-        url = f"http://{self.printer_url}/printer/status/state"
-        response = requests.get(url)
-        logging.info(f"Update State {url}: {response}")
-        if response.status_code != 200:
-            return "UNKNOWN"
-        r: dict = response.json()
-        self.data.update({"state": blapi.GcodeState(r.get("state", "IDLE"))})
-        return r.get("state", blapi.GcodeState.IDLE)
-
-    def upload_gcode(self, gcode: UploadFile) -> None:
-        """
-        Upload the gcode to the printer
-
-        Parameters
-        ----------
-        gcode : str
-            The gcode to upload
-        """
-        response = requests.post(
-            f"http://{self.printer_url}/printer/upload/gcode",
-            files={"file": gcode}
-        )
-        if response.status_code != 200:
-            raise Exception("Error uploading gcode")
-
-    def start_print(self, filename: str, plater_number: int) -> None:
+    def start_print(self,
+                    gcode: str,
+                    filename: str,
+                    use_ams: bool = True,
+                    ams_mapping: list[int] = [0]) -> None:
         """
         Start the print job
 
         Parameters
         ----------
+        gcode : str
+            The gcode to print
         filename : str
-            The filename of the gcode
-        plater_number : int
-            The plate number of the print job
+            The filename to use
+        use_ams : bool
+            Use AMS
+        ams_mapping : list[int]
+            AMS trays to use
         """
+        filename += ".3mf"
+        gcode_location = "Metadata/plate_1.gcode"
+        p = self.create_zip_archive_in_memory(gcode, gcode_location)
+
+        logging.info(f"Starting print on {self.printer_url}")
         response = requests.post(
-            f"http://{self.printer_url}/printer/print/start",
-            json={"filename": filename, "plate_number": plater_number}
+            f"http://{self.printer_url}/printer/print/3mf",
+            params={"filename": filename,
+                    "plate_number": 1,
+                    "use_ams": use_ams,
+                    },
+            files={"file": (filename, p.read())},
+            json={"ams_mapping": ams_mapping}
         )
+
         if response.status_code != 200:
             raise Exception("Error starting print job")
-        self.data.update({"state": blapi.GcodeState.RUNNING})
+
+    def printer_availability(self) -> bool:
+        logging.info(f"Getting availability of printer on {self.printer_url}")
+        response = requests.get(
+            f"http://{self.printer_url}/printer/available"
+        )
+        return response.json() if response.status_code == 200 else False
