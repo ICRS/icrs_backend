@@ -1,6 +1,7 @@
 from fastapi import FastAPI
-from src.server import router, status_router
+from src.server import router, status_router, print_router
 
 app = FastAPI()
 app.include_router(router)
 app.include_router(status_router)
+app.include_router(print_router)

@@ -1,4 +1,3 @@
-import io
 import json
 import logging
 import os
@@ -8,10 +7,8 @@ import pika
 import pika.channel
 import pika.spec
 import pika.delivery_mode
-import bambulabs_api as blapi
 
 from src.printer_farm import PrinterFarm
-from src.printer_gateway import PrinterGateway
 
 
 DEBUG = str(os.getenv('DEBUG', False)).lower() in ['true', '1']  # noqa  # pylint: disable=invalid-envvar-default
@@ -99,7 +96,7 @@ class QueueManager:
         # Queue the job to a printer. If the job is not queued, log error and
         # reject message with requeueing. Everything was valid but couldn't
         # queue job
-        if not self.queue_printer(printer_type, filename, gcode):
+        if not self.printer_farm.queue_print(printer_type, filename, gcode):
             logging.error(f"No available printers: {printer_type}")
             ch.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
             # Sleep for 5 seconds before returning to avoid
@@ -110,37 +107,3 @@ class QueueManager:
         # If everything was successful, acknowledge the message
         ch.basic_ack(delivery_tag=method.delivery_tag)
         return
-
-    def queue_printer(
-            self,
-            printer_type: str,
-            filename: str,
-            gcode: str) -> bool:
-        # Find available printer and send gcode and start
-        printers: list[str] = self.printer_farm.get_printers(
-            printer_type=printer_type)
-        if not printers:
-            logging.error(f"Printer type {printer_type} not found")
-            return False
-
-        logging.info(f"Available printers: {printers}")
-
-        for name in printers:
-            try:
-                state = self.printer_farm.get(name, "state")
-
-                if state in [blapi.GcodeState.IDLE, blapi.GcodeState.FINISH]:
-                    printer: PrinterGateway = self.printer_farm.printers.get(
-                        name)
-                    file = io.BytesIO(gcode.encode())
-                    file.name = filename
-                    logging.info(f"Uploading gcode to printer {name}")
-                    printer.upload_gcode(file)
-                    file.close()
-                    printer.start_print(filename, 0)
-                    logging.info(f"Started printer {name} with {filename}")
-                    return True
-
-            except Exception as e:
-                logging.error(f"Failed to queue printer {name}: {str(e)}")
-                return False
