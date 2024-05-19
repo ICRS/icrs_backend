@@ -8,6 +8,8 @@ import threading
 import numpy as np
 import requests
 import shutil
+from datetime import timedelta
+
 
 import pika
 import xml.etree.ElementTree as ET
@@ -71,16 +73,55 @@ def gcode_time(filename: str) -> tuple[str] | None:
     """
     with open(filename, "r") as file:
         lines = file.readlines()[:4]
-        for line in lines:
-            if line.startswith("; model printing time:"):
-                times = line[1:].split(";")
-                model_time = times[0].split(":")[-1].strip()
-                estimated_time = times[-1].split(":")[-1].strip()
-
-                return model_time, estimated_time
+        return extract_print_time(lines)
 
 
-def weight(filename: str) -> float:
+def extract_print_time(lines: list[str]) -> tuple[str] | None:
+    """
+    Extract the print time from the lines of a gcode file
+
+    Args:
+        lines (list[str]): lines of the gcode file
+
+    Returns:
+        tuple[str] | None: model print time and estimated time,
+    """
+    for line in lines:
+        if line.startswith("; model printing time:"):
+            times = line[1:].split(";")
+            model_time = times[0].split(":")[-1].strip()
+            estimated_time = times[-1].split(":")[-1].strip()
+
+            return model_time, estimated_time
+
+
+def bambu_time_conversion(time: str) -> timedelta:
+    """
+    Convert time from bambu format to minutes.
+    Expected Bambu format: "10d 1h 30m 15s"
+
+    Args:
+        time (str): time in bambu format
+
+    Returns:
+        timedelta: resulting timedelta
+    """
+    t = time.split(" ")
+    c = 0
+    for i in t:
+        if "s" in i:
+            c += int(i[:-1])
+        elif "m" in i:
+            c += int(i[:-1])*60
+        elif "h" in i:
+            c += int(i[:-1])*3600
+        elif "d" in i:
+            c += int(i[:-1])*86400
+
+    return timedelta(seconds=c)
+
+
+def extract_weight(filename: str) -> float:
     """
     Get weight from xml file (slice_info.config)
 
@@ -298,15 +339,25 @@ async def release_file(
                                     url=url, shortcode=shortcode)
             # =================================================================
             data = {
-                "gcode": "",        # noqa: gcode should be str or bytes
                 "filename": filename,
                 "printer_type": "",  # noqa: printer_type should be the printer type ("p1p" or "p1s" atm)
                 "shortcode": shortcode,
+                "gcode": "",        # noqa: gcode should be str or bytes
+                "print_time": 0,
+                "print_weight": 0,
             }
             data["printer_type"] = "p1p"        # TODO: Confirm printer type
             with open(f"{folder_name}/plate_1.gcode", "r") as f:
                 gcode = f.read()
                 data["gcode"] = str(gcode)
+
+            data["print_weight"] = int(
+                extract_weight(
+                    f"{folder_name}/slice_info.config")
+            )
+            data["print_time"] = bambu_time_conversion(
+                extract_print_time(data["gcode"].split("\n")[:4])[1]
+                ).total_seconds()
 
             connection = pika.BlockingConnection(
                 pika.ConnectionParameters(
