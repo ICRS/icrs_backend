@@ -45,9 +45,8 @@ def render_gcode(filename: str) -> Image.Image:
         filename (str): filename of the gcode file
     """
     imager = gcode2img()
-    img: bytes = gcode2img.gcode2img(imager,
-                                     filename=filename,
-                                     gif=False, frames=30)
+    img: bytes = imager.gcode2img(filename=filename,
+                                  gif=False, frames=30)
     return Image.open(img)
 
 
