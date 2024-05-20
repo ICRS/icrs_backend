@@ -18,6 +18,8 @@ from PIL import Image
 from .printer_asset_utils import AVAILABLE_LAYER_HEIGHT, AVAILABLE_PRINTERS, \
     get_machine, process_from_machine_layer, printer_pla
 
+from .gcode2img import gcode2img
+
 
 router = APIRouter()
 
@@ -34,15 +36,7 @@ credentials = pika.PlainCredentials(
 )
 
 
-class Args:
-    def __init__(self, arguments: dict):
-        self.arguments = arguments
-
-    def __getattr__(self, name: str):
-        return self.arguments.get(name, None)
-
-
-def render_gcode(filename: str) -> np.array:
+def render_gcode(filename: str) -> Image.Image:
     """
     Render gcode file to img
 
@@ -50,20 +44,11 @@ def render_gcode(filename: str) -> np.array:
     ----
         filename (str): filename of the gcode file
     """
-    # renderer = GcodeRenderer()  # noqa: F841
-    # img = renderer.run(
-    #     path=filename,
-    #     support=True,
-    #     moves=True,
-    #     bed=True,
-    #     show=False,
-    #     target="output.png",
-    #     imgx=600,
-    #     imgy=400,
-    # )
-    # print(img)
-    img = None
-    return img
+    imager = gcode2img()
+    img: bytes = gcode2img.gcode2img(imager,
+                                     filename=filename,
+                                     gif=False, frames=30)
+    return Image.open(img)
 
 
 def gcode_time(filename: str) -> tuple[str] | None:
@@ -238,12 +223,11 @@ async def slice_file(
                 f"{folder_name}/plate_1.gcode")
 
             try:
-                img = render_gcode(f"{folder_name}/plate_1.gcode")
+                img: Image.Image = render_gcode(f"{folder_name}/plate_1.gcode")
                 # convert np.array to image in base64
                 render_response = None
 
                 if img:
-                    img = Image.fromarray(img)
 
                     with BytesIO() as output:
                         img.save(output, format="JPEG")
