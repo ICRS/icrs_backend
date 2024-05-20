@@ -6,3 +6,6 @@ requests
 pika
 numpy
 pillow
+matplotlib
+plotly
+kaleido
