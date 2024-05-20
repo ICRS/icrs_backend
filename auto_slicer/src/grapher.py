@@ -1,4 +1,5 @@
 from functools import cache
+import logging
 import plotly.graph_objects as go
 from PIL import Image
 import numpy as np
@@ -157,9 +158,7 @@ class Grapher:
         y_coords = self.y_coords[:pct]
         z_coords = self.z_coords[:pct]
 
-        # print(f"Rendering {len(x_coords)} coordinates")
-
-        print("Rendering...")
+        logging.info(f"Rendering {len(x_coords)} coordinates")
 
         self.fig.add_trace(go.Scatter3d(
             x=x_coords, y=y_coords, z=z_coords,
@@ -174,7 +173,7 @@ class Grapher:
             showlegend=False
         ))
 
-        print("Converting to image...")
+        logging.info("Converting to image...")
         img_bytes = self.fig.to_image(format='png',
                                       scale=0.25,
                                       width=640,
@@ -182,6 +181,6 @@ class Grapher:
                                       validate=False)
         buf = io.BytesIO(img_bytes)
         buf.seek(0)
-        print("Converting to image... Done")
+        logging.info("Converting to image... Done")
 
         return Image.open(buf)
