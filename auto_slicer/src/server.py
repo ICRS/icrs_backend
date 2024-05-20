@@ -5,7 +5,6 @@ import os
 import logging
 import subprocess
 import threading
-import numpy as np
 import requests
 import shutil
 
@@ -50,7 +49,7 @@ def render_gcode(filename: str) -> Image.Image:
     return Image.open(img)
 
 
-def gcode_time(filename: str) -> tuple[str] | None:
+def gcode_time(filename: str) -> tuple[str, str]:
     """
     Get the model print time and estimated time from the gcode file
 
@@ -66,10 +65,11 @@ def gcode_time(filename: str) -> tuple[str] | None:
         for line in lines:
             if line.startswith("; model printing time:"):
                 times = line[1:].split(";")
-                model_time = times[0].split(":")[-1].strip()
-                estimated_time = times[-1].split(":")[-1].strip()
+                model_time: str = times[0].split(":")[-1].strip()
+                estimated_time: str = times[-1].split(":")[-1].strip()
 
                 return model_time, estimated_time
+    return "", ""
 
 
 def weight(filename: str) -> float:
@@ -260,6 +260,8 @@ async def slice_file(
     except Exception as e:
         logging.exception(f"Slice file failed: {e}")
         pass
+
+    return {"status": "failed"}
 
 
 @router.post("/slice/release")
