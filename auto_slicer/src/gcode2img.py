@@ -2,8 +2,8 @@ from io import BytesIO
 import os
 import cProfile
 import pstats
+import logging
 
-from PIL import Image
 from concurrent.futures import ThreadPoolExecutor
 
 from .gcode import GCode
@@ -12,13 +12,12 @@ from .grapher import Grapher
 __all__ = ["gcode2img"]
 
 
-def profile_code():
+def profile_code(filename: str = "cube.gcode"):
     profiler = cProfile.Profile()
     profiler.enable()
 
-    # Replace this with your actual code to generate the image
     imager = gcode2img()
-    img_bytes = imager.gcode2img(filename="cube.gcode", gif=False, frames=30)
+    imager.gcode2img(filename=filename, gif=False, frames=30)
 
     profiler.disable()
     return profiler
@@ -60,7 +59,7 @@ class gcode2img:
         grapher.trace()
 
         def generate_frame(i):
-            print(f"Generating frame {i + 1} of {frames}")
+            logging.info(f"Generating frame {i + 1} of {frames}")
             return grapher.render(percentage=(i + 1) / frames)
 
         output = BytesIO()
