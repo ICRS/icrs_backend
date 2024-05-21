@@ -68,7 +68,7 @@ class PrinterFarm:
                         ams_mapping=ams_mapping)
                     logging.info(f"Started printer {name} with {filename}")
                     requests.post(
-                        f"http://{DATABASE_ENDPOINT}/print-metrics/print",
+                        f"{DATABASE_ENDPOINT}/print-metrics/print",
                         params={
                             "printer_name": name,
                             "shortcode": shortcode,
