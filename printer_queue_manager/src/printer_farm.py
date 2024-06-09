@@ -1,7 +1,18 @@
 import logging
+import json
+import os
 from src.printer_gateway import PrinterGateway
+import requests
 
 __all__ = ["PrinterFarm"]
+
+
+# ==============================================================================
+settings = json.load(open(os.path.abspath("database_settings.json"),
+                          "r", encoding="utf-8"))
+
+DATABASE_ENDPOINT = settings['DATABASE_ENDPOINT']
+# ==============================================================================
 
 
 class PrinterFarm:
@@ -36,6 +47,9 @@ class PrinterFarm:
         printer_type: str,
         filename: str,
         gcode: str,
+        shortcode: str,
+        print_time: int,
+        print_weight: int
     ) -> bool:
 
         for name, printer in self.printers.items():
@@ -53,6 +67,15 @@ class PrinterFarm:
                         use_ams=use_ams,
                         ams_mapping=ams_mapping)
                     logging.info(f"Started printer {name} with {filename}")
+                    requests.post(
+                        f"{DATABASE_ENDPOINT}/print-metrics/print",
+                        params={
+                            "printer_name": name,
+                            "shortcode": shortcode,
+                            "print_time": print_time,
+                            "print_weight": print_weight,
+                        }
+                    )
                     return True
 
             except Exception as e:

@@ -49,6 +49,10 @@ spec:
             - name: rabbitmq-config
               mountPath: /app/rabbitmq.json
               subPath: rabbitmq.json
+            - name: database-settings
+              mountPath: /app/database_settings.json
+              subPath: database_settings.json
+              readOnly: true
 
       volumes:
         - name: printer-config
@@ -63,4 +67,9 @@ spec:
             items:
               - key: rabbitmq.json
                 path: rabbitmq.json
-
+        - name: database-settings
+          configMap:
+            name: database-config
+            items:
+              - key: endpoint
+                path: database_settings.json
