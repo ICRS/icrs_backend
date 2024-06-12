@@ -359,10 +359,10 @@ async def release_file(
                 gcode = f.read()
                 data["gcode"] = str(gcode)
 
-            data["print_weight"] = int(
-                extract_weight(
-                    f"{folder_name}/slice_info.config")
-            )
+            # data["print_weight"] = int(
+            #     extract_weight(
+            #         f"{folder_name}/Metadata/slice_info.config")
+            # )
             data["print_time"] = bambu_time_conversion(
                 extract_print_time(data["gcode"].split("\n")[:4])[1]
                 ).total_seconds()
