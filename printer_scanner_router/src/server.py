@@ -31,3 +31,14 @@ async def update_availability(
     )
 
     return r.status_code
+
+
+@router.get("/availability")
+async def get_availability(
+    printer_name: str = Query(enum=PRINTER_NAMES),
+):
+    r = requests.get(
+        f"http://{printer_name}{PRINTER_GATEWAY_ENDPOINT_SUFFIX}/printer/available", # noqa
+    )
+
+    return r.json()
