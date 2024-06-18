@@ -149,7 +149,8 @@ class SetPrintWindow(BaseHandler):
                 msg = "FAILURE"
                 return
             print("ok")
-            id = data.get('id').upper().strip().replace(" ","")
+            id = data.get('id').upper().strip().split(" ")
+            id = "".join([bit_val.zfill(2) for bit_val in id])
             id = id.zfill(8)
             #window = data.get('window')
             #if window is None:
