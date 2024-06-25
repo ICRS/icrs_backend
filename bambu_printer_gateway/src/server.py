@@ -1,5 +1,5 @@
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 from typing import BinaryIO
 import logging
@@ -96,6 +96,9 @@ async def get_file_name():
     return {"file_name": printer.get_file_name()}
 
 
+image_last_update = datetime.now()
+
+
 @router.get("/printer/camera")
 async def printer_get_camera():
     """
@@ -132,6 +135,10 @@ async def printer_get_camera():
     except Exception as e:  # noqa  # pylint: disable=broad-exception-caught
         logging.error(f"Error occurred while getting camera frame: {e}")    # noqa  # pylint: disable=logging-fstring-interpolation
         return {"error": str(e)}
+
+    global image_last_update
+    image_last_update = datetime.now()
+
     return {"frame": frame} if (frame := last_frame
                                 ) is not None else {}
 
@@ -345,3 +352,11 @@ async def set_printer_available(
     global printer_available
     printer_available = available
     return printer_available
+
+
+@router.get("/healthz", status_code=200)
+async def healthz(reponse: Response):
+    if (datetime.now() - image_last_update) > timedelta(seconds=60):
+        reponse.status_code = 500
+        return False
+    return True
