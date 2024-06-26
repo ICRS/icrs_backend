@@ -116,7 +116,6 @@ class UserMachinePermissions(BaseHandler):
         try:
             data = json.loads(self.request.body)
 
-            # TODO: FIX THIS
             canPrint = bool(data.get("canPrint"))
             canLaserCut = bool(data.get("canLaserCut"))
 
