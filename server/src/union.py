@@ -27,8 +27,11 @@ society_api = ICUEActivitiesAPI(CSP_CODE, api_key, year_string)
 
 # =========================================
 
+
 def isMember(shortcode: str) -> bool:
-    return shortcode in [member['Login'] for member in society_api.list_members()]
+    return shortcode in [member['Login']
+                         for member in society_api.list_members()]
+
 
 def is_member(shortcode: str) -> bool:
     """
@@ -48,15 +51,18 @@ def is_member(shortcode: str) -> bool:
         mems = [member['Login'] for member in
                 society_api.list_members()]  # pylint: disable=maybe-no-member
         return shortcode in mems
-    
+
     except Exception:  # pylint: disable=broad-except
         print("Error contacting Society API")
         return False
 
 
 def getShortcodesToCIDAndName(shortcodes) -> list:
-    d = {member['Login']: (f"{member['FirstName']} {member['Surname']}", member['CID'], member['Login']) for member in society_api.list_members()}
+    d = {member['Login']: (f"{member['FirstName']} {member['Surname']}",
+                           member['CID'], member['Login'])
+         for member in society_api.list_members()}
     return list(set(d[s] for s in shortcodes if s in d))
+
 
 def is_member_list(shortcodes: list[str]) -> bool:
     try:
