@@ -1,3 +1,4 @@
+import math
 import psycopg2 as pg
 
 import datetime
@@ -12,7 +13,6 @@ from src.authentication import BaseHandler
 from src.database import DB_CONFIG
 
 load_dotenv()
-import math
 
 secret = os.environ["SECRET"]
 last_set_time = datetime.datetime.fromtimestamp(0)
@@ -20,13 +20,14 @@ last_short_code = ''
 
 try:
     env = os.environ["ENV"]
-except:
+except Exception:
     env = "dev"
 
 if env == "dev":
     import src.union_mock as union
 else:
     import src.union as union
+
 
 def db_execute_command(sql_query, parameters):
     try:
@@ -35,11 +36,12 @@ def db_execute_command(sql_query, parameters):
                 cur.execute(sql_query, parameters)
 
                 conn.commit()
-                msg = "Record successfully added"    
-    except:
+                msg = "Record successfully added"
+    except Exception:
         msg = "error in insert operation"
     finally:
         return msg
+
 
 class AddUser(BaseHandler):
     '''adds a user to db with given ID and perms'''
@@ -48,50 +50,56 @@ class AddUser(BaseHandler):
     def post(self):
         try:
             data = json.loads(self.request.body)
-            
-            ID = data.get('id').upper().strip().replace(" ","")
+
+            ID = data.get('id').upper().strip().replace(" ", "")
             SHORTCODE = data.get('shortcode').lower()
             ISMEMBER = "TRUE" if union.isMember(SHORTCODE) is True else "FALSE"
-           
-            self.write(db_execute_command("INSERT INTO public.access (id, shortcode, valid) VALUES (%s,%s,%s)", (ID, SHORTCODE, ISMEMBER)))
+
+            self.write(db_execute_command(
+                "INSERT INTO public.access (id, shortcode, valid) VALUES (%s,%s,%s)", (ID, SHORTCODE, ISMEMBER)))  # noqa: E501
             self.write("Is Member: " + ISMEMBER)
 
             canPrint = None
             canLaserCut = None
             try:
                 canPrint = bool(data.get("canPrint"))
-            except:
+            except Exception:
                 pass
             try:
                 canLaserCut = bool(data.get("canLaserCut"))
-            except:
+            except Exception:
                 pass
 
             if canPrint is not None:
-                db_execute_command("UPDATE public.access SET canprint=%s WHERE valid=\'TRUE\' AND id=%s", (str(canPrint).upper(), ID))
+                db_execute_command(
+                    "UPDATE public.access SET canprint=%s WHERE valid=\'TRUE\' AND id=%s", (str(canPrint).upper(), ID))  # noqa: E501
             if canLaserCut is not None:
-                db_execute_command("UPDATE public.access SET canlasercut=%s WHERE valid=\'TRUE\' AND id=%s", (str(canLaserCut).upper(), ID))
-
+                db_execute_command("UPDATE public.access SET canlasercut=%s WHERE valid=\'TRUE\' AND id=%s", (str(  # noqa: E501
+                    canLaserCut).upper(), ID))
 
         except Exception as e:
             self.finish("ERROR in post message:"+str(e))
 
+
 class RegisterUsers(BaseHandler):
     '''sets users to valid if they have membership'''
+
     def get(self):
         try:
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT shortcode From public.access WHERE valid=\'FALSE\' OR valid=\'0\'")
+                    cur.execute(
+                        "SELECT shortcode From public.access WHERE valid=\'FALSE\' OR valid=\'0\'")  # noqa: E501
 
                     update = [c[0] for c in cur.fetchall()]
                     update = union.is_member_list(update)
-                    
-                    set_valid_by_shortcode = "UPDATE public.access SET valid=\'TRUE\', canprint=\'TRUE\' WHERE shortcode=%s"
-                    cur.executemany(set_valid_by_shortcode, [(c,) for c in update])
-                    
+
+                    set_valid_by_shortcode = "UPDATE public.access SET valid=\'TRUE\', canprint=\'TRUE\' WHERE shortcode=%s"  # noqa: E501
+                    cur.executemany(set_valid_by_shortcode,
+                                    [(c,) for c in update])
+
                     conn.commit()
-        
+
                     msg = "Successfully Registered Users"
         except Exception as e:
             print(e)
@@ -110,37 +118,43 @@ class UserMachinePermissions(BaseHandler):
 
             # TODO: FIX THIS
             canPrint = bool(data.get("canPrint"))
-            canLaserCut = bool(data.get("canLaserCut"))    
-            
+            canLaserCut = bool(data.get("canLaserCut"))
+
             if "id" in data:
                 id = data.get('id')
-            
+
                 if canPrint is not None:
-                    db_execute_command("UPDATE public.access SET canprint=%s WHERE valid=\'TRUE\' AND id=%s", (str(canPrint).upper(), id))
+                    db_execute_command(
+                        "UPDATE public.access SET canprint=%s WHERE valid=\'TRUE\' AND id=%s", (str(canPrint).upper(), id))  # noqa: E501
                 if canLaserCut is not None:
-                    db_execute_command("UPDATE public.access SET canlasercut=%s WHERE valid=\'TRUE\' AND id=%s", (str(canLaserCut).upper(), id))
+                    db_execute_command("UPDATE public.access SET canlasercut=%s WHERE valid=\'TRUE\' AND id=%s", (str(  # noqa: E501
+                        canLaserCut).upper(), id))
 
             if "shortcode" in data:
                 shortcode = data.get("shortcode")
                 if canPrint is not None:
-                    db_execute_command("UPDATE public.access SET canprint=%s WHERE valid=\'TRUE\' AND shortcode=%s", (str(canPrint).upper(), shortcode))
+                    db_execute_command("UPDATE public.access SET canprint=%s WHERE valid=\'TRUE\' AND shortcode=%s", (str(  # noqa: E501
+                        canPrint).upper(), shortcode))
                 if canLaserCut is not None:
-                    db_execute_command("UPDATE public.access SET canlasercut=%s WHERE valid=\'TRUE\' AND shortcode=%s", (str(canLaserCut).upper(), shortcode))
-                
-        except:
+                    db_execute_command("UPDATE public.access SET canlasercut=%s WHERE valid=\'TRUE\' AND shortcode=%s", (str(  # noqa: E501
+                        canLaserCut).upper(), shortcode))
+
+        except Exception:
             self.finish("Error in post message")
             return
 
         self.finish("SUCCESS")
         return
- 
+
 
 class SetPrintWindow(BaseHandler):
-    '''verifies if a user can print, if yes a print window of default 1 min is opened'''
+    '''verifies if a user can print,
+    if yes a print window of default 1 min is opened'''
+
     def post(self):
         try:
             msg = "SUCCESS"
-            
+
             data = json.loads(self.request.body)
             print(data, secret)
             if data.get('secret') != secret:
@@ -152,41 +166,44 @@ class SetPrintWindow(BaseHandler):
             id = data.get('id').upper().strip().split(" ")
             id = "".join([bit_val.zfill(2) for bit_val in id])
             id = id.zfill(8)
-            #window = data.get('window')
-            #if window is None:
+            # window = data.get('window')
+            # if window is None:
             window = 60
 
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT COUNT(*) FROM public.access WHERE id=%s AND canprint=\'TRUE\'", (id,))
+                    cur.execute(
+                        "SELECT COUNT(*) FROM public.access WHERE id=%s AND canprint=\'TRUE\'", (id,))  # noqa: E501
                     print("executed")
 
                     if cur is not None and cur.fetchone()[0] > 0:
                         print("CHECK TIME")
                         global last_set_time, last_short_code
-                        last_set_time = datetime.datetime.now() + datetime.timedelta(seconds=int(window))
-                        
-                        cur.execute("SELECT shortcode FROM public.access WHERE id=%s AND canprint=\'TRUE\'",(id,))
+                        last_set_time = datetime.datetime.now() + datetime.timedelta(seconds=int(window))  # noqa: E501
+
+                        cur.execute(
+                            "SELECT shortcode FROM public.access WHERE id=%s AND canprint=\'TRUE\'", (id,))  # noqa: E501
                         last_short_code = cur.fetchone()[0]
                         print(last_short_code)
 
                     else:
                         msg = "FAILURE"
-        except:
+        except Exception:
             msg = "FAILURE"
-        
+
         print(msg)
         self.write(msg)
-        
+
 
 class GetPrintWindow(BaseHandler):
     '''queries if the print window is open, returns true if open'''
+
     def get(self):
-        try:            
+        try:
             status = last_set_time > datetime.datetime.now()
             self.write(str(status))
 
-        except:
+        except Exception:
             self.write("Error in get message")
 
 
@@ -195,23 +212,26 @@ class GetRecentlyInducted(BaseHandler):
         try:
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT shortcode FROM public.access A WHERE valid=\'TRUE\' AND NOT EXISTS (SELECT \'X\' FROM public.sent S WHERE A.shortcode=S.shortcode)")
+                    cur.execute(
+                        "SELECT shortcode FROM public.access A WHERE valid=\'TRUE\' AND NOT EXISTS (SELECT \'X\' FROM public.sent S WHERE A.shortcode=S.shortcode)")  # noqa: E501
 
                     update = [c[0] for c in cur.fetchall()]
-        
+
                     mapping = union.getShortcodesToCIDAndName(update)
-                    
-                    cur.executemany("INSERT INTO public.sent (shortcode) VALUES (%s)", [(c,) for c in update])
+
+                    cur.executemany("INSERT INTO public.sent (shortcode) VALUES (%s)", [  # noqa: E501
+                                    (c,) for c in update])
                     return mapping
-        except:
+        except Exception:
             print("Error somewhere in here")
-            
+
     def get(self):
         try:
             self.write(str(self.getValidNameCIDs()))
-        
-        except:
+
+        except Exception:
             self.write("ERROR")
+
 
 class GetUserPermsFromShortCode(BaseHandler):
     @tornado.web.authenticated
@@ -221,25 +241,31 @@ class GetUserPermsFromShortCode(BaseHandler):
         if not shortcode:
             self.write("Shortcode not provided!")
             return
-        
+
         try:
             with pg.connect(**DB_CONFIG) as conn:
                 with conn.cursor() as cur:
-                    cur.execute("SELECT * FROM public.access WHERE shortcode=%s", (shortcode,))
+                    cur.execute(
+                        "SELECT * FROM public.access WHERE shortcode=%s", (shortcode,))  # noqa: E501
                     result = cur.fetchone()
                     if not result:
                         result = {}
                     else:
-                        result = {'shortcode':result[1],'print':result[2],'laser':result[3],'inducted':result[4]}
+                        result = {
+                            'shortcode': result[1], 'print': result[2],
+                            'laser': result[3],
+                            'inducted': result[4]
+                        }
                     self.write(result)
         except Exception as e:
-            self.write(e.message,e.args)
+            self.write(e.message, e.args)
+
 
 class GetUserPermsFromID(BaseHandler):
     def get(self):
         uid = self.get_argument('id', default=None)
         secret_ = self.get_argument('secret', default=None)
-        
+
         if secret_ != secret:
             print("secret incorrect")
             self.finish("incorrect key")
@@ -247,7 +273,7 @@ class GetUserPermsFromID(BaseHandler):
             self.write(msg)
             return
 
-        uid = uid.strip().replace(" ","")
+        uid = uid.strip().replace(" ", "")
         uid = uid.zfill(8)
 
         perm_request = "SELECT * FROM public.access WHERE id=%s"
@@ -261,17 +287,21 @@ class GetUserPermsFromID(BaseHandler):
                     if not result:
                         result = {}
                     else:
-                        result = {'shortcode':result[1],'print':result[2],'laser':result[3],'inducted':result[4]}
+                        result = {
+                            'shortcode': result[1], 'print': result[2],
+                            'laser': result[3],
+                            'inducted': result[4]}
                     self.write(result)
         except Exception as e:
-            self.write(e.message,e.args)
+            self.write(e.message, e.args)
+
 
 class PrintMetrics(BaseHandler):
     '''Saves metrics for a singe print job'''
+
     def parse_to_int(self, s: str) -> int:
         '''Expects the time to be in in seconds (float)'''
-        return math.ceil(float(s)) 
-        
+        return math.ceil(float(s))
 
     def post(self):
         data = json.loads(self.request.body)
@@ -280,20 +310,22 @@ class PrintMetrics(BaseHandler):
         print_time = self.parse_to_int(data.get('time').strip())
         print_weight = self.parse_to_int(data.get('weight').strip())
         printer_name = data.get('name').strip()
-        
+
         print(print_time, print_weight, printer_name, last_short_code)
-        self.write(db_execute_command("INSERT INTO public.print_metrics (shortcode, print_duration, print_weight, printer_name) VALUES (%s,%s,%s,%s)", (last_short_code, print_time, print_weight, printer_name)))
+        self.write(db_execute_command("INSERT INTO public.print_metrics (shortcode, print_duration, print_weight, printer_name) VALUES (%s,%s,%s,%s)",  # noqa: E501
+                   (last_short_code, print_time, print_weight, printer_name)))
         # print(data)
 
         return
 
 
-class GetAllInducted(BaseHandler):    
+class GetAllInducted(BaseHandler):
     @tornado.web.authenticated
     def get(self):
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT shortcode FROM public.access WHERE valid=\'TRUE\'")
+                cur.execute(
+                    "SELECT shortcode FROM public.access WHERE valid=\'TRUE\'")
                 inducted = cur.fetchall()
                 inducted = [c[0] + "@ic.ac.uk" for c in inducted]
                 self.write(json.dumps(inducted, default=str))
