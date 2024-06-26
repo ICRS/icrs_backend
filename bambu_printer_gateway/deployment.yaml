@@ -36,6 +36,12 @@ spec:
             secretKeyRef:
               name: ${printer-name}-secret
               key: printer_serial
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 60
 
 ---
 apiVersion: v1
