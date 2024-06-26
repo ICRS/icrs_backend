@@ -5,7 +5,6 @@ import os
 import logging
 import subprocess
 import threading
-import numpy as np
 import requests
 import shutil
 from datetime import timedelta
@@ -19,6 +18,8 @@ from PIL import Image
 
 from .printer_asset_utils import AVAILABLE_LAYER_HEIGHT, AVAILABLE_PRINTERS, \
     get_machine, process_from_machine_layer, printer_pla
+
+from .gcode2img import gcode2img
 
 
 router = APIRouter()
@@ -36,15 +37,7 @@ credentials = pika.PlainCredentials(
 )
 
 
-class Args:
-    def __init__(self, arguments: dict):
-        self.arguments = arguments
-
-    def __getattr__(self, name: str):
-        return self.arguments.get(name, None)
-
-
-def render_gcode(filename: str) -> np.array:
+def render_gcode(filename: str) -> Image.Image:
     """
     Render gcode file to img
 
@@ -52,23 +45,13 @@ def render_gcode(filename: str) -> np.array:
     ----
         filename (str): filename of the gcode file
     """
-    # renderer = GcodeRenderer()  # noqa: F841
-    # img = renderer.run(
-    #     path=filename,
-    #     support=True,
-    #     moves=True,
-    #     bed=True,
-    #     show=False,
-    #     target="output.png",
-    #     imgx=600,
-    #     imgy=400,
-    # )
-    # print(img)
-    img = None
-    return img
+    imager = gcode2img()
+    img: bytes = imager.gcode2img(filename=filename,
+                                  gif=False, frames=30)
+    return Image.open(img)
 
 
-def gcode_time(filename: str) -> tuple[str] | None:
+def gcode_time(filename: str) -> tuple[str, str]:
     """
     Get the model print time and estimated time from the gcode file
 
@@ -279,12 +262,11 @@ async def slice_file(
                 f"{folder_name}/plate_1.gcode")
 
             try:
-                img = render_gcode(f"{folder_name}/plate_1.gcode")
+                img: Image.Image = render_gcode(f"{folder_name}/plate_1.gcode")
                 # convert np.array to image in base64
                 render_response = None
 
                 if img:
-                    img = Image.fromarray(img)
 
                     with BytesIO() as output:
                         img.save(output, format="JPEG")
@@ -318,6 +300,8 @@ async def slice_file(
     except Exception as e:
         logging.exception(f"Slice file failed: {e}")
         pass
+
+    return {"status": "failed"}
 
 
 @router.post("/slice/release")
