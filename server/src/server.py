@@ -28,21 +28,22 @@ class Application(tornado.web.Application):
         # tornado.web.url(r"/getValidUsers", GetRecentlyInducted),
         tornado.web.url(r"/postPrintTime", PrintMetrics),
         tornado.web.url(r"/getAllInducted", GetAllInducted),
-        
+
         tornado.web.url(r"/user/perms/uid", GetUserPermsFromID),
         tornado.web.url(r"/user/perms", GetUserPermsFromShortCode),
-        
+
         tornado.web.url(r"/users/inducted/all", GetAllInducted),
         tornado.web.url(r"/users/inducted/recent", GetRecentlyInducted),
         tornado.web.url(r"/users/update/recent", RegisterUsers),
-        
+
         tornado.web.url(r"/login", LoginHandler),
         tornado.web.url(r"/", MainHandler),
     ]
 
     def __init__(self):
         setup_swagger(self._routes)
-        cookie_secret = str(base64.b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes))
+        cookie_secret = str(base64.b64encode(
+            uuid.uuid4().bytes + uuid.uuid4().bytes))
         settings = {
             "cookie_secret": cookie_secret,
             "login_url": "/login",
