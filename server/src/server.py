@@ -12,7 +12,6 @@ from src.access_server import (
     GetUserPermsFromShortCode,
     GetUserPermsFromID
 )
-from src.print_metrics import PrintStatistics
 from tornado_swagger.setup import setup_swagger
 
 import base64
@@ -28,7 +27,6 @@ class Application(tornado.web.Application):
         # tornado.web.url(r"/registerUsers", RegisterUsers),
         # tornado.web.url(r"/getValidUsers", GetRecentlyInducted),
         tornado.web.url(r"/postPrintTime", PrintMetrics),
-        tornado.web.url(r"/printStatistics", PrintStatistics),
         tornado.web.url(r"/getAllInducted", GetAllInducted),
         
         tornado.web.url(r"/user/perms/uid", GetUserPermsFromID),

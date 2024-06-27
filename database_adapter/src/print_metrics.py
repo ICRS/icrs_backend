@@ -1,6 +1,8 @@
+import datetime
+from typing import Annotated
 from src.database import DB_CONFIG
 import logging
-from fastapi import APIRouter, Query, HTTPException, status
+from fastapi import APIRouter, Body, Query, HTTPException, status
 import psycopg2 as pg
 import json
 
@@ -79,6 +81,35 @@ def member_stats_discord(discord_id: str = Query(min_length=10)):
                 prints = cur.fetchall()
 
                 return prints
+    except Exception as e:
+        error_msg = f"Error occurred when querying db: {e}"
+        logging.warning(error_msg)
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=error_msg,
+        )
+
+
+@print_metrics_router.get("/member/stats/summary")
+def member_stats_summary(
+    start_time: Annotated[datetime, Body()] = datetime.datetime(
+        1970, 1, 1, 0, 0),
+):
+    try:
+        with pg.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT shortcode, SUM(print_duration), " +
+                    "SUM(print_weight) " +
+                    "FROM public.print_metrics " +
+                    "WHERE time_started >= %s " +
+                    "GROUP BY shortcode",
+                    (start_time,)
+                )
+                return [{"shortcode": c[0],
+                         "print_duration": c[1],
+                         "print_weight": c[2]} for c in cur.fetchall()]
     except Exception as e:
         error_msg = f"Error occurred when querying db: {e}"
         logging.warning(error_msg)
