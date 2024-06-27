@@ -70,16 +70,13 @@ def member_stats_discord(discord_id: str = Query(min_length=10)):
     try:
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
-                # TODO: Make single query
                 cur.execute(
-                    "SELECT shortcode From public.mapping WHERE user_id=%s",
-                    (discord_id,)
-                )
-                shortcode = cur.fetchone()
-
-                cur.execute(
-                    "SELECT * FROM public.print_metrics WHERE shortcode=%s",
-                    (shortcode,))  # noqa: E501
+                    "SELECT T.shortcode, T.time_started, T.print_duration, " +
+                    "T.print_weight, T.printer_name " +
+                    "FROM public.print_metrics T INNER JOIN public.mapping" +
+                    "ON public.mapping.shortcode=T.shortcode " +
+                    "WHERE user_id=%s",
+                    (discord_id,))  # noqa: E501
                 prints = cur.fetchall()
 
                 return json.dumps(prints, default=str)
