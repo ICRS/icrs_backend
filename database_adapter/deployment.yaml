@@ -21,6 +21,27 @@ spec:
         env:
         - name: TZ
           value: Europe/London
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: access-server-secret
+              key: secret
+        - name: ENV
+          valueFrom:
+            secretKeyRef:
+              name: access-server-secret
+              key: env
+        - name: USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: access-server-secret
+              key: username
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: imperial-secret
+              key: api_key
+
         volumeMounts:
           - name: postgres-ini 
             mountPath: /app/postgres.ini
