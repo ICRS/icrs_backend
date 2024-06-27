@@ -4,7 +4,6 @@ from src.access_server import (
     AddUser,
     GetAllInducted,
     UserMachinePermissions,
-    GetMetrics,
     RegisterUsers,
     SetPrintWindow,
     GetPrintWindow,
@@ -30,7 +29,6 @@ class Application(tornado.web.Application):
         # tornado.web.url(r"/getValidUsers", GetRecentlyInducted),
         tornado.web.url(r"/postPrintTime", PrintMetrics),
         tornado.web.url(r"/printStatistics", PrintStatistics),
-        tornado.web.url(r"/getMetrics", GetMetrics),
         tornado.web.url(r"/getAllInducted", GetAllInducted),
         
         tornado.web.url(r"/user/perms/uid", GetUserPermsFromID),
