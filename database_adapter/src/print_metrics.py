@@ -1,6 +1,6 @@
 from src.database import DB_CONFIG
 import logging
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, status
 import psycopg2 as pg
 import json
 
@@ -43,3 +43,51 @@ async def add_print_entry(printer_name: str = Query(enum=PRINTER_NAMES),
         raise HTTPException(
             status_code=500,
             detail=error_msg)
+
+
+@print_metrics_router.get("/member/stats/shortcode")
+def member_stats(shortcode: str = Query(min_length=3, max_length=7)):
+    shortcode = shortcode.lower()
+    try:
+        with pg.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT * FROM public.print_metrics WHERE shortcode=%s", (shortcode,))  # noqa: E501
+                prints = cur.fetchall()
+                return json.dumps(prints, default=str)
+    except Exception as e:
+        error_msg = f"Error occurred when querying db: {e}"
+        logging.warning(error_msg)
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=error_msg,
+        )
+
+
+@print_metrics_router.get("/member/stats/discord")
+def member_stats_discord(discord_id: str = Query(min_length=10)):
+    try:
+        with pg.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                # TODO: Make single query
+                cur.execute(
+                    "SELECT shortcode From public.mapping WHERE user_id=%s",
+                    (discord_id,)
+                )
+                shortcode = cur.fetchone()
+
+                cur.execute(
+                    "SELECT * FROM public.print_metrics WHERE shortcode=%s",
+                    (shortcode,))  # noqa: E501
+                prints = cur.fetchall()
+
+                return json.dumps(prints, default=str)
+    except Exception as e:
+        error_msg = f"Error occurred when querying db: {e}"
+        logging.warning(error_msg)
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=error_msg,
+        )
