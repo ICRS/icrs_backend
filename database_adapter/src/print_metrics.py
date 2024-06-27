@@ -53,8 +53,7 @@ def member_stats(shortcode: str = Query(min_length=3, max_length=7)):
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT * FROM public.print_metrics WHERE shortcode=%s", (shortcode,))  # noqa: E501
-                prints = cur.fetchall()
-                return json.dumps(prints, default=str)
+                return cur.fetchall()
     except Exception as e:
         error_msg = f"Error occurred when querying db: {e}"
         logging.warning(error_msg)
@@ -73,13 +72,13 @@ def member_stats_discord(discord_id: str = Query(min_length=10)):
                 cur.execute(
                     "SELECT T.shortcode, T.time_started, T.print_duration, " +
                     "T.print_weight, T.printer_name " +
-                    "FROM public.print_metrics T INNER JOIN public.mapping" +
+                    "FROM public.print_metrics T INNER JOIN public.mapping " +
                     "ON public.mapping.shortcode=T.shortcode " +
                     "WHERE user_id=%s",
                     (discord_id,))  # noqa: E501
                 prints = cur.fetchall()
 
-                return json.dumps(prints, default=str)
+                return prints
     except Exception as e:
         error_msg = f"Error occurred when querying db: {e}"
         logging.warning(error_msg)
