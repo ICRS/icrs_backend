@@ -287,18 +287,6 @@ class PrintMetrics(BaseHandler):
 
         return
 
-class GetMetrics(BaseHandler):
-    def post(self):
-        data = json.loads(self.request.body)
-        shortcode = data['shortcode'].lower()
-        with pg.connect(**DB_CONFIG) as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT * FROM public.print_metrics WHERE shortcode=%s", (shortcode,))
-                prints = cur.fetchall()
-                # out = {"prints":prints}
-                self.write(json.dumps(prints, default=str))
-                return
-
 
 class GetAllInducted(BaseHandler):    
     @tornado.web.authenticated
