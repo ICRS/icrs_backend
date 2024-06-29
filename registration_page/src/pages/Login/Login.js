@@ -1,65 +1,34 @@
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
 import './Login.css';
 
 function Login(props) {
     const navigate = useNavigate();
-    
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+    const handleSubmit = (endpoint) => {
 
-        const finalFormEndpoint = e.target.action;
-        // console.log("Endpoint", finalFormEndpoint);
-        
-        const authorization = "Basic " + btoa(username+ ":" + password);
-        console.log(authorization, username, password);
+        const finalFormEndpoint = endpoint;        
         fetch(finalFormEndpoint, {
             method: 'POST',
             headers: {
                 "Accept": "*/*",
-                "Authorization": authorization,
             },
-			body: JSON.stringify({}),
-            // redirect: 'follow',    
         })
             .then((response) => {
                 if (!response.ok) {
-                    return alert('User not registered. Membership may need to be acquired.');
+                    return alert('Invalid Login!!!');
                 }
                 console.log(response);
                 props.loginHandler(true);
                 console.log(response)
                 return navigate('/');
-                // return alert("Success!");
             }).catch(() => {
-                return alert('Could not submit form. Please try again later. Network error likely.');
+                return alert('Could not log in! Network error likely.');
             });
 
     }
-
-    return (
-        <div className='login-container'>
-            <form 
-                action={props.endpoint}
-                method="POST"
-                onSubmit={handleSubmit}
-                className="login-form"
-                >
-                <div>
-                    <label>Username</label>
-                    <input type="text" placeholder="Username" onChange={(e) => setUsername(e.target.value)}/>
-                </div>
-                <div>
-                    <label>Password</label>
-                    <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
-                </div>
-                <button type="submit">Login</button>
-            </form>
-        </div>
-    );
+    handleSubmit(props.endpoint);
+    
+    return;
 }
 
 export default Login;

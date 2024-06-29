@@ -10,7 +10,6 @@ export function Form(props) {
         // Clear input values
         document.getElementsByName("id")[0].value = "";
         document.getElementsByName("shortcode")[0].value = "";
-        document.getElementsByName("secret")[0].value = "";
     }
     return (
         <div className="form-box">
@@ -40,18 +39,18 @@ export function Form(props) {
 
                 <div className="pt-0 mb-3">
                     <label>Can Laser Cut:</label>
-                    <select id="canLaserCut" name="canLaserCut">
-                        <option value="">False</option>
-                        <option value="True">True</option>
+                    <select id="laser" name="laser">
+                        <option value="false">False</option>
+                        <option value="true">True</option>
                     </select>
 
                 </div>
 
                 <div className="pt-0 mb-3">
                     <label>Can Print:</label>
-                    <select id="canPrint" name="canPrint">
-                        <option value="True">True</option>
-                        <option value="">False</option>
+                    <select id="print" name="print">
+                        <option value="true">True</option>
+                        <option value="false">False</option>
                     </select>
                 </div>
 

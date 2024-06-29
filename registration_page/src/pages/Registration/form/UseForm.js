@@ -13,11 +13,13 @@ function useForm() {
 		const data = Array.from(e.target.elements)
 			.filter((input) => input.name)
 			.reduce((obj, input) => Object.assign(obj, { [input.name]: input.value }), {});
-
+		data["print"] = data["print"] === "true";
+		data["laser"] = data["laser"] === "true";
 		fetch(finalFormEndpoint, {
 			method: 'POST',
 			headers: {
 				"Accept": "*/*",
+				"Content-Type": "application/json",
 			},
 			body: JSON.stringify(data),
 		})

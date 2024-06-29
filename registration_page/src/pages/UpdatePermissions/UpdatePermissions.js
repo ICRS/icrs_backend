@@ -7,13 +7,17 @@ function Form(props) {
         const data = Array.from(e.target.elements)
             .filter((input) => input.name)
             .reduce((obj, input) => Object.assign(obj, { [input.name]: input.value }), {});
+        
+            data["print"] = data["print"] === "true";
+        data["laser"] = data["laser"] === "true";
 
         fetch(finalFormEndpoint, {
             method: 'POST',
             headers: {
+		    "Content-Type": "application/json",
                 "Accept": "*/*",
             },
-            body: JSON.stringify(data)
+	body: JSON.stringify(data),
         })
             .then((response) => {
                 if (!response.ok) {
@@ -41,17 +45,17 @@ function Form(props) {
 
                 <div>
                     <label> Can Print: </label>
-                    <select id="canPrint" name="canPrint">
-                        <option value="True">True</option>
-                        <option value="">False</option>
+                    <select id="print" name="print">
+                        <option value="true">True</option>
+                        <option value="false">False</option>
                     </select>
                 </div>
 
                 <div className="pt-0 mb-3">
                     <label>Can Laser Cut:</label>
-                    <select id="canLaserCut" name="canLaserCut">
-                        <option value="">False</option>
-                        <option value="True">True</option>
+                    <select id="laser" name="laser">
+                        <option value="false">False</option>
+                        <option value="true">True</option>
                     </select>
                 </div>
                 <div>
