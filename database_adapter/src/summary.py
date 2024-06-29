@@ -4,7 +4,7 @@ import psycopg2 as pg
 from typing import Annotated
 from fastapi import APIRouter, Depends,  HTTPException, status
 
-from database import DB_CONFIG
+from src.database import DB_CONFIG
 
 from src.auth import get_current_username
 import src.union as union

@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends,  HTTPException, Query, status
 from pydantic import BaseModel
 
-from database import DB_CONFIG
+from src.database import DB_CONFIG
 
 from src.auth import get_current_username
 
@@ -15,9 +15,9 @@ from src.auth import get_current_username
 env = os.getenv("ENV", "dev")
 
 if env == "dev":
-    import union_mock as union
+    import src.union_mock as union
 else:
-    import union as union
+    import src.union as union
 
 member_router = APIRouter(prefix="/member", tags=["Member"])
 
@@ -87,7 +87,7 @@ def get_member_permissions_from_shortcode(
     username: Annotated[
         str, Depends(get_current_username)],
     shortcode: str = Query(min_length=3, max_length=7)
-) -> dict | MemberPermissions:
+):
     try:
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
@@ -103,7 +103,7 @@ def get_member_permissions_from_shortcode(
                         laser=result[3],
                         inducted=result[4]
                     )
-                return result.model_dump_json()
+                return result
     except Exception as e:
         error_msg = "Could not query database/result return" + \
             f"in unexpected format: {e}"
@@ -120,7 +120,7 @@ def get_member_permissions_from_uuid(
     username: Annotated[
         str, Depends(get_current_username)],
     uuid: str = Query(min_length=8, max_length=14)
-) -> dict | MemberPermissions:
+):
     uuid = "".join(u.zfill(2) for u in uuid.split(" "))
 
     try:
@@ -138,7 +138,7 @@ def get_member_permissions_from_uuid(
                         laser=result[3],
                         inducted=result[4]
                     )
-                return result.model_dump_json()
+                return result
     except Exception as e:
         error_msg = "Could not query database/result return" + \
             f"in unexpected format: {e}"

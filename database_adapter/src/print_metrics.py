@@ -93,7 +93,7 @@ def member_stats_discord(discord_id: str = Query(min_length=10)):
 
 @print_metrics_router.get("/member/stats/summary")
 def member_stats_summary(
-    start_time: Annotated[datetime, Body()] = datetime.datetime(
+    start_time: Annotated[datetime.datetime, Body()] = datetime.datetime(
         1970, 1, 1, 0, 0),
 ):
     try:
