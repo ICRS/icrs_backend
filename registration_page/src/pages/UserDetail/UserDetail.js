@@ -24,7 +24,7 @@ function Form(props) {
                 <div>
                     <ul>
 					{Object.entries(details).map(([item, index]) => (
-						<li > {item}: {index} </li>
+						<li > {item}: {index.toString()} </li>
 					))}
 				</ul>
                 </div>

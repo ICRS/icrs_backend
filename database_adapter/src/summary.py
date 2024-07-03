@@ -15,7 +15,7 @@ summary = APIRouter(prefix="/summary", tags=["Summary"])
 @summary.get("/inducted")
 def all_inducted(
     username: Annotated[
-        str, Depends(get_current_username)]
+        str, Depends(get_current_username)],
 ):
     try:
         with pg.connect(**DB_CONFIG) as conn:
@@ -39,7 +39,7 @@ def all_inducted(
 @summary.get("/inducted/recent")
 def recently_inducted(
     username: Annotated[
-        str, Depends(get_current_username)]
+        str, Depends(get_current_username)],
 ):
     try:
         with pg.connect(**DB_CONFIG) as conn:
