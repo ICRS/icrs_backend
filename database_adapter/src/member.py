@@ -25,8 +25,8 @@ member_router = APIRouter(prefix="/member", tags=["Member"])
 class MemberDetails(BaseModel):
     id: str = pydantic.Field(min_length=8, max_length=14)
     shortcode: str = pydantic.Field(min_length=3, max_length=7)
-    canPrint: bool = pydantic.Field(True)
-    canLaserCut: bool = pydantic.Field(False)
+    print: bool = pydantic.Field(True)
+    laser: bool = pydantic.Field(False)
 
 
 @member_router.post("/add")
@@ -61,9 +61,9 @@ def add_icrs_member(
                     "valid, canPrint, canLaserCut) VALUES (%s,%s,%s,%s,%s)",
                     (id,
                      shortcode,
-                     is_member,
-                     member_details.canPrint,
-                     member_details.canLaserCut))
+                     str(is_member).upper(),
+                     str(member_details.print).upper(),
+                     str(member_details.laser).upper()))
 
                 conn.commit()
     except Exception as e:
@@ -77,9 +77,9 @@ def add_icrs_member(
 
 class MemberPermissions(BaseModel):
     shortcode: str = pydantic.Field(min_length=3, max_length=7)
-    print: bool = pydantic.Field()
-    laser: bool = pydantic.Field()
-    inducted: bool = pydantic.Field()
+    print: bool = pydantic.Field(default=False)
+    laser: bool = pydantic.Field(default=False)
+    inducted: bool = pydantic.Field(default=True)
 
 
 @member_router.get("/permissions/shortcode")
@@ -87,7 +87,21 @@ def get_member_permissions_from_shortcode(
     username: Annotated[
         str, Depends(get_current_username)],
     shortcode: str = Query(min_length=3, max_length=7)
-):
+) -> MemberPermissions | dict:
+    """
+    Get member permissions from shortcode
+
+    Args:
+        username (Annotated[ str, Depends): authentication stuff for fastapi
+        shortcode (str, optional): member shortcode.
+            Defaults to Query(min_length=3, max_length=7).
+
+    Raises:
+        HTTPException: internal server error if error querying db
+
+    Returns:
+        MemberPermissions | dict: member permissions or empty dict
+    """
     try:
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
@@ -120,7 +134,21 @@ def get_member_permissions_from_uuid(
     username: Annotated[
         str, Depends(get_current_username)],
     uuid: str = Query(min_length=8, max_length=14)
-):
+) -> MemberPermissions | dict:
+    """
+    Get member permissions from uuid
+
+    Args:
+        username (Annotated[ str, Depends): authentication stuff for fastapi
+        uuid (str, optional): member card uuid.
+            Defaults to Query(min_length=8, max_length=14).
+
+    Raises:
+        HTTPException: internal server error if error querying db
+
+    Returns:
+        MemberPermissions | dict: member permissions or empty dict
+    """
     uuid = "".join(u.zfill(2) for u in uuid.split(" "))
 
     try:
@@ -151,7 +179,10 @@ def get_member_permissions_from_uuid(
 
 
 @member_router.get("/refresh/all")
-def refresh_all_membership():
+def refresh_all_membership(
+    username: Annotated[
+        str, Depends(get_current_username)],
+):
     try:
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
@@ -173,3 +204,32 @@ def refresh_all_membership():
     except Exception as e:
         logging.error(f"Error Querying/Updating db or Union API: {e}")
         return "FAILURE"
+
+
+@member_router.post("/permissions/update")
+def update_permissions(
+    username: Annotated[
+        str, Depends(get_current_username)],
+    permissions: MemberPermissions,
+):
+    try:
+        with pg.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE public.access SET canPrint=%s, canLaserCut=%s " +
+                    "WHERE shortcode=%s and valid=\'TRUE\'",
+                    (str(permissions.print).upper(),
+                     str(permissions.laser).upper(),
+                     permissions.shortcode.lower())
+                )
+
+                conn.commit()
+                return "Permissions Updated"
+    except Exception as e:
+        error_msg = f"Error Updating db: {e}"
+        logging.warning(error_msg)
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=error_msg
+        )

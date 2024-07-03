@@ -1,9 +1,9 @@
 {
-    "FORM_ENDPOINT" : "/api/addUser",
-    "USER_ENDPOINT" : "/api/user/perms",
-    "ALL_USERS_ENDPOINT" : "/api/getAllInducted",
-    "LOGIN_ENDPOINT" : "/api/login",
-    "UPDATE_PERMISSION_ENDPOINT" : "/api/user/permissions",
-    "RECENTLY_INDUCTED_ENDPOINT" : "/api/users/inducted/recent",
-    "REREGISTER_USERS_ENDPOINT" : "/api/users/update/recent"
+    "FORM_ENDPOINT" : "/api/member/add",
+    "USER_ENDPOINT" : "/api/member/permissions/shortcode",
+    "ALL_USERS_ENDPOINT" : "/api/summary/inducted",
+    "LOGIN_ENDPOINT" : "/api/auth/login",
+    "UPDATE_PERMISSION_ENDPOINT" : "/api/member/permissions/update",
+    "RECENTLY_INDUCTED_ENDPOINT" : "/api/summary/inducted/recent",
+    "REREGISTER_USERS_ENDPOINT" : "/api/member/refresh/all"
 }
