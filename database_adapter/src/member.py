@@ -25,8 +25,8 @@ member_router = APIRouter(prefix="/member", tags=["Member"])
 class MemberDetails(BaseModel):
     id: str = pydantic.Field(min_length=8, max_length=14)
     shortcode: str = pydantic.Field(min_length=3, max_length=7)
-    canPrint: bool = pydantic.Field(True)
-    canLaserCut: bool = pydantic.Field(False)
+    print: bool = pydantic.Field(True)
+    laser: bool = pydantic.Field(False)
 
 
 @member_router.post("/add")
@@ -61,9 +61,9 @@ def add_icrs_member(
                     "valid, canPrint, canLaserCut) VALUES (%s,%s,%s,%s,%s)",
                     (id,
                      shortcode,
-                     is_member,
-                     member_details.canPrint,
-                     member_details.canLaserCut))
+                     str(is_member).upper(),
+                     str(member_details.print).upper(),
+                     str(member_details.laser).upper()))
 
                 conn.commit()
     except Exception as e:
