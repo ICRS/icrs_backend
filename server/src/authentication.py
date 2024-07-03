@@ -16,14 +16,6 @@ class BaseHandler(tornado.web.RequestHandler):
         return self.get_signed_cookie("icrs")
 
 
-class MainHandler(BaseHandler):
-    @tornado.web.authenticated
-    def get(self):
-        print("HI")
-        self.write("Hello World")
-        return
-
-
 class LoginHandler(BaseHandler):
     def post(self):
         auth_header = self.request.headers.get('Authorization')
