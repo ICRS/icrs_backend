@@ -6,6 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request, \
     HTTPException, status
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 import requests
 
@@ -25,7 +26,7 @@ last_set_time = datetime.datetime.fromtimestamp(0)
 last_short_code = ''
 
 
-@access_server_router.post("/setPrintWindow")
+@access_server_router.post("/print-window/update")
 def set_print_window(
     uuid: str = Query(min_length=8, max_length=14),
     credentials: Annotated[HTTPBasicAuth |
@@ -64,7 +65,7 @@ def set_print_window(
         )
 
 
-@access_server_router.get("/getPrintWindow")
+@access_server_router.get("/getPrintWindow", response_class=PlainTextResponse)
 async def get_print_window(request: Request):
     global last_set_time
     return str(last_set_time > datetime.datetime.now())
