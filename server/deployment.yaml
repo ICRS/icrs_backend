@@ -24,21 +24,13 @@ spec:
             subPath: postgres.ini
             readOnly: true
         env:
-        - name: SECRET
+        - name: TZ
+          value: Europe/London
+        - name: DATABASE_ADAPTER_IP
           valueFrom:
-            secretKeyRef:
-              name: access-server-secret
-              key: secret
-        - name: ENV
-          valueFrom:
-            secretKeyRef:
-              name: access-server-secret
-              key: env
-        - name: API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: imperial-secret
-              key: api_key
+            configMapKeyRef:
+              name: database-config
+              key: endpoint-url
 
       volumes:
         - name: postgres-ini 
@@ -56,7 +48,7 @@ spec:
     app: icrs-access
   ports:
     - protocol: TCP
-      port: 8888
+      port: 8000
       nodePort: 30001  # Change this to the desired external port
-      targetPort: 8888
+      targetPort: 8000
   type: NodePort

@@ -13,8 +13,14 @@ print_metrics_router = APIRouter(prefix="/print-metrics",
 #                               Printer Config
 # ==============================================================================
 
+
+def printer_name_parsing(s: str) -> str:
+    return s.title().replace("-", " ")
+
+
 PRINTER_CONFIG = json.load(open("printer_config.json"))
-PRINTER_NAMES = list(PRINTER_CONFIG["PRINTER_NAMES"])
+PRINTER_NAMES = [
+    printer_name_parsing(n) for n in PRINTER_CONFIG["PRINTER_NAMES"]]
 
 # ==============================================================================
 

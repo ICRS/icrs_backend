@@ -1,8 +1,16 @@
-import tornado
+from fastapi import FastAPI
+from src.server import access_server_router
+import logging
 
-from src.server import make_app
 
-if __name__ == "__main__":
-    app = make_app()
-    app.listen(8888)
-    tornado.ioloop.IOLoop.current().start()
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s [%(levelname)s]: %(message)s',
+    datefmt='%d-%b-%y %H:%M:%S',
+    handlers=[
+        logging.StreamHandler()
+    ])
+
+
+app = FastAPI()
+app.include_router(access_server_router)
