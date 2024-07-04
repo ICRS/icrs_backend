@@ -13,8 +13,7 @@ from src.auth import valid_login
 from requests.auth import HTTPBasicAuth
 
 # ==============================================================================
-DATABASE_ADAPTER_IP = os.getenv(
-    "DATABASE_ADAPTER_IP", "http://localhost:42001")
+DATABASE_ADAPTER_IP = os.getenv("DATABASE_ADAPTER_IP")
 
 # ==============================================================================
 
