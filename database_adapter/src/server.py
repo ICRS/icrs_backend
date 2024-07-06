@@ -128,7 +128,20 @@ def get_can_print_from_shortcode(
             detail=error_msg)
 
 
-@discord_id_router.post("/register/user")
+@discord_id_router.post("/deregister")
+def deregister_user(
+    discord_id: str = Query(min_length=17, max_length=19,
+                            DISCORD_ID_REGEX=DISCORD_ID_REGEX
+                            )
+) -> dict:
+    valid = change_valid(discord_id, 1)
+    return {
+        "msg": "Membership Reverified!",
+        "valid": valid,
+    }
+
+
+@discord_id_router.post("/register")
 def register_user(
     shortcode: str = Query(min_length=3, max_length=7,
                            pattern=SHORTCODE_REGEX),
