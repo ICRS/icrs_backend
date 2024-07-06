@@ -4,8 +4,7 @@ from src.database import DB_CONFIG
 from fastapi import APIRouter, Query, HTTPException, status
 import psycopg2 as pg
 
-from src.validation import SHORTCODE_REGEX
-from validation import DISCORD_ID_REGEX
+from src.validation import SHORTCODE_REGEX, DISCORD_ID_REGEX
 
 env = os.getenv("ENV", "dev")
 
@@ -134,9 +133,9 @@ def deregister_user(
                             DISCORD_ID_REGEX=DISCORD_ID_REGEX
                             )
 ) -> dict:
-    valid = change_valid(discord_id, 1)
+    valid = change_valid(discord_id, 0)
     return {
-        "msg": "Membership Reverified!",
+        "msg": "Membership Removed!",
         "valid": valid,
     }
 
