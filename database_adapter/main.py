@@ -4,6 +4,8 @@ from src.print_metrics import print_metrics_router
 from src.member import member_router
 from src.summary import summary
 from src.auth import auth_router
+from src.meme import meme_router
+
 import logging
 
 logging.basicConfig(
@@ -21,3 +23,4 @@ app.include_router(print_metrics_router)
 app.include_router(member_router)
 app.include_router(summary)
 app.include_router(auth_router)
+app.include_router(meme_router)
