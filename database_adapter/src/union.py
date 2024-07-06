@@ -33,30 +33,6 @@ def isMember(shortcode: str) -> bool:
                          for member in society_api.list_members()]
 
 
-def is_member(shortcode: str) -> bool:
-    """
-    is_member checks if a given shortcode belongs to a member
-
-    Returns
-    -------
-    bool
-        True if the shortcode belongs to a member, False otherwise
-
-    Raises
-    ------
-    KeyError
-        Raised if there is no contact with the API
-    """
-    try:
-        mems = [member['Login'] for member in
-                society_api.list_members()]  # pylint: disable=maybe-no-member
-        return shortcode in mems
-
-    except Exception:  # pylint: disable=broad-except
-        print("Error contacting Society API")
-        return False
-
-
 def getShortcodesToCIDAndName(shortcodes) -> list:
     d = {member['Login']: (f"{member['FirstName']} {member['Surname']}",
                            member['CID'], member['Login'])
