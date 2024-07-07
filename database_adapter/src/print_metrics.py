@@ -124,3 +124,39 @@ def member_stats_summary(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=error_msg,
         )
+
+
+@print_metrics_router.get("/current/printer/shortcode")
+async def get_current_user_printer(
+    printer_name: str
+):
+    try:
+        with pg.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    ("SELECT t.shortcode "
+                     "FROM public.print_metrics t "
+                     "WHERE t.time_started + make_interval(secs => t.print_duration) > CURRENT_TIMESTAMP and printer_name=%s "  # noqa: E501
+                     "ORDER BY t.time_started DESC "
+                     "LIMIT 1"),
+                    (printer_name,)
+                )
+
+                shortcode = cur.fetchone()
+
+                if shortcode is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_204_NO_CONTENT,
+                        detail="No entry for printer"
+                    )
+
+                return shortcode[0]
+
+    except Exception as e:
+        error_msg = f"Error occurred when querying db: {e}"
+        logging.warning(error_msg)
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=error_msg,
+        )
