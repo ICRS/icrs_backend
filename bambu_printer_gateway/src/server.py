@@ -8,7 +8,8 @@ from fastapi import APIRouter, HTTPException, Query, UploadFile, Response
 from bambulabs_api import AMSFilamentSettings, GcodeState
 from PIL import Image, ImageDraw, ImageFont
 
-from .printer import printer
+from src.validation import SHORTCODE_REGEX
+from src.printer import printer
 
 
 logging.basicConfig(level=logging.INFO,
@@ -190,6 +191,19 @@ async def start_print(filename: str, plate_number: int,
     return printer.start_print(filename, plate_number, use_ams, ams_mapping)
 
 user_shortcode = ""
+
+
+@print_router.post("/print_owner")
+async def set_print_owner(
+        shortcode: str = Query(
+            min_length=3, max_length=7, pattern=SHORTCODE_REGEX)):
+    global user_shortcode
+    user_shortcode = shortcode
+
+
+@print_router.get("/printer_owner")
+async def get_print_owner():
+    return user_shortcode
 
 
 @print_router.post("/3mf")
