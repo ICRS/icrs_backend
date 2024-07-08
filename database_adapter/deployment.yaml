@@ -41,6 +41,11 @@ spec:
             secretKeyRef:
               name: imperial-secret
               key: api_key
+        - name: MEME_DB
+          valueFrom:
+            configMapKeyRef:
+              name: database-config
+              key: meme-db
 
         volumeMounts:
           - name: postgres-ini 
