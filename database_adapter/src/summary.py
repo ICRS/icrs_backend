@@ -1,4 +1,5 @@
 import logging
+import os
 import psycopg2 as pg
 
 from typing import Annotated
@@ -7,7 +8,13 @@ from fastapi import APIRouter, Depends,  HTTPException, status
 from src.database import DB_CONFIG
 
 from src.auth import get_current_username
-import src.union as union
+
+env = os.getenv("ENV", "dev")
+
+if env == "dev":
+    import src.union_mock as union
+else:
+    import src.union as union
 
 summary = APIRouter(prefix="/summary", tags=["Summary"])
 
