@@ -7,7 +7,7 @@ import psycopg2 as pg
 from fastapi import APIRouter, HTTPException, Query, Response, status
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
-from src.database import DB_CONFIG
+from src.database import MEME_DB_CONFIG
 
 
 meme_router = APIRouter(prefix="/meme", tags=["Meme"])
@@ -15,7 +15,7 @@ meme_router = APIRouter(prefix="/meme", tags=["Meme"])
 
 @meme_router.get("/quote/random")
 def get_random_quote(name: str):
-    with pg.connect(**DB_CONFIG) as conn:
+    with pg.connect(**MEME_DB_CONFIG) as conn:
         with conn.cursor() as cur:
             cur.execute(
                 ("SELECT quote FROM public.user_quote WHERE name=%s ORDER "
@@ -36,7 +36,7 @@ def get_random_quote(name: str):
 
 @meme_router.get("/image/random")
 async def get_random_image(name: str):
-    with pg.connect(**DB_CONFIG) as conn:
+    with pg.connect(**MEME_DB_CONFIG) as conn:
         with conn.cursor() as cur:
             cur.execute(
                 ("SELECT image FROM public.user_image WHERE name=%s ORDER "
@@ -63,7 +63,7 @@ async def get_random_image(name: str):
 
 @meme_router.get("/random")
 async def get_random_meme(name: str = Query("")):
-    with pg.connect(**DB_CONFIG) as conn:
+    with pg.connect(**MEME_DB_CONFIG) as conn:
         with conn.cursor() as cur:
             if not name:
                 cur.execute(
