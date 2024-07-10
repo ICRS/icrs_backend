@@ -13,6 +13,13 @@ services:
       context: .
     ports:
       - 8000:8000
+    # restart: always
+    develop:
+      watch:
+        - action: rebuild
+          path: ./src
+          target: /app
+    # command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 # The commented out section below is an example of how to define a PostgreSQL
 # database that your application can use. `depends_on` tells Docker Compose to
