@@ -104,6 +104,23 @@ async def get_random_meme(name: str = Query("")):
             }
 
 
+@meme_router.get("/names")
+async def get_names():
+    with pg.connect(**MEME_DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT DISTINCT name FROM public.user_quote")
+            data = cur.fetchall()
+            if data is None:
+                msg = "Nothing in db"
+                logging.warning(msg)
+                raise HTTPException(
+                    status_code=status.HTTP_204_NO_CONTENT,
+                    detail=msg
+                )
+
+            return [d[0] for d in data]
+
+
 def generate(image: Image.Image, author: str, quote: str,
              font=("assets/fonts/Precious.ttf")) -> Image.Image:
     """
