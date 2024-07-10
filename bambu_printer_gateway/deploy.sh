@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PRINTERS=("andrew-printerson" "")
+PRINTERS=("andrew-printerson" "eric-printman" "printer-cheung" "freddy-printer" "printy-mcprintface" "additive-spiers")
 
 for printer in ${PRINTERS[@]}; do
     echo "Deploying printer $printer"
