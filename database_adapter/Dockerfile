@@ -4,7 +4,7 @@
 # If you need more help, visit the Dockerfile reference guide at
 # https://docs.docker.com/go/dockerfile-reference/
 
-ARG PYTHON_VERSION=3.10
+ARG PYTHON_VERSION=3.10.12
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
