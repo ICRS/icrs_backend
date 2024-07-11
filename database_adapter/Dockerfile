@@ -4,8 +4,10 @@
 # If you need more help, visit the Dockerfile reference guide at
 # https://docs.docker.com/go/dockerfile-reference/
 
-ARG PYTHON_VERSION=3.10.12
-FROM python:${PYTHON_VERSION}-slim AS base
+ARG PYTHON_VERSION=3.10
+FROM python:${PYTHON_VERSION}-slim-bookworm AS base
+
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Prevents Python from writing pyc files.
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -47,4 +49,3 @@ EXPOSE 8000
 
 # Run the application.
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-
