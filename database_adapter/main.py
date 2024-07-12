@@ -16,7 +16,9 @@ logging.basicConfig(
         logging.StreamHandler()
     ])
 
+
 app = FastAPI()
+
 app.include_router(discord_id_router)
 app.include_router(shortcode_router)
 app.include_router(print_metrics_router)
@@ -24,3 +26,8 @@ app.include_router(member_router)
 app.include_router(summary)
 app.include_router(auth_router)
 app.include_router(meme_router)
+
+
+@app.get("/healthz")
+async def get_health():
+    return True
