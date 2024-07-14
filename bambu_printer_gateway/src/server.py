@@ -1,15 +1,18 @@
+import asyncio
 import base64
 from datetime import datetime, timedelta
 from io import BytesIO
 from typing import BinaryIO
 import logging
 
-from fastapi import APIRouter, HTTPException, Query, UploadFile, Response
+from fastapi import (APIRouter, HTTPException, Query,
+                     UploadFile, Response, status)
 from bambulabs_api import AMSFilamentSettings, GcodeState
 from PIL import Image, ImageDraw, ImageFont
 
 from src.validation import SHORTCODE_REGEX
 from src.printer import printer
+from src.timelapse import Timelapse
 
 
 logging.basicConfig(level=logging.INFO,
@@ -25,6 +28,20 @@ print_router = APIRouter(prefix="/printer/print", tags=["Print"])
 
 logging.info("Connecting to printer...")
 printer.connect()
+
+timelapse = Timelapse(printer=printer)
+asyncio.create_task(timelapse.timelapse_task())
+
+
+@router.get("/timelapse")
+async def get_timelapse(speed: float = Query(1.0),
+                        skip_frames: int = Query(1)):
+    t = timelapse.get_timelapse(speed, skip_frames)
+    if t is None:
+        raise HTTPException(
+            status_code=status.HTTP_204_NO_CONTENT
+        )
+    return Response(t, media_type="image/gif")
 
 
 @status_router.get("/time")
