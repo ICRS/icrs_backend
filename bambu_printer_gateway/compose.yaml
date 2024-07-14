@@ -12,4 +12,9 @@ services:
     build:
       context: .
     ports:
-      - 8888:8888
+      - :8000
+    environment:
+      TZ: Europe/London
+      HOSTNAME: ${HOSTNAME}
+      ACCESS_CODE: ${ACCESS_CODE}
+      PRINTER_SERIAL: ${PRINTER_SERIAL}
