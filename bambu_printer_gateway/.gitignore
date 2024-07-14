@@ -163,3 +163,9 @@ examples/
 *.ipynb
 
 .env
+
+*.mp4
+*.png
+*.jpeg
+*.webm
+*.webp
