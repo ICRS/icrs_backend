@@ -34,14 +34,13 @@ asyncio.create_task(timelapse.timelapse_task())
 
 
 @router.get("/timelapse")
-async def get_timelapse(speed: float = Query(1.0),
-                        skip_frames: int = Query(1)):
-    t = timelapse.get_timelapse(speed, skip_frames)
+async def get_timelapse():
+    t = timelapse.get_timelapse()
     if t is None:
         raise HTTPException(
             status_code=status.HTTP_204_NO_CONTENT
         )
-    return Response(t, media_type="image/gif")
+    return Response(t, media_type="video/webm")
 
 
 @status_router.get("/time")
