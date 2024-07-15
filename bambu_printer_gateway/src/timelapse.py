@@ -56,8 +56,13 @@ class Timelapse:
                         self.current_output.close()
 
                         # Make Current Timelapse the saved timelapse
-                        self.last_timelapse.close()
-                        self.last_timelapse = self.current_timelapse_buffer
+                        buffer = self.current_timelapse_buffer.getbuffer()
+                        if buffer.nbytes:
+                            self.last_timelapse = buffer.tobytes()  # noqa: E501
+                        else:
+                            self.last_timelapse = None
+
+                        self.current_timelapse_buffer.close()
 
                         self.__init_current_stream()
 
@@ -67,12 +72,4 @@ class Timelapse:
             await asyncio.sleep(self.timelapse_sleep)
 
     def get_timelapse(self) -> None | bytes:
-        if not self.last_timelapse:
-            return None
-
-        buffer = self.last_timelapse.getbuffer()
-
-        if buffer.nbytes:
-            return buffer.tobytes()
-        else:
-            return None
+        return self.last_timelapse
