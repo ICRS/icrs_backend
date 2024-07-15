@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: ${printer-name}-printer-gateway-deployment
 spec:
-  replicas: 1  # Number of replicas you want to run
+  replicas: 1 # Number of replicas you want to run
   selector:
     matchLabels:
       app: ${printer-name}-printer-gateway
@@ -13,35 +13,35 @@ spec:
         app: ${printer-name}-printer-gateway
     spec:
       containers:
-      - name: ${printer-name}-printer-gateway
-        image: localhost:32000/icrs-bambu-printer-gateway  # Replace with your Python Docker image and tag
-        ports:
-        - containerPort: 8000  # Port your Python application is listening on
-        imagePullPolicy: "Always"
-        env:
-        - name: TZ
-          value: Europe/London
-        - name: HOSTNAME
-          valueFrom:
-            secretKeyRef:
-              name: ${printer-name}-secret 
-              key: hostname
-        - name: ACCESS_CODE
-          valueFrom:
-            secretKeyRef:
-              name: ${printer-name}-secret
-              key: access_code
-        - name: PRINTER_SERIAL
-          valueFrom:
-            secretKeyRef:
-              name: ${printer-name}-secret
-              key: printer_serial
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8000
-          initialDelaySeconds: 30
-          periodSeconds: 60
+        - name: ${printer-name}-printer-gateway
+          image: localhost:32000/icrs-bambu-printer-gateway # Replace with your Python Docker image and tag
+          ports:
+            - containerPort: 8000 # Port your Python application is listening on
+          imagePullPolicy: "Always"
+          env:
+            - name: TZ
+              value: Europe/London
+            - name: HOSTNAME
+              valueFrom:
+                secretKeyRef:
+                  name: ${printer-name}-secret
+                  key: hostname
+            - name: ACCESS_CODE
+              valueFrom:
+                secretKeyRef:
+                  name: ${printer-name}-secret
+                  key: access_code
+            - name: PRINTER_SERIAL
+              valueFrom:
+                secretKeyRef:
+                  name: ${printer-name}-secret
+                  key: printer_serial
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 60
 
 ---
 apiVersion: v1
