@@ -63,7 +63,8 @@ class Timelapse:
                             self.last_timelapse = None
 
                         self.current_timelapse_buffer.close()
-
+                        del self.current_timelapse_buffer
+                        del self.stream
                         self.__init_current_stream()
 
             except Exception as e:
