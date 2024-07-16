@@ -43,7 +43,7 @@ spec:
                   name: ${printer-name}-secret
                   key: printer_serial
           volumeMounts:
-            - name: printer-gateway-pvc
+            - name: printer-gateway-storage
               mountPath: "/app/videos/"
               subPath: ${printer-name}
           livenessProbe:
