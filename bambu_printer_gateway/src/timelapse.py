@@ -25,8 +25,7 @@ class Timelapse:
 
     def __init_current_stream(self):
         self.current_timelapse_path = (
-            f"./{PRINTER_NAME}/"
-            f"{PRINTER_NAME}_{datetime.datetime.now()}.webm")
+            f"videos/{PRINTER_NAME}_{datetime.datetime.now()}.webm")
 
         self.video_writer = cv2.VideoWriter(
             self.current_timelapse_path,
