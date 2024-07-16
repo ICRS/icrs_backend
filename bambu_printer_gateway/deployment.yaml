@@ -74,7 +74,8 @@ metadata:
   name: printer-gateway-pvc
 spec:
   storageClassName: nfs-csi
-  accessModes: [ReadWriteOnce]
+  accessModes:
+    - ReadWriteMany
   resources:
     requests:
       storage: 10Gi
