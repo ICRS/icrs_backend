@@ -50,9 +50,6 @@ class Timelapse:
                 elif state != GcodeState.PAUSE:
                     if self.running:
                         self.running = False
-
-                        packet = self.stream.encode(None)
-                        self.current_output.mux(packet)
                         self.current_output.close()
 
                         # Make Current Timelapse the saved timelapse
