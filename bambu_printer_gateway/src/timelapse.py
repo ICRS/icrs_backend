@@ -42,12 +42,14 @@ class Timelapse:
                         self.__init_current_stream()
 
                     self.running = True
+                    image = Image.open(
+                        io.BytesIO(base64.b64decode(
+                            self.printer.get_camera_frame())))
+
                     self.video_writer.write(
                         cv2.cvtColor(
-                            np.asarray(Image.open(
-                                io.BytesIO(base64.b64decode(
-                                    self.printer.get_camera_frame()))),
-                                cv2.COLOR_RGB2BGR)))
+                            np.asarray(image), cv2.COLOR_RGB2BGR)
+                    )
 
                 elif state != GcodeState.PAUSE:
                     if self.running:
