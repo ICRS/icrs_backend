@@ -45,7 +45,7 @@ spec:
           volumeMounts:
             - name: printer-gateway-pvc
               mountPath: "/app/videos/"
-              subpath: ${printer-name}
+              subPath: ${printer-name}
           livenessProbe:
             httpGet:
               path: /healthz
