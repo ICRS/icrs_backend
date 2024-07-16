@@ -55,6 +55,8 @@ class Timelapse:
                     if self.running:
                         self.running = False
                         self.video_writer.release()
+                        del self.video_writer
+                        self.last_timelapse_file = self.current_timelapse_path 
 
             except Exception as e:
                 logging.error(f"Error encountered with timelapse: {e}")
