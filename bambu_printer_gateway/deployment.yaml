@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: ${printer-name}-printer-gateway-deployment
 spec:
-  replicas: 1  # Number of replicas you want to run
+  replicas: 1 # Number of replicas you want to run
   selector:
     matchLabels:
       app: ${printer-name}-printer-gateway
@@ -12,36 +12,46 @@ spec:
       labels:
         app: ${printer-name}-printer-gateway
     spec:
+      volumes:
+      - name: printer-gateway-storage
+        persistentVolumeClaim:
+          claimName: printer-gateway-pvc
       containers:
-      - name: ${printer-name}-printer-gateway
-        image: localhost:32000/icrs-bambu-printer-gateway  # Replace with your Python Docker image and tag
-        ports:
-        - containerPort: 8000  # Port your Python application is listening on
-        imagePullPolicy: "Always"
-        env:
-        - name: TZ
-          value: Europe/London
-        - name: HOSTNAME
-          valueFrom:
-            secretKeyRef:
-              name: ${printer-name}-secret 
-              key: hostname
-        - name: ACCESS_CODE
-          valueFrom:
-            secretKeyRef:
-              name: ${printer-name}-secret
-              key: access_code
-        - name: PRINTER_SERIAL
-          valueFrom:
-            secretKeyRef:
-              name: ${printer-name}-secret
-              key: printer_serial
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8000
-          initialDelaySeconds: 30
-          periodSeconds: 60
+        - name: ${printer-name}-printer-gateway
+          image: localhost:32000/icrs-bambu-printer-gateway # Replace with your Python Docker image and tag
+          ports:
+            - containerPort: 8000 # Port your Python application is listening on
+          imagePullPolicy: "Always"
+          env:
+            - name: TZ
+              value: Europe/London
+            - name: PRINTER_NAME
+              value: ${printer-name}
+            - name: HOSTNAME
+              valueFrom:
+                secretKeyRef:
+                  name: ${printer-name}-secret
+                  key: hostname
+            - name: ACCESS_CODE
+              valueFrom:
+                secretKeyRef:
+                  name: ${printer-name}-secret
+                  key: access_code
+            - name: PRINTER_SERIAL
+              valueFrom:
+                secretKeyRef:
+                  name: ${printer-name}-secret
+                  key: printer_serial
+          volumeMounts:
+            - name: printer-gateway-storage
+              mountPath: "/app/videos/"
+              subPath: ${printer-name}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 60
 
 ---
 apiVersion: v1
@@ -56,3 +66,16 @@ spec:
       port: 8000
       targetPort: 8000
   type: ClusterIP
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: printer-gateway-pvc
+spec:
+  storageClassName: nfs-csi
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi

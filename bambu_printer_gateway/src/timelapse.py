@@ -1,59 +1,71 @@
 import asyncio
 import base64
-import collections
-from io import BytesIO
+import datetime
 import io
 import logging
-from typing import List
 from PIL import Image
 
 from bambulabs_api import GcodeState, Printer
+import cv2
+import numpy as np
+from .printer import PRINTER_NAME
+
+
+WIDTH = 1280
+HEIGHT = 720
 
 
 class Timelapse:
-    def __init__(self, printer: Printer, sleep=5) -> None:
-        self.state_queue = collections.deque([], maxlen=5)
-        self.last_timelapse = []
-        self.current_timelapse_buffer: List[Image.Image] = []
+    def __init__(self, printer: Printer, sleep=10) -> None:
         self.printer = printer
+        self.running = False
 
         self.timelapse_sleep = sleep
+        self.last_timelapse_file = None
+
+    def __init_current_stream(self):
+        self.current_timelapse_path = (
+            f"videos/{PRINTER_NAME}_{datetime.datetime.now()}.webm")
+
+        self.video_writer = cv2.VideoWriter(
+            self.current_timelapse_path,
+            cv2.VideoWriter_fourcc(*'VP90'),
+            10,
+            (WIDTH, HEIGHT),)
 
     async def timelapse_task(self):
         while True:
             try:
                 state = GcodeState(self.printer.get_state())
                 if state == GcodeState.RUNNING:
-                    self.current_timelapse_buffer.append(
-                        Image.open(
-                            io.BytesIO(base64.b64decode(
-                                self.printer.get_camera_frame())))
+                    if not self.running:
+                        self.__init_current_stream()
+
+                    self.running = True
+                    image = Image.open(
+                        io.BytesIO(base64.b64decode(
+                            self.printer.get_camera_frame())))
+
+                    self.video_writer.write(
+                        cv2.cvtColor(
+                            np.asarray(image), cv2.COLOR_RGB2BGR)
                     )
+
                 elif state != GcodeState.PAUSE:
-                    if self.current_timelapse_buffer:
-                        self.last_timelapse = self.current_timelapse_buffer
-                        self.current_timelapse_buffer = []
+                    if self.running:
+                        self.running = False
+                        self.video_writer.release()
+                        del self.video_writer
+                        self.last_timelapse_file = self.current_timelapse_path 
 
             except Exception as e:
                 logging.error(f"Error encountered with timelapse: {e}")
 
             await asyncio.sleep(self.timelapse_sleep)
 
-    def get_timelapse(self, timelapse_speed, timelapse_skip):
-        if not self.last_timelapse:
+    def get_timelapse(self) -> None | bytes:
+        if self.last_timelapse_file is None:
             return None
-
-        im: list[Image.Image] = self.last_timelapse
-
-        try:
-            with BytesIO() as buffer:
-                im[0].save(buffer, format='GIF', save_all=True,
-                           append_images=im[1:][::timelapse_skip],
-                           optimize=False,
-                           duration=int((1000 * 1/timelapse_speed)/6),
-                           loop=0)
-                buffer.seek(0)
-                return buffer.getbuffer().tobytes()
-        except Exception as e:
-            logging.error(f"Error creating timelapse: {e}")
-            return None
+        else:
+            with open(self.last_timelapse_file, "rb") as b:
+                return b.read()
