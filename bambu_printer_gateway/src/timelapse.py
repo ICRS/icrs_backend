@@ -11,12 +11,12 @@ import numpy as np
 from .printer import PRINTER_NAME
 
 
-WIDTH = 1280
-HEIGHT = 720
+WIDTH = 1280 // 2
+HEIGHT = 720 // 2
 
 
 class Timelapse:
-    def __init__(self, printer: Printer, sleep=10) -> None:
+    def __init__(self, printer: Printer, sleep=60) -> None:
         self.printer = printer
         self.running = False
 
@@ -30,7 +30,7 @@ class Timelapse:
         self.video_writer = cv2.VideoWriter(
             self.current_timelapse_path,
             cv2.VideoWriter_fourcc(*'VP90'),
-            10,
+            24,
             (WIDTH, HEIGHT),)
 
     async def timelapse_task(self):
@@ -48,7 +48,8 @@ class Timelapse:
 
                     self.video_writer.write(
                         cv2.cvtColor(
-                            np.asarray(image), cv2.COLOR_RGB2BGR)
+                            np.asarray(image.resize((WIDTH, HEIGHT))),
+                            cv2.COLOR_RGB2BGR)
                     )
 
                 elif state != GcodeState.PAUSE:
@@ -56,7 +57,7 @@ class Timelapse:
                         self.running = False
                         self.video_writer.release()
                         del self.video_writer
-                        self.last_timelapse_file = self.current_timelapse_path 
+                        self.last_timelapse_file = self.current_timelapse_path
 
             except Exception as e:
                 logging.error(f"Error encountered with timelapse: {e}")
