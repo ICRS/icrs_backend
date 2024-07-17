@@ -143,15 +143,6 @@ async def get_current_user_printer(
                 )
 
                 shortcode = cur.fetchone()
-
-                if shortcode is None:
-                    raise HTTPException(
-                        status_code=status.HTTP_204_NO_CONTENT,
-                        detail="No entry for printer"
-                    )
-
-                return shortcode[0]
-
     except Exception as e:
         error_msg = f"Error occurred when querying db: {e}"
         logging.warning(error_msg)
@@ -160,3 +151,11 @@ async def get_current_user_printer(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=error_msg,
         )
+
+    if shortcode is None:
+        raise HTTPException(
+            status_code=status.HTTP_204_NO_CONTENT,
+            detail="No entry for printer"
+        )
+    else:
+        return shortcode[0]
