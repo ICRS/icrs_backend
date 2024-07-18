@@ -53,6 +53,31 @@ async def add_print_entry(printer_name: str = Query(enum=PRINTER_NAMES),
             detail=error_msg)
 
 
+@print_metrics_router.post("/print/update/stop")
+async def stop_print_update_entry(
+        printer_name: str = Query(enum=PRINTER_NAMES)):
+    try:
+        with pg.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    ("UPDATE ONLY public.print_metrics "
+                     "SET print_duration=EXTRACT("
+                     "EPOCH FROM (NOW() - time_started)) "
+                     "WHERE printer_name=%s AND time_started="
+                     "(SELECT MAX(time_started) FROM public.print_metrics "
+                     "WHERE printer_name=%s)")
+                    (printer_name,)
+                )
+                conn.commit()
+                return True
+    except Exception:
+        error_msg = "Could not add entry for"
+        logging.error(error_msg)
+        raise HTTPException(
+            status_code=500,
+            detail=error_msg)
+
+
 @print_metrics_router.get("/member/stats/shortcode")
 def member_stats(shortcode: str = Query(min_length=3, max_length=7)):
     shortcode = shortcode.lower()
