@@ -42,6 +42,12 @@ spec:
                 secretKeyRef:
                   name: ${printer-name}-secret
                   key: printer_serial
+            - name: DATABASE_ADAPTER_ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: database-config
+                  key: endpoint-url
+
           volumeMounts:
             - name: printer-gateway-storage
               mountPath: "/app/videos/"
