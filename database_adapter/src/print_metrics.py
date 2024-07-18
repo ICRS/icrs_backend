@@ -61,8 +61,8 @@ async def stop_print_update_entry(
             with conn.cursor() as cur:
                 cur.execute(
                     ("UPDATE ONLY public.print_metrics "
-                     "SET print_duration=EXTRACT("
-                     "EPOCH FROM (NOW() - time_started)) "
+                     "SET print_duration=LEAST(EXTRACT("
+                     "EPOCH FROM (NOW() - time_started)), print_duration) "
                      "WHERE printer_name=%s AND time_started="
                      "(SELECT MAX(time_started) FROM public.print_metrics "
                      "WHERE printer_name=%s)")
