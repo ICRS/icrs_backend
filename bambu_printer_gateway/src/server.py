@@ -10,6 +10,7 @@ from fastapi import (APIRouter, HTTPException, Query,
 from bambulabs_api import AMSFilamentSettings, GcodeState
 from PIL import Image, ImageDraw, ImageFont
 
+from src.printer_task import PrinterTask
 from src.validation import SHORTCODE_REGEX
 from src.printer import printer
 from src.timelapse import Timelapse
@@ -31,6 +32,9 @@ printer.connect()
 
 timelapse = Timelapse(printer=printer)
 asyncio.create_task(timelapse.timelapse_task())
+
+printer_task = PrinterTask()
+asyncio.create_task(printer_task.task())
 
 
 @router.get("/timelapse")
