@@ -33,7 +33,7 @@ printer.connect()
 timelapse = Timelapse(printer=printer)
 asyncio.create_task(timelapse.timelapse_task())
 
-printer_task = PrinterTask()
+printer_task = PrinterTask(printer=printer)
 asyncio.create_task(printer_task.task())
 
 
