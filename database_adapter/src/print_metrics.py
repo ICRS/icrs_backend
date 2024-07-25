@@ -161,10 +161,10 @@ async def get_current_user_printer(
                 cur.execute(
                     ("SELECT t.shortcode "
                      "FROM public.print_metrics t "
-                     "WHERE t.time_started + make_interval(secs => t.print_duration) > CURRENT_TIMESTAMP and printer_name=%s "  # noqa: E501
+                     "WHERE t.time_started + make_interval(secs => t.print_duration) > CURRENT_TIMESTAMP and LOWER(printer_name)=%s "  # noqa: E501
                      "ORDER BY t.time_started DESC "
                      "LIMIT 1"),
-                    (printer_name,)
+                    (printer_name.replace("-",' ').lower(),)
                 )
 
                 shortcode = cur.fetchone()
