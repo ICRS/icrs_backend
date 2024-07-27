@@ -57,6 +57,7 @@ async def add_print_entry(printer_name: str = Query(enum=PRINTER_NAMES),
 async def stop_print_update_entry(
         printer_name: str = Query(enum=PRINTER_NAMES)):
     try:
+        printer_name = printer_name.replace("-", " ").lower()
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
                 cur.execute(
@@ -65,13 +66,13 @@ async def stop_print_update_entry(
                      "EPOCH FROM (NOW() - time_started)), print_duration) "
                      "WHERE printer_name=%s AND time_started="
                      "(SELECT MAX(time_started) FROM public.print_metrics "
-                     "WHERE printer_name=%s)")
+                     "WHERE LOWER(printer_name)=%s)")
                     (printer_name,)
                 )
                 conn.commit()
                 return True
     except Exception:
-        error_msg = "Could not add entry for"
+        error_msg = f"Could not update printer entry: {printer_name}"
         logging.error(error_msg)
         raise HTTPException(
             status_code=500,
@@ -164,7 +165,7 @@ async def get_current_user_printer(
                      "WHERE t.time_started + make_interval(secs => t.print_duration) > CURRENT_TIMESTAMP and LOWER(printer_name)=%s "  # noqa: E501
                      "ORDER BY t.time_started DESC "
                      "LIMIT 1"),
-                    (printer_name.replace("-",' ').lower(),)
+                    (printer_name.replace("-", ' ').lower(),)
                 )
 
                 shortcode = cur.fetchone()
