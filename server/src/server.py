@@ -71,6 +71,64 @@ async def get_print_window(request: Request):
     return str(last_set_time > datetime.datetime.now())
 
 
+@access_server_router.get("/slicer/print/permissions")
+async def slicer_permissions(
+        time_seconds: int | None = None,
+        orcaslicer_timedelta: str | None = None):
+    # return shortcode, can print
+    if time_seconds is None and orcaslicer_timedelta is None:
+        raise HTTPException(
+            status_code=400,
+            detail="No print time delta given!")
+
+    global last_set_time, last_short_code
+    if last_set_time < datetime.datetime.now():
+        raise HTTPException(
+            status_code=401,
+            detail="Card not scanned!")
+
+    if time_seconds:
+        delta = datetime.timedelta(seconds=time_seconds)
+    elif orcaslicer_timedelta:
+        t = {
+        }
+
+        v = 0
+        for c in orcaslicer_timedelta:
+            if c == 'd':
+                t['days'] = v
+                v = 0
+            elif c == 'h':
+                t['hours'] = v
+                v = 0
+            elif c == 'm':
+                t['minutes'] = v
+                v = 0
+            elif c == 's':
+                t['seconds'] = v
+                v = 0
+            else:
+                v *= 10
+                v += int(c)
+
+        delta = datetime.timedelta(**t)
+
+    can_print = delta < (datetime.timedelta(hours=3)
+                         if datetime.datetime.now().hour < 22
+                         else datetime.timedelta(hours=9))
+    if not can_print:
+        raise HTTPException(
+            status_code=401,
+            detail="Time Limit Exceeded")
+
+    data = {
+        "shortcode": last_short_code,
+        "can_print": can_print
+    }
+
+    return data
+
+
 class PrintData(BaseModel):
     time: str
     weight: str
