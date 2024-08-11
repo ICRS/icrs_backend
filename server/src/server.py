@@ -113,11 +113,17 @@ async def slicer_permissions(
 
         delta = datetime.timedelta(**t)
 
+    can_print = delta < (datetime.timedelta(hours=3)
+                         if datetime.datetime.now().hour < 22
+                         else datetime.timedelta(hours=9))
+    if not can_print:
+        raise HTTPException(
+            status_code=401,
+            detail="Time Limit Exceeded")
+
     data = {
         "shortcode": last_short_code,
-        "can_print": delta < (datetime.timedelta(hours=3)
-                              if datetime.datetime.now().hour < 22
-                              else datetime.timedelta(hours=9))
+        "can_print": can_print
     }
 
     return data
