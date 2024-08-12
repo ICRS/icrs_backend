@@ -49,7 +49,16 @@ def set_print_window(
                 detail=f"No UUID found in server {r}"
             )
 
-        shortcode = str(result.json().get("shortcode", ""))
+        body = result.json() 
+        shortcode = str(body.get("shortcode", ""))
+        can_print = body.get("print", False)
+
+        if not can_print:
+            raise HTTPException(
+                    status_code=401,
+                    detail=f"no induction"
+                    )
+
         last_set_time = datetime.datetime.now() + datetime.timedelta(
             seconds=60)
         last_short_code = shortcode
