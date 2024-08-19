@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 import psycopg2 as pg
 from pydantic import BaseModel
 
@@ -39,3 +39,19 @@ def quiz():
         incorrect_options=r[2].split(';'), num_answers=r[3]) for r in quiz]
 
     return quiz
+
+
+@induction_router.post("/induct/discord-id")
+def induct(
+    id: str = Query(min_length=17, max_length=19)
+):
+    with pg.connect(**MEME_DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO public.access (shortcode, "
+                "valid, canPrint) "
+                "SELECT SHORTCODE, 'TRUE', 'TRUE' "
+                "FROM public.mapping WHERE user_id=%s",
+                (id,)
+            )
+    return True
