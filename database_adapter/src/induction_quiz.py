@@ -48,10 +48,15 @@ def induct(
     with pg.connect(**MEME_DB_CONFIG) as conn:
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO public.access (shortcode, "
-                "valid, canPrint) "
-                "SELECT SHORTCODE, 'TRUE', 'TRUE' "
-                "FROM public.mapping WHERE user_id=%s",
+                ("INSERT INTO public.access (shortcode, "
+                 "valid, canPrint) "
+                 "SELECT SHORTCODE, 'TRUE', 'TRUE' "
+                 "FROM public.mapping WHERE user_id=%s "
+                 "ON CONFLICT(shortcode) "
+                 "DO UPDATE SET (valid, canPrint) = ('TRUE', 'TRUE') "
+                 "RETURNING id"),
                 (id,)
             )
-    return True
+            v = cur.fetchone()
+
+    return v is not None
