@@ -57,7 +57,8 @@ def add_icrs_member(
             with conn.cursor() as cur:
                 cur.execute(
                     "INSERT INTO public.induction (shortcode, "
-                    "valid, canPrint, canLaserCut) VALUES (%s,%s,%s,%s)",
+                    "valid, canPrint, canLaserCut) VALUES (%s,%s,%s,%s) "
+                    "ON CONFLICT DO NOTHING",
                     (
                         shortcode,
                         is_member,
@@ -67,8 +68,9 @@ def add_icrs_member(
                 )
 
                 cur.execute(
-                    "INSERT INTO public.shortcode_card_mapping"
-                    " (id, shortcode) VALUES (%s,%s)",
+                    "INSERT INTO public.shortcode_card_mapping "
+                    "(id, shortcode) VALUES (%s,%s) "
+                    "ON CONFLICT DO NOTHING",
                     (id, shortcode),
                 )
                 conn.commit()
@@ -165,9 +167,9 @@ def get_member_permissions_from_uuid(
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT shortcode, canprint, canlasercut, valid FROM "
+                    "SELECT i.shortcode, i.canprint, i.canlasercut, valid FROM "  # noqa: E501
                     "public.induction i JOIN public.shortcode_card_mapping s ON "  # noqa: E501
-                    "i.shortcode=s.shortcode WHERE i.id=%s",
+                    "i.shortcode=s.shortcode WHERE s.id=%s",
                     (uuid,),
                 )
                 result = cur.fetchone()
