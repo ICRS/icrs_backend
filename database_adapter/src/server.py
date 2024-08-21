@@ -114,7 +114,7 @@ def get_can_print_from_shortcode(
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT canprint FROM public.access WHERE shortcode=%s",
+                    "SELECT canprint FROM public.induction WHERE shortcode=%s",
                     (shortcode,)
                 )
                 can_print = str(cur.fetchone()[0]).lower() == "true"

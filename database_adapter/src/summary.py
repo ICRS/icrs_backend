@@ -28,7 +28,7 @@ def all_inducted(
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT shortcode FROM public.access WHERE valid=\'TRUE\'")
+                    "SELECT shortcode FROM public.induction WHERE valid")
                 inducted = cur.fetchall()
                 inducted = [c[0] + "@ic.ac.uk" for c in inducted]
 
@@ -51,8 +51,8 @@ def recently_inducted(
     try:
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT shortcode FROM public.access A " +
-                            "WHERE valid=\'TRUE\' AND NOT EXISTS " +
+                cur.execute("SELECT shortcode FROM public.induction A " +
+                            "WHERE valid AND NOT EXISTS " +
                             "(SELECT \'X\' FROM public.sent S " +
                             "WHERE A.shortcode=S.shortcode)")
 
