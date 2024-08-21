@@ -66,7 +66,7 @@ async def stop_print_update_entry(
                      "EPOCH FROM (NOW() - time_started)), print_duration) "
                      "WHERE printer_name=%s AND time_started="
                      "(SELECT MAX(time_started) FROM public.print_metrics "
-                     "WHERE LOWER(printer_name)=%s)")
+                     "WHERE LOWER(printer_name)=%s)"),
                     (printer_name,)
                 )
                 conn.commit()
