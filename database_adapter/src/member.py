@@ -106,16 +106,16 @@ def get_member_permissions_from_shortcode(
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT * FROM public.access WHERE shortcode=%s", (shortcode,))  # noqa: E501
+                    "SELECT canprint, canlasercut, valid FROM public.access WHERE shortcode=%s", (shortcode,))  # noqa: E501
                 result = cur.fetchone()
                 if not result:
                     result = {}
                 else:
                     result = MemberPermissions(
-                        shortcode=result[1],
-                        print=result[2],
-                        laser=result[3],
-                        inducted=result[4]
+                        shortcode=shortcode,
+                        print=result[0],
+                        laser=result[1],
+                        inducted=result[2]
                     )
                 return result
     except Exception as e:
@@ -154,17 +154,19 @@ def get_member_permissions_from_uuid(
     try:
         with pg.connect(**DB_CONFIG) as conn:
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM public.access WHERE id=%s", (uuid,))
+                cur.execute(
+                    "SELECT shortcode, canprint, canlasercut, valid FROM "
+                    "public.access WHERE id=%s", (uuid,))
                 result = cur.fetchone()
 
                 if not result:
                     result = {}
                 else:
                     result = MemberPermissions(
-                        shortcode=result[1],
-                        print=result[2],
-                        laser=result[3],
-                        inducted=result[4]
+                        shortcode=result[0],
+                        print=result[1],
+                        laser=result[2],
+                        inducted=result[3]
                     )
                 return result
     except Exception as e:
