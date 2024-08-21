@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 import psycopg2 as pg
 from pydantic import BaseModel
 
-from src.database import MEME_DB_CONFIG
+from src.database import DB_CONFIG
 
 
 induction_router = APIRouter(
@@ -19,13 +19,17 @@ class QuizRow(BaseModel):
     num_answers: int
 
 
+def get_options(s: str):
+    return [c for c in s.split(';') if c]
+
+
 @induction_router.get("/quiz")
 def quiz():
-    with pg.connect(**MEME_DB_CONFIG) as conn:
+    with pg.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
             cur.execute(
                 ("SELECT QUESTION, CORRECT_OPTIONS, INCORRECT_OPTIONS, "
-                 " NUM_ANSWERS FROM public.induction_quiz"),
+                 "NUM_ANSWERS FROM public.induction_quiz"),
             )
             quiz = cur.fetchall()
     if quiz is None:
@@ -35,8 +39,8 @@ def quiz():
         )
 
     quiz = [QuizRow(
-        question=r[0], correct_options=r[1].split(';'),
-        incorrect_options=r[2].split(';'), num_answers=r[3]) for r in quiz]
+        question=r[0], correct_options=get_options(r[1]),
+        incorrect_options=get_options(r[2]), num_answers=r[3]) for r in quiz]
 
     return quiz
 
@@ -45,7 +49,7 @@ def quiz():
 def induct(
     id: str = Query(min_length=17, max_length=19)
 ):
-    with pg.connect(**MEME_DB_CONFIG) as conn:
+    with pg.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
             cur.execute(
                 ("INSERT INTO public.induction (shortcode, "
