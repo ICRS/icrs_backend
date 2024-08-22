@@ -17,6 +17,7 @@ class QuizRow(BaseModel):
     correct_options: List[str]
     incorrect_options: List[str]
     num_answers: int
+    single_choice: bool = False
 
 
 def get_options(s: str):
@@ -29,7 +30,7 @@ def quiz():
         with conn.cursor() as cur:
             cur.execute(
                 ("SELECT QUESTION, CORRECT_OPTIONS, INCORRECT_OPTIONS, "
-                 "NUM_ANSWERS FROM public.induction_quiz"),
+                 "NUM_ANSWERS, SINGLE_CHOICE FROM public.induction_quiz"),
             )
             quiz = cur.fetchall()
     if quiz is None:
@@ -40,7 +41,8 @@ def quiz():
 
     quiz = [QuizRow(
         question=r[0], correct_options=get_options(r[1]),
-        incorrect_options=get_options(r[2]), num_answers=r[3]) for r in quiz]
+        incorrect_options=get_options(r[2]), num_answers=r[3],
+        single_choice=r[4]) for r in quiz]
 
     return quiz
 
@@ -57,7 +59,7 @@ def induct(
                  "SELECT SHORTCODE, TRUE, TRUE "
                  "FROM public.mapping WHERE user_id=%s "
                  "ON CONFLICT(shortcode) "
-                 "DO UPDATE SET (valid, canPrint) = (TRUE, TRUE) "
+                 "DO UPDATE SET (valid, canPrint) = (TRUE, TRUE)"
                  ),
                 (id,)
             )
