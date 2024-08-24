@@ -11,7 +11,7 @@ from src.database import DB_CONFIG
 
 from src.auth import get_current_username
 from src.union import cid_to_shortcode
-from validation import SHORTCODE_REGEX
+from src.validation import SHORTCODE_REGEX
 
 
 env = os.getenv("ENV", "dev")
