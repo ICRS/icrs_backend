@@ -282,7 +282,6 @@ def register_card_details_cid(
                     )
                 )
 
-                return True
     except Exception as e:
         error_msg = f"Error Updating db: {e}"
         logging.warning(error_msg)
@@ -311,7 +310,6 @@ def register_card_details_shortcode(
                     )
                 )
 
-                return True
     except Exception as e:
         error_msg = f"Error Updating db: {e}"
         logging.warning(error_msg)
