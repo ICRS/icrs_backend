@@ -73,3 +73,11 @@ def is_member_list(shortcodes: list[str]) -> bool:
     except Exception:
         print("Error contacting Society API")
         return False
+
+
+@update_members
+def cid_to_shortcode(cid: str) -> str | None:
+    return next(
+        (member["Login"] for member in society_members
+         if member["CID"] == cid),
+        None)
