@@ -10,6 +10,8 @@ from pydantic import BaseModel
 from src.database import DB_CONFIG
 
 from src.auth import get_current_username
+from src.union import cid_to_shortcode
+from src.validation import SHORTCODE_REGEX
 
 
 env = os.getenv("ENV", "dev")
@@ -247,6 +249,67 @@ def update_permissions(
                 )
 
                 return "Permissions Updated"
+    except Exception as e:
+        error_msg = f"Error Updating db: {e}"
+        logging.warning(error_msg)
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg
+        )
+
+
+@member_router.post("/register/card/cid")
+def register_card_details_cid(
+    username: Annotated[str, Depends(get_current_username)],
+    uuid: str = Query(min_length=8, max_length=14),
+    cid: str = Query(regex=r"\d{8}")
+):
+    shortcode = cid_to_shortcode(cid)
+    if not shortcode:
+        raise HTTPException(status_code=status.HTTP_304_NOT_MODIFIED,
+                            detail="CID not found!")
+
+    try:
+        with pg.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO public.shortcode_card_mapping (id, "
+                    "shortcode) VALUES (%s,%s) "
+                    "ON CONFLICT DO NOTHING",
+                    (
+                        uuid.upper(),
+                        shortcode.lower(),
+                    )
+                )
+
+    except Exception as e:
+        error_msg = f"Error Updating db: {e}"
+        logging.warning(error_msg)
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg
+        )
+
+
+@member_router.post("/register/card/shortcode")
+def register_card_details_shortcode(
+    username: Annotated[str, Depends(get_current_username)],
+    uuid: str = Query(min_length=8, max_length=14),
+    shortcode: str = Query(regex=SHORTCODE_REGEX),
+):
+    try:
+        with pg.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO public.shortcode_card_mapping (id, "
+                    "shortcode) VALUES (%s,%s) "
+                    "ON CONFLICT DO NOTHING",
+                    (
+                        uuid.upper(),
+                        shortcode.lower(),
+                    )
+                )
+
     except Exception as e:
         error_msg = f"Error Updating db: {e}"
         logging.warning(error_msg)
