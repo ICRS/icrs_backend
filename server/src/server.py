@@ -49,14 +49,14 @@ def set_print_window(
                 detail=f"No UUID found in server {r}"
             )
 
-        body = result.json() 
+        body = result.json()
         shortcode = str(body.get("shortcode", ""))
         can_print = body.get("print", False)
 
         if not can_print:
             raise HTTPException(
                     status_code=401,
-                    detail=f"no induction"
+                    detail="no induction"
                     )
 
         last_set_time = datetime.datetime.now() + datetime.timedelta(
@@ -189,6 +189,30 @@ async def get_member_permission_uuid(
     result = requests.get(
         DATABASE_ADAPTER_IP + "/member/permissions/uuid",
         params={"uuid": uuid},
+        auth=credentials
+    )
+
+    if result.status_code != 200:
+        msg = f"Error Querying the permissions with uuid: {result.reason}"
+        logging.error(msg)
+        raise HTTPException(
+            status_code=result.status_code,
+            detail=msg
+        )
+
+    return result.json()
+
+
+@access_server_router.post("/register/card/cid")
+def register_card_details_cid(
+    uuid: str = Query(min_length=8, max_length=14),
+    cid: str = Query(regex=r"\d{8}"),
+    credentials: Annotated[HTTPBasicAuth |
+                           None, Depends(valid_login)] = None
+):
+    result = requests.get(
+        DATABASE_ADAPTER_IP + "/register/card/cid",
+        params={"uuid": uuid, "cid": cid},
         auth=credentials
     )
 
