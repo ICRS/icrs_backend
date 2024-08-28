@@ -1,3 +1,4 @@
+import json
 from typing import List
 from fastapi import APIRouter, HTTPException, Query, status
 import psycopg2 as pg
@@ -12,12 +13,19 @@ induction_router = APIRouter(
 )
 
 
+class QuizAsset(BaseModel):
+    media: str
+    type: str
+    data: str
+
+
 class QuizRow(BaseModel):
     question: str
     correct_options: List[str]
     incorrect_options: List[str]
     num_answers: int
     single_choice: bool = False
+    assets: List[QuizAsset] = []
 
 
 def get_options(s: str):
@@ -25,12 +33,13 @@ def get_options(s: str):
 
 
 @induction_router.get("/quiz")
-def quiz():
+def quiz() -> List[QuizRow]:
     with pg.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
             cur.execute(
                 ("SELECT QUESTION, CORRECT_OPTIONS, INCORRECT_OPTIONS, "
-                 "NUM_ANSWERS, SINGLE_CHOICE FROM public.induction_quiz"),
+                 "NUM_ANSWERS, SINGLE_CHOICE, ASSETS "
+                 "FROM public.induction_quiz"),
             )
             quiz = cur.fetchall()
     if quiz is None:
@@ -42,7 +51,8 @@ def quiz():
     quiz = [QuizRow(
         question=r[0], correct_options=get_options(r[1]),
         incorrect_options=get_options(r[2]), num_answers=r[3],
-        single_choice=r[4]) for r in quiz]
+        single_choice=r[4],
+        assets=json.loads(r[5]) if r[5] else []) for r in quiz]
 
     return quiz
 
