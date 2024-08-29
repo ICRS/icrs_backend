@@ -37,9 +37,9 @@ def quiz() -> List[QuizRow]:
     with pg.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
             cur.execute(
-                ("SELECT QUESTION, CORRECT_OPTIONS, INCORRECT_OPTIONS, "
-                 "NUM_ANSWERS, SINGLE_CHOICE, ASSETS "
-                 "FROM public.induction_quiz"),
+                ("SELECT q.QUESTION, q.CORRECT_OPTIONS, q.INCORRECT_OPTIONS, "
+                 "q.NUM_ANSWERS, q.SINGLE_CHOICE, q.ASSETS "
+                 "FROM public.induction_quiz q ORDER BY q.order ASC"),
             )
             quiz = cur.fetchall()
     if quiz is None:
