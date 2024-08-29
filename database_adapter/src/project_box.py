@@ -24,7 +24,7 @@ class ProjectBoxDetails(BaseModel):
 
 @project_box_router.get("/register")
 def induct(
-    uuid: str = Query(min_length=17, max_length=19)
+    uuid: str = Query(min_length=8, max_length=14),
 ) -> ProjectBoxDetails:
     with pg.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
