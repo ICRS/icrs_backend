@@ -1,8 +1,9 @@
+import base64
 from datetime import date
 from fastapi import APIRouter, Query
 import psycopg2 as pg
 from pydantic import BaseModel
-
+import cairosvg
 from src.database import DB_CONFIG
 
 
@@ -19,7 +20,7 @@ project_box_router = APIRouter(
 class ProjectBoxDetails(BaseModel):
     shortcode: str
     expiry: date
-    image: str
+    image: bytes
 
 
 @project_box_router.get("/register")
@@ -40,9 +41,17 @@ def induct(
 
             shortcode = c[0]
             expiry = c[1]
+            svg = label_xml.replace(
+                r"${EXPIRY_DATE}",
+                expiry.strftime(r"%d %b %Y")
+            ).replace(r"${SHORTCODE}", shortcode)
+
+            buffered = cairosvg.svg2png(
+                bytestring=svg.encode('utf-8')
+            )
+            img_str = base64.b64encode(buffered.getvalue())
+
             return ProjectBoxDetails(
                 shortcode=shortcode,
                 expiry=expiry,
-                image=label_xml
-                .replace(r"${EXPIRY_DATE}", expiry.strftime(r"%d %b %Y"))
-                .replace(r"${SHORTCODE}", shortcode))
+                image=img_str)
