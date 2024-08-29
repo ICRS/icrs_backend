@@ -31,7 +31,7 @@ def induct(
             cur.execute(
                 ("INSERT INTO public.project_box (shortcode) "
                  "SELECT SHORTCODE "
-                 "FROM public.mapping WHERE user_id=%s "
+                 "FROM public.shortcode_card_mapping WHERE id=%s "
                  "RETURNING shortcode, expiry"
                  ),
                 (uuid,)
