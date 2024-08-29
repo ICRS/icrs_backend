@@ -44,5 +44,5 @@ def induct(
                 shortcode=shortcode,
                 expiry=expiry,
                 image=label_xml
-                .replace(r"${EXPIRY_DATE}", expiry)
+                .replace(r"${EXPIRY_DATE}", expiry.strftime(r"%d %b %Y"))
                 .replace(r"${SHORTCODE}", shortcode))
