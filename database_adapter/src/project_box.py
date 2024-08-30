@@ -56,7 +56,7 @@ def induct(
             buffered = cairosvg.svg2png(
                 bytestring=svg.encode('utf-8')
             )
-            img_str = base64.b64encode(buffered.getvalue())
+            img_str = base64.b64encode(buffered)
 
             return ProjectBoxDetails(
                 shortcode=shortcode,
