@@ -34,7 +34,7 @@ def induct(
                  "SELECT m.SHORTCODE "
                  "FROM public.shortcode_card_mapping m "
                  "JOIN public.induction i ON i.shortcode=m.shortcode "
-                 "WHERE m.id=%s and i.valid"
+                 "WHERE m.id=%s and i.valid "
                  "RETURNING shortcode, expiry"
                  ),
                 (uuid,)
