@@ -6,6 +6,7 @@ from src.summary import summary
 from src.auth import auth_router
 from src.meme import meme_router
 from src.induction_quiz import induction_router
+from src.project_box import project_box_router
 
 import logging
 
@@ -28,6 +29,7 @@ app.include_router(summary)
 app.include_router(auth_router)
 app.include_router(meme_router)
 app.include_router(induction_router)
+app.include_router(project_box_router)
 
 
 @app.get("/healthz")
