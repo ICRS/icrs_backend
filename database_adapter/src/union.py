@@ -2,11 +2,7 @@ import datetime
 import logging
 from icu_ea_api import ICUEActivitiesAPI
 import os
-from dotenv import load_dotenv
 from datetime import date
-
-
-load_dotenv()
 
 
 # ===== Get the current date =====

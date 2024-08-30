@@ -7,7 +7,7 @@
 ARG PYTHON_VERSION=3.10.12
 FROM python:${PYTHON_VERSION}-slim-bookworm AS base
 
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl libcairo2 && rm -rf /var/lib/apt/lists/*
 
 # Prevents Python from writing pyc files.
 ENV PYTHONDONTWRITEBYTECODE=1
