@@ -23,7 +23,7 @@ class ProjectBoxDetails(BaseModel):
     image: bytes
 
 
-@project_box_router.get("/register")
+@project_box_router.get("/assign/uuid")
 def induct(
     uuid: str = Query(min_length=8, max_length=14),
 ) -> ProjectBoxDetails:
