@@ -1,6 +1,6 @@
 import base64
 from datetime import date
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query, status
 import psycopg2 as pg
 from pydantic import BaseModel
 import cairosvg
@@ -40,6 +40,11 @@ def induct(
                 (uuid,)
             )
             c = cur.fetchone()
+            if not c:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Could not assign project box - "
+                    "insufficient permissions or card not registered")
 
             shortcode = c[0]
             expiry = c[1]
