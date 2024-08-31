@@ -1,13 +1,12 @@
 import logging
 import os
 import pydantic
-import psycopg2 as pg
 
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 
-from src.database import DB_CONFIG
+from src.database import main_db_pool
 
 from src.auth import get_current_username
 from src.union import cid_to_shortcode
@@ -55,7 +54,7 @@ def add_icrs_member(
 
     is_member = union.isMember(shortcode)
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "INSERT INTO public.induction (shortcode, "
@@ -114,7 +113,7 @@ def get_member_permissions_from_shortcode(
         MemberPermissions | dict: member permissions or empty dict
     """
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT canprint, canlasercut, valid "
@@ -166,7 +165,7 @@ def get_member_permissions_from_uuid(
     uuid = "".join(u.zfill(2) for u in uuid.split(" "))
 
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT i.shortcode, i.canprint, i.canlasercut, valid FROM "  # noqa: E501
@@ -203,7 +202,7 @@ def refresh_all_membership(
     username: Annotated[str, Depends(get_current_username)],
 ):
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT shortcode From public.induction WHERE "
@@ -236,7 +235,7 @@ def update_permissions(
     permissions: MemberPermissions,
 ):
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "UPDATE public.induction SET canPrint=%s, canLaserCut=%s "
@@ -270,7 +269,7 @@ def register_card_details_cid(
                             detail="CID not found!")
 
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "INSERT INTO public.shortcode_card_mapping (id, "
@@ -298,7 +297,7 @@ def register_card_details_shortcode(
     shortcode: str = Query(regex=SHORTCODE_REGEX),
 ):
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "INSERT INTO public.shortcode_card_mapping (id, "
