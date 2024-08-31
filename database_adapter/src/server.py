@@ -1,8 +1,7 @@
 import logging
 import os
-from src.database import DB_CONFIG
+from src.database import main_db_pool
 from fastapi import APIRouter, Query, HTTPException, status
-import psycopg2 as pg
 
 from src.validation import SHORTCODE_REGEX, DISCORD_ID_REGEX
 
@@ -43,7 +42,7 @@ def get_discord_id_from_shortcode(
         dict: dictionary with the discord_id
     """
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT user_id FROM public.mapping WHERE shortcode=%s",
@@ -77,7 +76,7 @@ def get_shortcode_from_discord_id(
         dict: dictionary with the shortcode
     """
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT shortcode FROM public.mapping WHERE user_id=%s",
@@ -111,7 +110,7 @@ def get_can_print_from_shortcode(
         dict: dictionary with the can_print value
     """
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT canprint FROM public.induction WHERE shortcode=%s",
@@ -191,7 +190,7 @@ def add_mapping(shortcode: str, discord_id: str) -> bool:
     Returns:
         bool: if insert operation was successful
     """
-    with pg.connect(**DB_CONFIG) as conn:
+    with main_db_pool.connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(
                 'INSERT INTO public.mapping VALUES (%s,%s,%s)',
@@ -211,7 +210,7 @@ def shortcode_exists(shortcode: str) -> bool:
     Returns:
         bool: if shortcode exists in the mapping db
     """
-    with pg.connect(**DB_CONFIG) as conn:
+    with main_db_pool.connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute('SELECT * FROM public.mapping WHERE shortcode = %s',
                            (shortcode.lower().strip(),))
@@ -231,7 +230,7 @@ def valid_mapping(
     Returns:
         bool: whether the discord id, shortcode mapping is active
     """
-    with pg.connect(**DB_CONFIG) as conn:
+    with main_db_pool.connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(
                 'SELECT active FROM public.mapping WHERE shortcode=%s AND user_id=%s',  # noqa: E501
@@ -270,7 +269,7 @@ def change_valid(
         Raised if the validity status is not 0 or 1
     """
     if (valid in {0, 1}):
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cursor:
                 cursor.execute('''
                 UPDATE public.mapping
