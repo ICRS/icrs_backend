@@ -28,3 +28,6 @@ main_db_pool = ConnectionPool(
     " ".join(f"{k}={v}" for k, v in DB_CONFIG.items()))
 meme_db_pool = ConnectionPool(
     " ".join(f"{k}={v}" for k, v in MEME_DB_CONFIG.items()))
+
+main_db_pool.wait()
+meme_db_pool.wait()
