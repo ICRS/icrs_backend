@@ -1,10 +1,9 @@
 import json
 from typing import List
 from fastapi import APIRouter, HTTPException, Query, status
-import psycopg2 as pg
 from pydantic import BaseModel
 
-from src.database import DB_CONFIG
+from src.database import main_db_pool
 
 
 induction_router = APIRouter(
@@ -34,7 +33,7 @@ def get_options(s: str):
 
 @induction_router.get("/quiz")
 def quiz() -> List[QuizRow]:
-    with pg.connect(**DB_CONFIG) as conn:
+    with main_db_pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 ("SELECT q.QUESTION, q.CORRECT_OPTIONS, q.INCORRECT_OPTIONS, "
@@ -61,7 +60,7 @@ def quiz() -> List[QuizRow]:
 def induct(
     id: str = Query(min_length=17, max_length=19)
 ):
-    with pg.connect(**DB_CONFIG) as conn:
+    with main_db_pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 ("INSERT INTO public.induction (shortcode, "

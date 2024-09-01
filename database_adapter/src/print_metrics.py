@@ -1,9 +1,8 @@
 import datetime
 from typing import Annotated
-from src.database import DB_CONFIG
+from src.database import main_db_pool
 import logging
 from fastapi import APIRouter, Body, Query, HTTPException, status
-import psycopg2 as pg
 import json
 
 print_metrics_router = APIRouter(prefix="/print-metrics",
@@ -33,7 +32,7 @@ async def add_print_entry(printer_name: str = Query(enum=PRINTER_NAMES),
     logging.info(f"Adding entry {printer_name, print_time, print_weight} \
                  submitted by{shortcode}")
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "INSERT INTO public.print_metrics (shortcode, \
@@ -58,7 +57,7 @@ async def stop_print_update_entry(
         printer_name: str = Query(enum=PRINTER_NAMES)):
     try:
         printer_name = printer_name.replace("-", " ").lower()
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     ("UPDATE ONLY public.print_metrics "
@@ -83,7 +82,7 @@ async def stop_print_update_entry(
 def member_stats(shortcode: str = Query(min_length=3, max_length=7)):
     shortcode = shortcode.lower()
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT * FROM public.print_metrics WHERE shortcode=%s", (shortcode,))  # noqa: E501
@@ -101,7 +100,7 @@ def member_stats(shortcode: str = Query(min_length=3, max_length=7)):
 @print_metrics_router.get("/member/stats/discord")
 def member_stats_discord(discord_id: str = Query(min_length=10)):
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT T.shortcode, T.time_started, T.print_duration, " +
@@ -129,7 +128,7 @@ def member_stats_summary(
         1970, 1, 1, 0, 0),
 ):
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT shortcode, SUM(print_duration), " +
@@ -157,7 +156,7 @@ async def get_current_user_printer(
     printer_name: str
 ):
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     ("SELECT t.shortcode "

@@ -1,11 +1,10 @@
 import logging
 import os
-import psycopg2 as pg
 
 from typing import Annotated
 from fastapi import APIRouter, Depends,  HTTPException, status
 
-from src.database import DB_CONFIG
+from src.database import main_db_pool
 
 from src.auth import get_current_username
 
@@ -25,7 +24,7 @@ def all_inducted(
         str, Depends(get_current_username)],
 ):
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT shortcode FROM public.induction WHERE valid")
@@ -49,7 +48,7 @@ def recently_inducted(
         str, Depends(get_current_username)],
 ):
     try:
-        with pg.connect(**DB_CONFIG) as conn:
+        with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT shortcode FROM public.induction A " +
                             "WHERE valid AND NOT EXISTS " +
