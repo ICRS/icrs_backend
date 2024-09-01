@@ -1,12 +1,13 @@
 from configparser import ConfigParser
 import os
 
+from psycopg_pool import ConnectionPool
 
 config = ConfigParser()
 config.read('postgres.ini')
 
 DB_CONFIG = {
-    'database': config['postgres']['database'],
+    'dbname': config['postgres']['database'],
     'user': config['postgres']['user'],
     'password': config['postgres']['password'],
     'host': config['postgres']['host'],
@@ -16,9 +17,21 @@ DB_CONFIG = {
 MEME_DB = os.getenv("MEME_DB")
 
 MEME_DB_CONFIG = {
-    'database': MEME_DB,
+    'dbname': MEME_DB,
     'user': config['postgres']['user'],
     'password': config['postgres']['password'],
     'host': config['postgres']['host'],
     'port': config['postgres']['port'],
 }
+
+main_db_pool = ConnectionPool(
+    " ".join(f"{k}={v}" for k, v in DB_CONFIG.items()),
+    min_size=5,
+    max_size=10)
+meme_db_pool = ConnectionPool(
+    " ".join(f"{k}={v}" for k, v in MEME_DB_CONFIG.items()),
+    min_size=5,
+    max_size=10)
+
+main_db_pool.wait()
+meme_db_pool.wait()
