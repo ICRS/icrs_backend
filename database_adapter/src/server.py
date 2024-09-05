@@ -129,7 +129,6 @@ def get_can_print_from_shortcode(
 @discord_id_router.post("/deregister")
 def deregister_user(
     discord_id: str = Query(min_length=17, max_length=19,
-                            DISCORD_ID_REGEX=DISCORD_ID_REGEX
                             )
 ) -> dict:
     valid = change_valid(discord_id, 0)
@@ -144,7 +143,6 @@ def register_user(
     shortcode: str = Query(min_length=3, max_length=7,
                            pattern=SHORTCODE_REGEX),
     discord_id: str = Query(min_length=17, max_length=19,
-                            DISCORD_ID_REGEX=DISCORD_ID_REGEX
                             )
 ) -> dict:
     is_member = union.isMember(shortcode)
