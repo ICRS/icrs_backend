@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 from contextlib import asynccontextmanager
+
+from psycopg_pool import ConnectionPool
 
 from src.server import discord_id_router, shortcode_router
 from src.print_metrics import print_metrics_router
@@ -43,6 +45,30 @@ app.include_router(induction_router)
 app.include_router(project_box_router)
 
 
+def db_pool_healthy(db_pool: ConnectionPool):
+    db_pool.check()
+    stats = db_pool.get_stats()
+
+    errors = stats.get("requests_errors", 0)
+    errors += stats.get("returns_bad", 0)
+    errors += stats.get("connections_errors", 0)
+    errors += stats.get("connections_lost", 0)
+
+    return errors < 5
+
+
 @app.get("/healthz")
 async def get_health():
+    main_db_pool.check()
+    meme_db_pool.check()
+
+    if db_pool_healthy(main_db_pool) and db_pool_healthy(meme_db_pool):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=(
+                "Something bad happened to the db pools.\n"
+                f"Main: {main_db_pool.get_stats()}.\n"
+                f"Meme: {meme_db_pool.get_stats()}."),
+        )
+
     return True
