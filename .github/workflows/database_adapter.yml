@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-    - master
+    - main
     paths:
       - 'database_adapter/**'
       - '.github/workflows/database_adapter.yml'
