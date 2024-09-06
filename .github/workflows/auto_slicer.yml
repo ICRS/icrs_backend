@@ -1,0 +1,20 @@
+on:
+  push:
+    branches:
+    - master
+    paths:
+      - 'auto_slicer/**'
+      - '.github/workflows/auto_slicer.yml'
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to remote server
+        run: |
+          cd auto_slicer
+          ./docker_build.sh ${GITHUB_SHA}
+          kubectl set image deployments/icrsbot icrsbot=localhost:32000/icrsbot:${GITHUB_SHA}
