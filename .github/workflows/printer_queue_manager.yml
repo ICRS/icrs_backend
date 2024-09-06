@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-    - master
+    - main
     paths:
       - 'printer_scanner_router/**'
       - '.github/workflows/printer_scanner_router.yml'

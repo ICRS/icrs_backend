@@ -1,7 +1,7 @@
 on:
   push:
     branches:
-    - master
+    - main
     paths:
       - 'auto_slicer/**'
       - '.github/workflows/auto_slicer.yml'
