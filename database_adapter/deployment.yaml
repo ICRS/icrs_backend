@@ -56,6 +56,12 @@ spec:
             mountPath: /app/printer_config.json
             subPath: printer_config.json
             readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 60
 
       volumes:
         - name: postgres-ini 
