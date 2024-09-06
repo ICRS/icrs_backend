@@ -17,4 +17,4 @@ jobs:
         run: |
           cd database_adapter
           ./docker_build.sh ${GITHUB_SHA}
-          kubectl set image deployments/database-adapter database-adapter=localhost:32000/database-adapter:${GITHUB_SHA}
+          kubectl set image deployments/database-adapter database-adapter=localhost:32000/database_adapter:${GITHUB_SHA}
