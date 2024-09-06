@@ -1,0 +1,20 @@
+on:
+  push:
+    branches:
+    - master
+    paths:
+      - 'database_adapter/**'
+      - '.github/workflows/database_adapter.yml'
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to remote server
+        run: |
+          cd database_adapter
+          ./docker_build.sh ${GITHUB_SHA}
+          kubectl set image deployments/database-adapter database-adapter=localhost:32000/database-adapter:${GITHUB_SHA}

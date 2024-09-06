@@ -1,1 +1,1 @@
-docker buildx build --builder=builder --push --platform linux/arm64,linux/amd64 -t localhost:32000/database_adapter .
+docker buildx build --builder=builder --push --platform linux/arm64,linux/amd64 -t localhost:32000/database_adapter:$1 .
