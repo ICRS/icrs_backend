@@ -17,11 +17,10 @@ import logging
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s [%(levelname)s]: %(message)s',
-    datefmt='%d-%b-%y %H:%M:%S',
-    handlers=[
-        logging.StreamHandler()
-    ])
+    format="%(asctime)s - %(name)s [%(levelname)s]: %(message)s",
+    datefmt="%d-%b-%y %H:%M:%S",
+    handlers=[logging.StreamHandler()],
+)
 
 
 @asynccontextmanager
@@ -31,6 +30,7 @@ async def lifespan(app: FastAPI):
     yield
     main_db_pool.close()
     meme_db_pool.close()
+
 
 app = FastAPI(lifespan=lifespan)
 
@@ -63,12 +63,15 @@ async def get_health():
     meme_db_pool.check()
 
     if db_pool_healthy(main_db_pool) and db_pool_healthy(meme_db_pool):
+        msg = (
+            "Something bad happened to the db pools.\n"
+            f"Main: {main_db_pool.get_stats()}.\n"
+            f"Meme: {meme_db_pool.get_stats()}."
+        )
+
+        logging.error(msg)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=(
-                "Something bad happened to the db pools.\n"
-                f"Main: {main_db_pool.get_stats()}.\n"
-                f"Meme: {meme_db_pool.get_stats()}."),
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg
         )
 
     return True
