@@ -225,3 +225,26 @@ def register_card_details_cid(
         )
 
     return result.json()
+
+
+@access_server_router.get("/project-box/assign/uuid")
+def assign_project_box(
+    uuid: str = Query(min_length=8, max_length=14),
+    credentials: Annotated[HTTPBasicAuth |
+                           None, Depends(valid_login)] = None
+):
+    result = requests.get(
+        DATABASE_ADAPTER_IP + "/project-box/assign/uuid",
+        params={"uuid": uuid},
+        auth=credentials
+    )
+
+    if result.status_code != 200:
+        msg = f"Error assigning box with uuid: {result.reason}"
+        logging.error(msg)
+        raise HTTPException(
+            status_code=result.status_code,
+            detail=msg
+        )
+
+    return result.json()
