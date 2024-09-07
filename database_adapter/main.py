@@ -54,7 +54,7 @@ def db_pool_healthy(db_pool: ConnectionPool):
     errors += stats.get("connections_errors", 0)
     errors += stats.get("connections_lost", 0)
 
-    return errors < 5
+    return errors > 5
 
 
 @app.get("/healthz")
