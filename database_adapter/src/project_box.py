@@ -1,8 +1,10 @@
 import base64
 from datetime import date
-from fastapi import APIRouter, HTTPException, Query, status
+from typing import Annotated
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 import cairosvg
+from src.auth import get_current_username
 from src.database import main_db_pool
 
 
@@ -23,7 +25,8 @@ class ProjectBoxDetails(BaseModel):
 
 
 @project_box_router.get("/assign/uuid")
-def induct(
+def project_box_assign(
+    username: Annotated[str, Depends(get_current_username)],
     uuid: str = Query(min_length=8, max_length=14),
 ) -> ProjectBoxDetails:
     with main_db_pool.connection() as conn:
