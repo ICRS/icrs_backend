@@ -45,7 +45,7 @@ app.include_router(induction_router)
 app.include_router(project_box_router)
 
 
-def db_pool_healthy(db_pool: ConnectionPool):
+def db_pool_unhealthy(db_pool: ConnectionPool):
     db_pool.check()
     stats = db_pool.get_stats()
 
@@ -62,7 +62,7 @@ async def get_health():
     main_db_pool.check()
     meme_db_pool.check()
 
-    if db_pool_healthy(main_db_pool) and db_pool_healthy(meme_db_pool):
+    if db_pool_unhealthy(main_db_pool) or db_pool_unhealthy(meme_db_pool):
         msg = (
             "Something bad happened to the db pools.\n"
             f"Main: {main_db_pool.get_stats()}.\n"
