@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from psycopg_pool import ConnectionPool
 
+from src.slicer import slicer_router
 from src.server import discord_id_router, shortcode_router
 from src.print_metrics import print_metrics_router
 from src.member import member_router
@@ -43,6 +44,7 @@ app.include_router(auth_router)
 app.include_router(meme_router)
 app.include_router(induction_router)
 app.include_router(project_box_router)
+app.include_router(slicer_router)
 
 
 def db_pool_unhealthy(db_pool: ConnectionPool):
