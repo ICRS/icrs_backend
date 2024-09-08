@@ -55,9 +55,9 @@ def set_print_window(
 
         if not can_print:
             raise HTTPException(
-                    status_code=401,
-                    detail="no induction"
-                    )
+                status_code=401,
+                detail="no induction"
+            )
 
         last_set_time = datetime.datetime.now() + datetime.timedelta(
             seconds=60)
@@ -78,64 +78,6 @@ def set_print_window(
 async def get_print_window(request: Request):
     global last_set_time
     return str(last_set_time > datetime.datetime.now())
-
-
-@access_server_router.get("/slicer/print/permissions")
-async def slicer_permissions(
-        time_seconds: int | None = None,
-        orcaslicer_timedelta: str | None = None):
-    # return shortcode, can print
-    if time_seconds is None and orcaslicer_timedelta is None:
-        raise HTTPException(
-            status_code=400,
-            detail="No print time delta given!")
-
-    global last_set_time, last_short_code
-    if last_set_time < datetime.datetime.now():
-        raise HTTPException(
-            status_code=401,
-            detail="Card not scanned!")
-
-    if time_seconds:
-        delta = datetime.timedelta(seconds=time_seconds)
-    elif orcaslicer_timedelta:
-        t = {
-        }
-
-        v = 0
-        for c in orcaslicer_timedelta:
-            if c == 'd':
-                t['days'] = v
-                v = 0
-            elif c == 'h':
-                t['hours'] = v
-                v = 0
-            elif c == 'm':
-                t['minutes'] = v
-                v = 0
-            elif c == 's':
-                t['seconds'] = v
-                v = 0
-            else:
-                v *= 10
-                v += int(c)
-
-        delta = datetime.timedelta(**t)
-
-    can_print = delta < (datetime.timedelta(hours=3)
-                         if datetime.datetime.now().hour < 22
-                         else datetime.timedelta(hours=9))
-    if not can_print:
-        raise HTTPException(
-            status_code=401,
-            detail="Time Limit Exceeded")
-
-    data = {
-        "shortcode": last_short_code,
-        "can_print": can_print
-    }
-
-    return data
 
 
 class PrintData(BaseModel):
@@ -248,3 +190,65 @@ def assign_project_box(
         )
 
     return result.json()
+
+
+@access_server_router.get("/slicer/print/permissions")
+def get_slicer_print_permissions(
+        time_seconds: int | None = None,
+        orcaslicer_timedelta: str | None = None
+):
+    if time_seconds is None and orcaslicer_timedelta is None:
+        raise HTTPException(
+            status_code=400,
+            detail="No print time delta given!")
+
+    global last_set_time, last_short_code
+    if last_set_time < datetime.datetime.now():
+        raise HTTPException(
+            status_code=401,
+            detail="Card not scanned!")
+
+    if time_seconds:
+        delta = datetime.timedelta(seconds=time_seconds)
+    else:
+        t = {
+        }
+
+        v = 0
+        for c in orcaslicer_timedelta:
+            if c == 'd':
+                t['days'] = v
+                v = 0
+            elif c == 'h':
+                t['hours'] = v
+                v = 0
+            elif c == 'm':
+                t['minutes'] = v
+                v = 0
+            elif c == 's':
+                t['seconds'] = v
+                v = 0
+            else:
+                v *= 10
+                v += int(c)
+
+        delta = datetime.timedelta(**t)
+
+    if last_set_time > datetime.datetime.now():
+        result = requests.get(
+            DATABASE_ADAPTER_IP + "/slicer/print/permissions",
+            params={"shortcode": last_short_code,
+                    "time": delta},
+        )
+        if result.status_code != 200:
+            msg = f"Permission denied for slicer: {result.reason}"
+            logging.error(msg)
+            raise HTTPException(
+                status_code=result.status_code,
+                detail=msg
+            )
+
+        return result.json()
+    else:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Card not tapped on reader")

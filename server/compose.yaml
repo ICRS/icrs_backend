@@ -11,11 +11,15 @@ services:
   access-server:
     build:
       context: .
-    # ports:
-    #   - 8000:8000
+    ports:
+      - 7999:8000
     environment:
       - TZ=Europe/London
-
+    develop:
+      watch:
+        - action: rebuild
+          path: ./src
+          target: /app
 
 # The commented out section below is an example of how to define a PostgreSQL
 # database that your application can use. `depends_on` tells Docker Compose to
