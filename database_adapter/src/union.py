@@ -26,8 +26,8 @@ society_api = ICUEActivitiesAPI(CSP_CODE, api_key, year_string)
 # =========================================
 
 
-society_members = society_api.list_members()
-last_update = datetime.datetime.now()
+society_members = []
+last_update = datetime.datetime(2000, 1, 1)
 timeout = datetime.timedelta(seconds=5)
 
 
