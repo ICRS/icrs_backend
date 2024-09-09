@@ -14,15 +14,14 @@ slicer_router = APIRouter(prefix="/slicer", tags=["Slicer"])
 
 @slicer_router.get("/print/permissions")
 def print_permissions(
-    # username: Annotated[str, Depends(get_current_username)],
-    time: datetime.timedelta,
+    time_seconds: int = 10000000,
     shortcode: str = Query(pattern=SHORTCODE_REGEX)
 ) -> str:
     try:
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 now = datetime.datetime.now()
-                print_minutes = time.seconds // 60
+                print_minutes = time_seconds // 60
                 logging.warning(print_minutes)
                 if 7 < now.hour < 22:
                     cur.execute(
@@ -40,7 +39,7 @@ def print_permissions(
                         "i.canprint and i.valid and i.print_night_time > %s "
                         "and i.shortcode=%s",
                         (
-                            time.seconds // 60,
+                            print_minutes,
                             shortcode
                         )
                     )

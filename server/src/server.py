@@ -238,7 +238,7 @@ def get_slicer_print_permissions(
         result = requests.get(
             DATABASE_ADAPTER_IP + "/slicer/print/permissions",
             params={"shortcode": last_short_code,
-                    "time": delta},
+                    "time_seconds": delta.seconds},
         )
         if result.status_code != 200:
             msg = f"Permission denied for slicer: {result.reason}"
