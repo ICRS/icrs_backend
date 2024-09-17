@@ -85,7 +85,9 @@ def member_stats(shortcode: str = Query(min_length=3, max_length=7)):
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT * FROM public.print_metrics WHERE shortcode=%s", (shortcode,))  # noqa: E501
+                    "SELECT shortcode, time_started, print_duration, print_weight, printer_name "  # noqa: E501
+                    "FROM public.print_metrics WHERE shortcode=%s",
+                    (shortcode,))
                 return cur.fetchall()
     except Exception as e:
         error_msg = f"Error occurred when querying db: {e}"
