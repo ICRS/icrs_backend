@@ -210,7 +210,8 @@ def shortcode_exists(shortcode: str) -> bool:
     """
     with main_db_pool.connection() as conn:
         with conn.cursor() as cursor:
-            cursor.execute('SELECT * FROM public.mapping WHERE shortcode = %s',
+            cursor.execute('SELECT user_id, shortcode, active '
+                           'FROM public.mapping WHERE shortcode = %s',
                            (shortcode.lower().strip(),))
             return any(cursor.fetchall())
 
