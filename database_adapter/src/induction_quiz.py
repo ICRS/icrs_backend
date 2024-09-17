@@ -27,8 +27,8 @@ class QuizRow(BaseModel):
     assets: List[QuizAsset] = []
 
 
-def get_options(s: str):
-    return [c for c in s.split(';') if c]
+def get_options(s: str | None):
+    return [c for c in s.split(';') if c] if s else []
 
 
 @induction_router.get("/quiz")
