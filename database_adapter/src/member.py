@@ -30,6 +30,13 @@ class MemberDetails(BaseModel):
     laser: bool = pydantic.Field(False)
 
 
+@member_router.get("")
+def is_member(
+    shortcode: str = Query(min_length=3, max_length=7),
+):
+    return union.isMember(shortcode)
+
+
 @member_router.post("/add")
 def add_icrs_member(
     username: Annotated[str, Depends(get_current_username)],
