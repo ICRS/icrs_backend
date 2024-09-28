@@ -3,7 +3,7 @@ import os
 from src.database import main_db_pool
 from fastapi import APIRouter, Query, HTTPException, status
 
-from src.validation import SHORTCODE_REGEX, DISCORD_ID_REGEX
+from src.validation import SHORTCODE_REGEX
 
 env = os.getenv("ENV", "dev")
 
