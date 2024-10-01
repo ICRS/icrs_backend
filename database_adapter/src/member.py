@@ -98,6 +98,8 @@ class MemberPermissions(BaseModel):
     print: bool = pydantic.Field(default=False)
     laser: bool = pydantic.Field(default=False)
     inducted: bool = pydantic.Field(default=True)
+    time_added: str = pydantic.Field(default="")
+    card_id: str = pydantic.Field(min_length=8, max_length=14, default="")
 
 
 @member_router.get("/permissions/shortcode")
@@ -123,19 +125,28 @@ def get_member_permissions_from_shortcode(
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT canprint, canlasercut, valid "
-                    "FROM public.induction WHERE shortcode=%s",
-                    (shortcode,),
-                )  # noqa: E501
+                    "SELECT i.canprint, i.canlasercut, i.valid, i.time_added, m.id "
+                    "FROM public.induction i "
+                    "LEFT JOIN public.shortcode_card_mapping m ON i.shortcode=m.shortcode "
+                    "WHERE i.shortcode = %s;",
+                    (shortcode,)
+                )
+
                 result = cur.fetchone()
+
+                logging.info(f"Result: {result}")
                 if not result:
                     result = {}
                 else:
+                    datStr = result[3].strftime("%d %b %Y") if result[3] else "Unknown Date"
+
                     result = MemberPermissions(
                         shortcode=shortcode,
                         print=result[0],
                         laser=result[1],
                         inducted=result[2],
+                        time_added=datStr,
+                        card_id=result[4] if result[4] else "Not Found",
                     )
                 return result
     except Exception as e:
