@@ -29,7 +29,13 @@ def all_inducted(
                 cur.execute(
                     "SELECT shortcode FROM public.induction WHERE valid")
                 inducted = cur.fetchall()
-                inducted = [c[0] + "@ic.ac.uk" for c in inducted]
+                inducted = [
+                    (
+                        c[0] + "@ic.ac.uk",
+                    ) for c in union.getShortcodesToCIDAndName(inducted)]
+                inducted = [
+                    " - ".join(c) for c in inducted
+                ]
 
                 return inducted
     except Exception as e:
