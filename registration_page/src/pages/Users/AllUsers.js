@@ -11,11 +11,11 @@ function AllUsers(props) {
 			</div>
 			<div>
 				{users !== '' && (
-				<ul>
-					{users.map((item, index) => (
-						<li key={index}> {item} </li>
-					))}
-				</ul>
+					<ul>
+						{users.map((item, index) => (
+							<li key={index}> {item} </li>
+						))}
+					</ul>
 				)}
 			</div>
 		</div>

@@ -1,10 +1,10 @@
 import QueryEndpoint from "./QueryEndpoint";
 
 export default function RecentlyInducted(props) {
-    const { handleRefresh, users } = QueryEndpoint(props["endpoint"], "GET");
+	const { handleRefresh, users } = QueryEndpoint(props["endpoint"], "GET");
 
-    const handleRegisterUsers = () => {
-        fetch(props["registrationEndpoint"], {
+	const handleRegisterUsers = () => {
+		fetch(props["registrationEndpoint"], {
 			method: "GET",
 			headers: {
 				"Accept": "*/*",
@@ -18,23 +18,38 @@ export default function RecentlyInducted(props) {
 				return alert('Something went wrong. Please try again later. Network error likely.');
 			});
 
-    }
+	}
 
-    return (
+	return (
 		<div className="form-box">
 			<div>
 				<h1>Recently Inducted Users</h1>
-                <p>Get list of users to send to card office</p>
+				<p>Get list of users to send to card office</p>
 				<button onClick={handleRefresh}> Refresh </button>
-                <button onClick={handleRegisterUsers}> Update Registered Users </button>
+				<button onClick={handleRegisterUsers}> Update Registered Users </button>
 			</div>
 			<div >
-				{users !== '' && (
-				<ul>
-					{users.map((item, index) => (
-						<li key={index}> {item} </li>
-					))}
-				</ul>
+				{users !== '' && users[0] !== '' && (
+					<div>
+						<br />
+						<h3> Previously Inducted </h3>
+						<ul>
+							{users[0].map((item, index) => (
+								<li key={index}> {item} </li>
+							))}
+						</ul>
+					</div>
+				)}
+				{users !== '' && users[1] !== '' && (
+					<div>
+						<br />
+						<h3> Previously Inducted </h3>
+						<ul>
+							{users[1].map((item, index) => (
+								<li key={index}> {item.join(", ")} </li>
+							))}
+						</ul>
+					</div>
 				)}
 			</div>
 		</div>
