@@ -29,7 +29,8 @@ def all_inducted(
                 cur.execute(
                     "SELECT shortcode FROM public.induction WHERE valid")
                 inducted = cur.fetchall()
-                inducted = union.getShortcodesToCIDAndName(inducted)
+                inducted = union.getShortcodesToCIDAndName(
+                    [i[0] for i in inducted])
                 inducted = [
                     " - ".join(c) + "@ic.ac.uk" for c in inducted
                 ]
