@@ -16,5 +16,5 @@ jobs:
       - name: Deploy to remote server
         run: |
           cd registration_page
-          ./docker_build.sh ${GITHUB_SHA} "prod"
+          ./docker_build.sh ${GITHUB_SHA} 'prod'
           kubectl set image deployments/icrs-registration-page-deployment icrs-registration-page=localhost:32000/icrs-registration-page:${GITHUB_SHA}
