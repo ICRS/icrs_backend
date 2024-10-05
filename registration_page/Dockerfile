@@ -41,7 +41,12 @@ RUN --mount=type=bind,source=package.json,target=package.json \
     npm ci
 
 # Copy the rest of the source files into the image.
-COPY . .
+COPY package.json package-lock.json ./
+RUN npm i
+
+COPY public ./public
+COPY src ./src
+
 # Run the build script.
 RUN npm run build
 

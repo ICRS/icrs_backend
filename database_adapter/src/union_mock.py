@@ -3,7 +3,7 @@ def isMember(shortcode: str) -> bool:
 
 
 def getShortcodesToCIDAndName(shortcodes) -> list:
-    return shortcodes
+    return [("", "", s) for s in shortcodes]
 
 
 def isMemberList(shortcodes: list[str]) -> bool:
