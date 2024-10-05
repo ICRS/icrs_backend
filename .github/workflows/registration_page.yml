@@ -1,0 +1,20 @@
+on:
+  push:
+    branches:
+    - main
+    paths:
+      - 'registration_page/**'
+      - '.github/workflows/registration_page.yml'
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to remote server
+        run: |
+          cd registration_page
+          ./docker_build.sh ${GITHUB_SHA} "prod"
+          kubectl set image deployments/icrs-registration-page-deployment icrs-registration-page=localhost:32000/icrs-registration-page:${GITHUB_SHA}
