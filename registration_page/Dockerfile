@@ -7,6 +7,7 @@
 # Want to help us make this template better? Share your feedback here: https://forms.gle/ybq9Krt8jtBL3iCk7
 
 ARG NODE_VERSION=18
+ARG NODE_ENV=dev
 
 ################################################################################
 # Use node image for base image for all stages.
@@ -73,13 +74,15 @@ FROM nginx:alpine AS proxy
 
 COPY --from=build /usr/src/app/build/ /usr/share/nginx/html
 
-FROM proxy AS deploy_dev 
+
+FROM proxy AS deploy_dev
 ONBUILD COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
 
 FROM proxy AS deploy_prod
 ONBUILD COPY nginx/nginx_prod.conf /etc/nginx/conf.d/default.conf
 
-FROM deploy_${ENV:-dev} AS deploy
+
+FROM deploy_${NODE_ENV} AS deploy
 
 # Expose the port that the application listens on.
 EXPOSE 80
