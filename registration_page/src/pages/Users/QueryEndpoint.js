@@ -18,9 +18,6 @@ export default function QueryEndpoint(endpoint, request_method) {
 				}
 
 				response.json().then((data) => {
-					console.log(data)
-					console.log(data[0])
-					console.log(data[1])
 					setUsers(data);
 				});
 			}).catch(() => {
