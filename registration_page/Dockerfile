@@ -55,7 +55,7 @@ RUN npm run build
 # where the necessary files are copied from the build stage.
 # FROM base as final
 
-FROM nginx:alpine
+FROM nginx:alpine AS proxy
 
 # Use production node environment by default.
 #ENV NODE_ENV production
@@ -72,7 +72,14 @@ FROM nginx:alpine
 #COPY --from=build /usr/src/app/build/ ./build/
 
 COPY --from=build /usr/src/app/build/ /usr/share/nginx/html
-COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
+
+FROM proxy AS deploy_dev 
+ONBUILD COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
+
+FROM proxy AS deploy_prod
+ONBUILD COPY nginx/nginx_prod.conf /etc/nginx/conf.d/default.conf
+
+FROM deploy_${ENV:-dev} AS deploy
 
 # Expose the port that the application listens on.
 EXPOSE 80
