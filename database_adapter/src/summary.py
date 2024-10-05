@@ -29,7 +29,11 @@ def all_inducted(
                 cur.execute(
                     "SELECT shortcode FROM public.induction WHERE valid")
                 inducted = cur.fetchall()
-                inducted = [c[0] + "@ic.ac.uk" for c in inducted]
+                inducted = union.getShortcodesToCIDAndName(
+                    [i[0] for i in inducted])
+                inducted = [
+                    " - ".join(c) + "@ic.ac.uk" for c in inducted
+                ]
 
                 return inducted
     except Exception as e:
@@ -54,16 +58,22 @@ def recently_inducted(
                             "WHERE valid AND NOT EXISTS " +
                             "(SELECT \'X\' FROM public.sent S " +
                             "WHERE A.shortcode=S.shortcode)")
-
                 update = [c[0] for c in cur.fetchall()]
 
+                cur.execute("SELECT shortcode, time_added FROM public.sent S "
+                            "ORDER BY time_added DESC")
+                sent = {c[0]: c[1] for c in cur.fetchall()}
+
                 mapping = union.getShortcodesToCIDAndName(update)
+                sent_info = [
+                    (a, b, c, sent[c]) for a, b, c in
+                    union.getShortcodesToCIDAndName(list(sent))]
 
                 cur.executemany(
                     "INSERT INTO public.sent (shortcode) VALUES (%s)",
                     [(c,) for c in update])
 
-                return mapping
+                return mapping, sent_info
     except Exception as e:
         error_msg = f"Error when querying db or inserting into  {e}"
         logging.error(error_msg)
