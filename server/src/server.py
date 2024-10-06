@@ -153,7 +153,7 @@ def register_card_details_cid(
                            None, Depends(valid_login)] = None
 ):
     result = requests.get(
-        DATABASE_ADAPTER_IP + "/register/card/cid",
+        DATABASE_ADAPTER_IP + "/member/register/card/cid",
         params={"uuid": uuid, "cid": cid},
         auth=credentials
     )
