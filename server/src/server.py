@@ -152,7 +152,7 @@ def register_card_details_cid(
     credentials: Annotated[HTTPBasicAuth |
                            None, Depends(valid_login)] = None
 ):
-    result = requests.get(
+    result = requests.post(
         DATABASE_ADAPTER_IP + "/member/register/card/cid",
         params={"uuid": uuid, "cid": cid},
         auth=credentials
