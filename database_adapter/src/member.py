@@ -125,9 +125,9 @@ def get_member_permissions_from_shortcode(
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT i.canprint, i.canlasercut, i.valid, i.time_added, m.id "
+                    "SELECT i.canprint, i.canlasercut, i.valid, i.time_added, m.id "  # noqa: E501
                     "FROM public.induction i "
-                    "LEFT JOIN public.shortcode_card_mapping m ON i.shortcode=m.shortcode "
+                    "LEFT JOIN public.shortcode_card_mapping m ON i.shortcode=m.shortcode "  # noqa: E501
                     "WHERE i.shortcode = %s;",
                     (shortcode,)
                 )
@@ -138,7 +138,7 @@ def get_member_permissions_from_shortcode(
                 if not result:
                     result = {}
                 else:
-                    datStr = result[3].strftime("%d %b %Y") if result[3] else "Unknown Date"
+                    datStr = result[3].strftime("%d %b %Y") if result[3] else "Unknown Date"  # noqa: E501
 
                     result = MemberPermissions(
                         shortcode=shortcode,
@@ -301,6 +301,33 @@ def register_card_details_cid(
 
     except Exception as e:
         error_msg = f"Error Updating db: {e}"
+        logging.warning(error_msg)
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg
+        )
+
+
+@member_router.delete("/register/card")
+def remove_card_details_cid(
+    username: Annotated[str, Depends(get_current_username)],
+    uuid: str = Query(min_length=8, max_length=14),
+):
+    try:
+        with main_db_pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM public.shortcode_card_mapping "
+                    "WHERE id=%s",
+                    (
+                        uuid.upper(),
+                    )
+                )
+                return True
+
+    except Exception as e:
+        error_msg = (f"Error Deleting Card {uuid} from shortcode mapping "
+                     f"table: {e}")
         logging.warning(error_msg)
 
         raise HTTPException(
