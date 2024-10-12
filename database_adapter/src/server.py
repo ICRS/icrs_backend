@@ -128,13 +128,23 @@ def get_can_print_from_shortcode(
 
 @discord_id_router.post("/deregister")
 def deregister_user(
-    discord_id: str = Query(min_length=17, max_length=19,
-                            )
+    discord_id: str = Query(min_length=17, max_length=19,)
 ) -> dict:
     valid = change_valid(discord_id, 0)
     return {
         "msg": "Membership Removed!",
         "valid": valid,
+    }
+
+
+@shortcode_router.delete("/discord/mapping")
+def delete_discord_from_table(
+    shortcode: str = Query(min_length=3, max_length=7,
+                           pattern=SHORTCODE_REGEX),
+) -> dict[str, str]:
+    valid = delete_discord_mapping(shortcode)
+    return {
+        "msg": f"Removed discord user from shortcode mapping: {valid}",
     }
 
 
@@ -280,3 +290,35 @@ def change_valid(
         return True
     else:
         raise KeyError('Issue changing valid status')
+
+
+def delete_discord_mapping(
+    discord_id: str,
+) -> bool:
+    """
+    delete discord mapping from db by discord id
+
+    Parameters
+    ----------
+    discord_id : String
+        Discord user id
+
+    Returns
+    -------
+    bool
+        True if the validity status was changed, False otherwise
+
+    Raises
+    ------
+    KeyError
+        Raised if the validity status is not 0 or 1
+    """
+    with main_db_pool.connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                DELETE FROM public.mapping
+                WHERE user_id = %s
+                ''', (discord_id, )
+            )
+            conn.commit()
+    return True
