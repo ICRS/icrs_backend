@@ -293,7 +293,7 @@ def change_valid(
 
 
 def delete_discord_mapping(
-    discord_id: str,
+    shortcode: str,
 ) -> bool:
     """
     delete discord mapping from db by discord id
@@ -317,8 +317,8 @@ def delete_discord_mapping(
         with conn.cursor() as cursor:
             cursor.execute('''
                 DELETE FROM public.mapping
-                WHERE user_id = %s
-                ''', (discord_id, )
+                WHERE shortcode = %s
+                ''', (shortcode, )
             )
             conn.commit()
     return True
