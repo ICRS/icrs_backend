@@ -323,7 +323,9 @@ def remove_card_details_cid(
                         uuid.upper(),
                     )
                 )
-                return True
+                v = cur.rowcount
+                logging.info(f"Deleting uuid {uuid} with result {v}")
+                return {"deleted": v}
 
     except Exception as e:
         error_msg = (f"Error Deleting Card {uuid} from shortcode mapping "
