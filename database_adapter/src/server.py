@@ -60,7 +60,8 @@ def get_discord_id_from_shortcode(
 
 @discord_id_router.get("/shortcode")
 def get_shortcode_from_discord_id(
-    id: str = Query(min_length=17, max_length=19)
+    id: str = Query(min_length=17, max_length=19),
+    active: bool = Query(default=False)
 ) -> dict:
     """
     Get the shortcode from the Discord ID
@@ -78,10 +79,18 @@ def get_shortcode_from_discord_id(
     try:
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT shortcode FROM public.mapping WHERE user_id=%s",
-                    (id,)
-                )
+                if not active:
+                    cur.execute(
+                        "SELECT shortcode FROM public.mapping "
+                        "WHERE user_id=%s",
+                        (id,)
+                    )
+                else:
+                    cur.execute(
+                        "SELECT shortcode FROM public.mapping "
+                        "WHERE user_id=%s and active!=0",
+                        (id,)
+                    )
 
                 return {"shortcode": cur.fetchone()[0]}
     except Exception:
