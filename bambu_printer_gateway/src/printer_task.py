@@ -24,7 +24,7 @@ RUNNING_STATES = set([GcodeState.RUNNING, GcodeState.PAUSE])
 class PrinterTask:
     EXCHANGE = RABBITMQ_EXCHANGE
     EXCHANGE_TYPE = ExchangeType.topic
-    PRINTER_NAME = PRINTER_NAME_TITLE.replace(" ", "_").lower()
+    PRINTER_NAME = PRINTER_NAME_TITLE.replace(" ", "-").lower()
 
     def __init__(self, printer: Printer, sleep=5) -> None:
         self._printer = printer

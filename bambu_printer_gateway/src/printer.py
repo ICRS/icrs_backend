@@ -27,7 +27,7 @@ DATABASE_URL = get_env_string("DATABASE_ADAPTER_ENDPOINT")
 # =============================================================================
 # RabbitMQ Settings
 # =============================================================================
-rabbitmq_settings = json.load(open("../rabbitmq.json", "r", encoding="utf-8"))
+rabbitmq_settings = json.load(open("rabbitmq.json", "r", encoding="utf-8"))
 RABBITMQ_EXCHANGE = rabbitmq_settings["EXCHANGE_NAME"]
 
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
