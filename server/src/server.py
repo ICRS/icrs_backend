@@ -6,12 +6,16 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request, \
     HTTPException, status
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel
 import requests
 
+from starlette.background import BackgroundTask
 from src.auth import valid_login
 from requests.auth import HTTPBasicAuth
+
+
+import httpx
 
 # ==============================================================================
 DATABASE_ADAPTER_IP = os.getenv("DATABASE_ADAPTER_IP")
@@ -122,74 +126,42 @@ async def post_print_time(
         )
 
 
-@access_server_router.get("/member/permissions/uuid")
-async def get_member_permission_uuid(
-    uuid: str = Query(min_length=8, max_length=14),
-    credentials: Annotated[HTTPBasicAuth |
-                           None, Depends(valid_login)] = None
-):
-    result = requests.get(
-        DATABASE_ADAPTER_IP + "/member/permissions/uuid",
-        params={"uuid": uuid},
-        auth=credentials
+client = httpx.AsyncClient(base_url=DATABASE_ADAPTER_IP)
+
+
+async def _reverse_proxy(request: Request):
+    url = httpx.URL(path=request.url.path,
+                    query=request.url.query.encode("utf-8"))
+    rp_req = client.build_request(request.method, url,
+                                  headers=request.headers.raw,
+                                  content=request.stream())
+    rp_resp = await client.send(rp_req, stream=True)
+    return StreamingResponse(
+        rp_resp.aiter_raw(),
+        status_code=rp_resp.status_code,
+        headers=rp_resp.headers,
+        background=BackgroundTask(rp_resp.aclose),
     )
 
-    if result.status_code != 200:
-        msg = f"Error Querying the permissions with uuid: {result.reason}"
-        logging.error(msg)
-        raise HTTPException(
-            status_code=result.status_code,
-            detail=msg
-        )
-
-    return result.json()
+access_server_router.add_route(
+    "/member/permissions/uuid",
+    _reverse_proxy,
+    ["GET"]
+)
 
 
-@access_server_router.post("/register/card/cid")
-def register_card_details_cid(
-    uuid: str = Query(min_length=8, max_length=14),
-    cid: str = Query(regex=r"\d{8}"),
-    credentials: Annotated[HTTPBasicAuth |
-                           None, Depends(valid_login)] = None
-):
-    result = requests.post(
-        DATABASE_ADAPTER_IP + "/member/register/card/cid",
-        params={"uuid": uuid, "cid": cid},
-        auth=credentials
-    )
-
-    if result.status_code != 200:
-        msg = f"Error Querying the permissions with uuid: {result.reason}"
-        logging.error(msg)
-        raise HTTPException(
-            status_code=result.status_code,
-            detail=msg
-        )
-
-    return result.json()
+access_server_router.add_route(
+    "/register/card/cid",
+    _reverse_proxy,
+    ["POST"]
+)
 
 
-@access_server_router.get("/project-box/assign/uuid")
-def assign_project_box(
-    uuid: str = Query(min_length=8, max_length=14),
-    credentials: Annotated[HTTPBasicAuth |
-                           None, Depends(valid_login)] = None
-):
-    result = requests.get(
-        DATABASE_ADAPTER_IP + "/project-box/assign/uuid",
-        params={"uuid": uuid},
-        auth=credentials
-    )
-
-    if result.status_code != 200:
-        msg = f"Error assigning box with uuid: {result.reason}"
-        logging.error(msg)
-        raise HTTPException(
-            status_code=result.status_code,
-            detail=msg
-        )
-
-    return result.json()
+access_server_router.add_route(
+    "/project-box/assign/uuid",
+    _reverse_proxy,
+    ["GET"]
+)
 
 
 @access_server_router.get("/slicer/print/permissions")
