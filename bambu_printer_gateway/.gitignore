@@ -171,3 +171,5 @@ examples/
 *.webp
 *.gif
 
+\test.py
+
