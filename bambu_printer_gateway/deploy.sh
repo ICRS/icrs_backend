@@ -4,6 +4,6 @@ PRINTERS=("andrew-printerson" "eric-printman" "printer-cheung" "freddy-printer" 
 
 for printer in ${PRINTERS[@]}; do
     echo "Deploying printer $printer"
-    cat deployment.yaml | sed -e "s/\${printer-name}/$printer/g" | kubectl apply -f -
+    cat deployment.yaml | sed -e "s/\${printer-name}/$printer/g" | sed -e "s/latest/${1:-latest}/g" | kubectl apply -f -
     # Deploy printer
 done

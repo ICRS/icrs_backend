@@ -13,12 +13,18 @@ spec:
         app: ${printer-name}-printer-gateway
     spec:
       volumes:
+      - name: rabbitmq-config
+        secret:
+          secretName: rabbitmq-secret
+          items:
+            - key: printer_rabbitmq.json
+              path: rabbitmq.json
       - name: printer-gateway-storage
         persistentVolumeClaim:
           claimName: printer-gateway-pvc
       containers:
         - name: ${printer-name}-printer-gateway
-          image: localhost:32000/icrs-bambu-printer-gateway # Replace with your Python Docker image and tag
+          image: localhost:32000/icrs-bambu-printer-gateway:latest # Replace with your Python Docker image and tag
           ports:
             - containerPort: 8000 # Port your Python application is listening on
           imagePullPolicy: "Always"
@@ -47,11 +53,35 @@ spec:
                 configMapKeyRef:
                   name: database-config
                   key: endpoint-url
+            - name: RABBITMQ_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: print-queue-default-user
+                  key: host
+            - name: RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: print-queue-default-user
+                  key: username
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: print-queue-default-user
+                  key: password
+            - name: RABBITMQ_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: print-queue-default-user
+                  key: port
 
           volumeMounts:
             - name: printer-gateway-storage
               mountPath: "/app/videos/"
               subPath: ${printer-name}
+            - name: rabbitmq-config
+              mountPath: /app/rabbitmq.json
+              subPath: rabbitmq.json
+
           livenessProbe:
             httpGet:
               path: /healthz
