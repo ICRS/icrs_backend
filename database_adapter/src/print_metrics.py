@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import datetime
 from typing import Annotated
 from src.database import main_db_pool
@@ -78,6 +79,15 @@ async def stop_print_update_entry(
             detail=error_msg)
 
 
+@dataclass
+class PrintMetric:
+    shortcode: str
+    time_started: datetime.datetime
+    time: float
+    weight: float
+    printer_name: str
+
+
 @print_metrics_router.get("/member/stats/shortcode")
 def member_stats(shortcode: str = Query(min_length=3, max_length=7)):
     shortcode = shortcode.lower()
@@ -88,7 +98,7 @@ def member_stats(shortcode: str = Query(min_length=3, max_length=7)):
                     "SELECT shortcode, time_started, print_duration, print_weight, printer_name "  # noqa: E501
                     "FROM public.print_metrics WHERE shortcode=%s",
                     (shortcode,))
-                return cur.fetchall()
+                return [PrintMetric(*c) for c in cur.fetchall()]
     except Exception as e:
         error_msg = f"Error occurred when querying db: {e}"
         logging.warning(error_msg)
@@ -110,10 +120,9 @@ def member_stats_discord(discord_id: str = Query(min_length=10)):
                     "FROM public.print_metrics T INNER JOIN public.mapping " +
                     "ON public.mapping.shortcode=T.shortcode " +
                     "WHERE user_id=%s",
-                    (discord_id,))  # noqa: E501
-                prints = cur.fetchall()
+                    (discord_id,))
 
-                return prints
+                return [PrintMetric(*c) for c in cur.fetchall()]
     except Exception as e:
         error_msg = f"Error occurred when querying db: {e}"
         logging.warning(error_msg)
