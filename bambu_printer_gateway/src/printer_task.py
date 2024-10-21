@@ -30,9 +30,7 @@ class PrinterTask:
         self._printer = printer
         self._task_sleep = sleep
 
-        self.running = False
-
-        self.credentials = pika.PlainCredentials(
+        self._credentials = pika.PlainCredentials(
             RABBITMQ_USERNAME, RABBITMQ_PASSWORD)
 
     async def task(self):
@@ -40,19 +38,22 @@ class PrinterTask:
             pika.ConnectionParameters(
                 host=str(RABBITMQ_HOST),
                 port=int(RABBITMQ_PORT),
-                credentials=self.credentials,
+                credentials=self._credentials,
             )
         ) as conn:
             channel = conn.channel()
             channel.exchange_declare(
                 exchange=self.EXCHANGE, exchange_type=self.EXCHANGE_TYPE)
 
+            last_state = GcodeState.UNKNOWN
+            running = False
+
             while True:
                 state = GcodeState(self._printer.get_state())
                 if state in RUNNING_STATES:
-                    self.running = True
-                elif state in FINISH_STATES and self.running:
-                    self.running = False
+                    running = True
+                elif state in FINISH_STATES and running:
+                    running = False
                     requests.post(
                         f"{DATABASE_URL}/print-metrics/print/update/stop",
                         params={
@@ -64,8 +65,10 @@ class PrinterTask:
                     routing_key=f"printer.{self.PRINTER_NAME}.status",
                     body=json.dumps({
                         "state": str(state),
-                        "running": self.running,
+                        "running": running,
+                        "state_changed": last_state == state,
                     })
                 )
+                last_state = state
 
                 await asyncio.sleep(self._task_sleep)
