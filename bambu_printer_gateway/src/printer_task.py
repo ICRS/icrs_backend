@@ -64,9 +64,9 @@ class PrinterTask:
                     exchange=self.EXCHANGE,
                     routing_key=f"printer.{self.PRINTER_NAME}.status",
                     body=json.dumps({
-                        "state": str(state),
+                        "state": state.value,
                         "running": running,
-                        "state_changed": last_state == state,
+                        "state_changed": last_state != state,
                     })
                 )
                 last_state = state
