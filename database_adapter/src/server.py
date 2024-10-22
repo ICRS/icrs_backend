@@ -1,5 +1,7 @@
+from dataclasses import dataclass
 import logging
 import os
+
 from src.database import main_db_pool
 from fastapi import APIRouter, Query, HTTPException, status
 
@@ -21,6 +23,41 @@ shortcode_router = APIRouter(
     prefix="/shortcode",
     tags=["shortcode"]
 )
+discord_mapping_router = APIRouter(
+    prefix="/discord-mapping",
+    tags=["Discord Mapping Utils"]
+)
+
+
+@dataclass
+class DiscordMapping:
+    discord_id: str
+    shortcode: str
+    active: bool
+
+
+@discord_mapping_router.get("/exists")
+def add_entry(
+    discord_id: str = Query(min_length=17, max_length=21),
+    shortcode: str = Query(min_length=3, max_length=7,
+                           pattern=SHORTCODE_REGEX),
+):
+    try:
+        with main_db_pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT user_id, shortcode, active FROM public.mapping "
+                    "WHERE shortcode=%s or user_id=%s",
+                    (shortcode, discord_id,)
+                )
+
+                return [DiscordMapping(*c) for c in cur.fetchall()]
+    except Exception:
+        error_msg = f"Discord ID not found for short code: {shortcode}"
+        logging.error(error_msg)
+        raise HTTPException(
+            status_code=500,
+            detail=error_msg)
 
 
 @shortcode_router.get("/discord-id")
@@ -45,11 +82,13 @@ def get_discord_id_from_shortcode(
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT user_id FROM public.mapping WHERE shortcode=%s",
+                    "SELECT user_id, active FROM public.mapping "
+                    "WHERE shortcode=%s",
                     (shortcode,)
                 )
 
-                return {"discord_id": cur.fetchone()[0]}
+                result = cur.fetchone()
+                return {"discord_id": result[0], "active": result[1]}
     except Exception:
         error_msg = f"Discord ID not found for short code: {shortcode}"
         logging.error(error_msg)
@@ -81,18 +120,18 @@ def get_shortcode_from_discord_id(
             with conn.cursor() as cur:
                 if not active:
                     cur.execute(
-                        "SELECT shortcode FROM public.mapping "
+                        "SELECT shortcode, active FROM public.mapping "
                         "WHERE user_id=%s",
                         (id,)
                     )
                 else:
                     cur.execute(
-                        "SELECT shortcode FROM public.mapping "
+                        "SELECT shortcode, active FROM public.mapping "
                         "WHERE user_id=%s and active!=0",
                         (id,)
                     )
-
-                return {"shortcode": cur.fetchone()[0]}
+                c = cur.fetchone()
+                return {"shortcode": c[0], "active": c[1]}
     except Exception:
         error_msg = f"ShortCode not found for Discord ID: {id}"
         logging.error(error_msg)

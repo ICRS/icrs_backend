@@ -5,7 +5,8 @@ from psycopg_pool import ConnectionPool
 
 from src.notification import notification_router
 from src.slicer import slicer_router
-from src.server import discord_id_router, shortcode_router
+from src.server import (
+    discord_id_router, shortcode_router, discord_mapping_router)
 from src.print_metrics import print_metrics_router
 from src.member import member_router
 from src.summary import summary
@@ -37,6 +38,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(discord_id_router)
+app.include_router(discord_mapping_router)
 app.include_router(shortcode_router)
 app.include_router(print_metrics_router)
 app.include_router(member_router)
