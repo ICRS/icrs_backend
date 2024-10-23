@@ -2,7 +2,7 @@ import logging
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 import asyncio
 import os
 from dotenv import load_dotenv
@@ -31,7 +31,9 @@ class DB:
         # Store the list of results from the database query
         self.data = db_response["results"]
         # Extract the column names from the properties of the first result
-        self.columns = list(self.data[0]["properties"].keys())
+        self.columns = list(self.data[0]["properties"].keys()) if self.data else []
+        # Create a mapping from page_id to Row
+        self.pages = {page["id"]: Row(page["properties"], page["id"]) for page in self.data}
 
     def get_columns(self) -> list:
         # Return the list of column names
@@ -41,22 +43,24 @@ class DB:
         # Allow indexing by integer (row) or string (column)
         if isinstance(item, int):
             # Return a Row object for the given index
-            return Row(self.data[item]["properties"])
+            page = self.data[item]
+            return Row(page["properties"], page["id"])
         elif isinstance(item, str):
             # Return a Column object for the given column name
             return Column(self.data, item)
 
     def __iter__(self):
         # Make the DB object iterable over its rows
-        for row_data in self.data:
-            yield Row(row_data["properties"])
+        for page in self.data:
+            yield Row(page["properties"], page["id"])
 
 
 class Row:
     """Row class to represent a row in the Notion database."""
 
-    def __init__(self, row_props: dict):
+    def __init__(self, row_props: dict, page_id: str):
         self.row = {}
+        self.page_id = page_id  # Store the page ID
         # Iterate over each property in the row
         for k, v in row_props.items():
             # Handle different property types accordingly
@@ -66,7 +70,7 @@ class Row:
                 self.row[k] = values
             elif v["type"] == "title":
                 # Extract the plain text from the title
-                self.row[k] = v["title"][0]["plain_text"]
+                self.row[k] = v["title"][0]["plain_text"] if v["title"] else ''
             elif v["type"] == "unique_id":
                 # Construct the unique ID with prefix and number
                 prefix = v["unique_id"].get("prefix", None)
@@ -90,6 +94,12 @@ class Row:
         # Allow dictionary-like access to row data
         return self.row[key]
 
+    def __eq__(self, other):
+        # Check if two Row objects are equal based on their data
+        if not isinstance(other, Row):
+            return False
+        return self.row == other.row
+
     def __dict__(self):
         # Return the row data as a dictionary
         return self.row
@@ -111,7 +121,7 @@ class Column:
                 self.column[idx] = values
             elif prop["type"] == "title":
                 # Extract the plain text from the title
-                self.column[idx] = prop["title"][0]["plain_text"]
+                self.column[idx] = prop["title"][0]["plain_text"] if prop["title"] else ''
             elif prop["type"] == "unique_id":
                 # Construct the unique ID with prefix and number
                 prefix = prop["unique_id"].get("prefix", None)
@@ -191,6 +201,62 @@ class Item(dict):
         return self.data[key]
 
 
+def compare_databases(old_db: Optional[DB], new_db: DB) -> Dict[str, Any]:
+    """Compare two databases and return the changes."""
+    changes = {
+        'added': [],
+        'removed': [],
+        'modified': []
+    }
+
+    old_pages = old_db.pages if old_db else {}
+    new_pages = new_db.pages
+
+    old_page_ids = set(old_pages.keys())
+    new_page_ids = set(new_pages.keys())
+
+    # Pages added
+    for page_id in new_page_ids - old_page_ids:
+        changes['added'].append(new_pages[page_id])
+
+    # Pages removed
+    for page_id in old_page_ids - new_page_ids:
+        changes['removed'].append(old_pages[page_id])
+
+    # Pages modified
+    for page_id in old_page_ids & new_page_ids:
+        old_page = old_pages[page_id]
+        new_page = new_pages[page_id]
+        if old_page != new_page:
+            changes['modified'].append({'old': old_page, 'new': new_page})
+
+    return changes
+
+
+def handle_db_changes(changes: Dict[str, Any]):
+    """Handle changes detected between databases."""
+    # Print the changes
+    if changes['added']:
+        print("Added pages:")
+        for page in changes['added']:
+            print(f"Page ID: {page.page_id}, Data: {page.row}")
+
+    if changes['removed']:
+        print("Removed pages:")
+        for page in changes['removed']:
+            print(f"Page ID: {page.page_id}, Data: {page.row}")
+
+    if changes['modified']:
+        print("Modified pages:")
+        for change in changes['modified']:
+            old_page = change['old']
+            new_page = change['new']
+            print(f"Page ID: {old_page.page_id}")
+            for key in old_page.row.keys():
+                if old_page.row[key] != new_page.row[key]:
+                    print(f"Changed {key}: {old_page.row[key]} -> {new_page.row[key]}")
+
+
 async def update_LOCAL_DB():
     """Background task to update the latest database entries periodically."""
     global LOCAL_DB
@@ -198,8 +264,22 @@ async def update_LOCAL_DB():
         try:
             # Query the Notion database to get the latest data
             db_response = await notion.databases.query(database_id=os.environ["NOTION_DATABASE_ID"])
+            # Create a new DB instance
+            new_db = DB(db_response)
+
+            # Compare the new DB with the local DB
+            if LOCAL_DB is not None:
+                changes = compare_databases(LOCAL_DB, new_db)
+                # If there are any changes, handle them
+                if changes['added'] or changes['removed'] or changes['modified']:
+                    handle_db_changes(changes)
+            else:
+                # If LOCAL_DB is None, this is the first run
+                print("Initial database loaded.")
+
             # Update the local database with the new data
-            LOCAL_DB = DB(db_response)
+            LOCAL_DB = new_db
+
             # Wait for 60 seconds before updating again
             await asyncio.sleep(60)
         except Exception as e:
@@ -282,7 +362,7 @@ async def get_item(item_id: str):
         # Extract the properties of the page
         properties = page["properties"]
         # Create a Row object from the properties
-        item = Row(properties)
+        item = Row(properties, item_id)
         # Return a success message along with the item data
         return {"status": "success", "data": item.row}
     except Exception as e:
