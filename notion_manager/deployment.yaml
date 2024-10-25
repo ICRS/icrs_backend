@@ -21,7 +21,11 @@ spec:
         env:
         - name: TZ
           value: Europe/London
-
+        - name: NOTION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: notion
+              key: notion-secret
 
 
 ---
