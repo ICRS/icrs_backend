@@ -26,7 +26,11 @@ spec:
             secretKeyRef:
               name: notion
               key: notion-secret
-
+        - name: NOTION_DATABASE_ID
+          valueFrom:
+            secretKeyRef:
+              name: notion
+              key: notion-database-id
 
 ---
 apiVersion: v1
