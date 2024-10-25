@@ -1,19 +1,15 @@
 import logging
-from fastapi import APIRouter, FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any
 import asyncio
 import os
-from dotenv import load_dotenv
 
 from notion_client import AsyncClient
-from .notion_classes import DB, Row, Column
-
-# Load environment variables from a .env file, overriding any existing ones
-load_dotenv(override=True)
+from .notion_classes import DB, Row
 
 # Initialize the Notion client with the secret API key from environment variables
+NOTION_DATABASE_ID = os.environ["NOTION_DATABASE_ID"]
 notion = AsyncClient(auth=os.environ["NOTION_SECRET"])
 
 # Create an API router with a tag 'server'
@@ -142,7 +138,7 @@ async def update_LOCAL_DB():
     while True:
         try:
             # Query the Notion database to get the latest data
-            db_response = await notion.databases.query(database_id=os.environ["NOTION_DATABASE_ID"])
+            db_response = await notion.databases.query(database_id=NOTION_DATABASE_ID)
             # Create a new DB instance
             new_db = DB(db_response)
 
@@ -185,7 +181,7 @@ async def add_item(item_info: ItemInfo):
     try:
         # Use the Notion API to create a new page in the database
         response = await notion.pages.create(
-            parent={"database_id": os.environ["NOTION_DATABASE_ID"]},
+            parent={"database_id": NOTION_DATABASE_ID},
             properties=new_order
         )
         # Return a success message along with the response data
