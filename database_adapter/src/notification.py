@@ -109,14 +109,14 @@ def discord_printer_unsubscribe(
                 if printer_names is not None:
                     cur.execute(
                         "DELETE FROM public.printer_notification "
-                        "WHERE discord_id=%s AND printer IN (%s)",
-                        (discord_id, tuple(printer_names))
+                        "WHERE discord_id=%s AND printer=ANY (%s)",
+                        (discord_id, [printer_names,],)
                     )
                 else:
                     cur.execute(
                         "DELETE FROM public.printer_notification "
-                        "WHERE discord_id=%s AND printer IN (%s)",
-                        (discord_id, tuple(PRINTER_NAMES),)
+                        "WHERE discord_id=%s",
+                        (discord_id,)
                     )
                 return {"deleted": cur.rowcount}
     except Exception as e:
