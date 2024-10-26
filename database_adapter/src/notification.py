@@ -4,6 +4,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Query, status
 
+from src.print_metrics import PRINTER_NAMES
 from src.database import main_db_pool
 
 notification_router = APIRouter(
@@ -82,6 +83,51 @@ def discord_printer_subscription(
         )
 
 
+@notification_router.delete("/discord-id")
+def discord_printer_unsubscribe(
+    discord_id: str = Query(min_length=17, max_length=21),
+    printer_names: list[str] | None = None,
+):
+    """
+    Unsubscribe to a printer the discord user has subscribed to
+
+    Args:
+        discord_id (str): discord user's id
+        printer_names (list[str] | None): printers to be unsubscribed from.
+            Default = None.
+
+    Raises:
+        HTTPException: if something bad happened to the database
+
+    Returns:
+        dict[str, int]: how many rows have been deleted from the table
+    """
+    try:
+        with main_db_pool.connection() as conn:
+            with conn.cursor() as cur:
+                logging.info(f"Getting printers user {discord_id} has registered to")  # noqa: E501
+                if printer_names is not None:
+                    cur.execute(
+                        "DELETE FROM public.printer_notification "
+                        "WHERE discord_id=%s AND printer IN (%s)",
+                        (discord_id, tuple(printer_names))
+                    )
+                else:
+                    cur.execute(
+                        "DELETE FROM public.printer_notification "
+                        "WHERE discord_id=%s AND printer IN (%s)",
+                        (discord_id, tuple(PRINTER_NAMES),)
+                    )
+                return {"deleted": cur.rowcount}
+    except Exception as e:
+        logging.error(f"Something really bad happened to the database: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Exception occurred when removing subscription from the "
+            f"notification database {e}",
+        )
+
+
 @notification_router.post("/discord-id")
 def add_user_notification(
     discord_id: str = Query(min_length=17, max_length=21),
@@ -91,12 +137,20 @@ def add_user_notification(
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 logging.info(f"Subscribing user {discord_id} to {printer_names}")  # noqa: E501
-                cur.executemany(
-                    "INSERT INTO public.printer_notification "
-                    "(discord_id, printer) "
-                    "VALUES(%s,%s) ON CONFLICT DO NOTHING",
-                    [(discord_id, name) for name in printer_names]
-                )
+                if printer_names is not None:
+                    cur.executemany(
+                        "INSERT INTO public.printer_notification "
+                        "(discord_id, printer) "
+                        "VALUES(%s,%s) ON CONFLICT DO NOTHING",
+                        [(discord_id, name) for name in printer_names]
+                    )
+                else:
+                    cur.executemany(
+                        "INSERT INTO public.printer_notification "
+                        "(discord_id, printer) "
+                        "VALUES(%s,%s) ON CONFLICT DO NOTHING",
+                        [(discord_id, name) for name in PRINTER_NAMES]
+                    )
                 return {"inserted": cur.rowcount}
     except Exception as e:
         logging.error(f"Something really bad happened to the database: {e}")
