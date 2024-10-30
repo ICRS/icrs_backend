@@ -14,6 +14,7 @@ from src.auth import auth_router
 from src.meme import meme_router
 from src.induction_quiz import induction_router
 from src.project_box import project_box_router
+from src.printer_streamer import printer_streamer_router
 from src.database import main_db_pool, meme_db_pool
 
 import logging
@@ -47,6 +48,7 @@ app.include_router(auth_router)
 app.include_router(meme_router)
 app.include_router(induction_router)
 app.include_router(project_box_router)
+app.include_router(printer_streamer_router)
 app.include_router(notification_router)
 app.include_router(slicer_router)
 
