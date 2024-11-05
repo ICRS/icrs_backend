@@ -8,11 +8,17 @@ import os
 from notion_client import AsyncClient
 from .notion_classes import DB, Row
 
+# =============================================================================
+# Load environment variables from a .env file
+# Note: This is only needed if you are running the server locally
+
 # from dotenv import load_dotenv
 
 # load_dotenv(override=True)
+# =============================================================================
 
-# Initialize the Notion client with the secret API key from environment variables
+# Initialize the Notion client with
+# the secret API key from environment variables
 NOTION_DATABASE_ID = os.environ["NOTION_DATABASE_ID"]
 notion = AsyncClient(auth=os.environ["NOTION_SECRET"])
 
@@ -29,16 +35,17 @@ LOCAL_DB: 'DB' = None
 class ItemInfo(BaseModel):
     """Pydantic model for item information."""
     Item: str
-    Link: Optional[str] = None
+    URL: Optional[str] = None
     Quantity: Optional[int] = None
     Requested_by: Optional[str] = None
+    Reason: Optional[str] = None
 
 
 class Item(dict):
     """Item class to format data according to Notion API requirements."""
 
     def __init__(self, item_info: ItemInfo):
-        self.data = {}
+        self.data: dict[str, dict[str, int | str | list | dict]] = {}
         if item_info.Item:
             # Format the 'Item' property as a Notion title type
             self.data["Item"] = {
@@ -50,10 +57,10 @@ class Item(dict):
                     }
                 ]
             }
-        if item_info.Link:
-            # Format the 'Link' property as a Notion URL type
-            self.data["Link"] = {
-                "url": item_info.Link
+        if item_info.URL:
+            # Format the 'URL' property as a Notion URL type
+            self.data["URL"] = {
+                "url": item_info.URL
             }
         if item_info.Quantity is not None:
             # Format the 'Quantity' property as a Notion number type
@@ -67,11 +74,25 @@ class Item(dict):
                     {"text": {"content": item_info.Requested_by}}
                 ]
             }
+        if item_info.Reason:
+            # Format the 'Reason' property as a Notion rich text type
+            self.data["Reason"] = {
+                "rich_text": [
+                    {"text": {"content": item_info.Reason}}
+                ]
+            }
         # Add a default 'Tags' property with a multi-select value
         self.data["Tags"] = {
             "multi_select": [
-                {"name": "To buy"}
+                {"name": "Lab"}
             ]
+        }
+        # Add a default 'Status' property with a select value
+        self.data["Status"] = {
+            "status": {
+                "id": "ebc3b8a1-9df6-4fed-a380-1ab15fad1f1a",
+                "name": "Todo"
+            }
         }
         # Initialize the dictionary with the formatted data
         super().__init__(self.data)
@@ -83,7 +104,7 @@ class Item(dict):
 
 def compare_databases(old_db: Optional[DB], new_db: DB) -> Dict[str, Any]:
     """Compare two databases and return the changes."""
-    changes = {
+    changes: dict[str, list] = {
         'added': [],
         'removed': [],
         'modified': []
@@ -134,7 +155,8 @@ def handle_db_changes(changes: Dict[str, Any]):
             print(f"Page ID: {old_page.page_id}")
             for key in old_page.row.keys():
                 if old_page.row[key] != new_page.row[key]:
-                    print(f"Changed {key}: {old_page.row[key]} -> {new_page.row[key]}")
+                    print(f"Changed {key}: {old_page.row[key]}"
+                          f" -> {new_page.row[key]}")
 
 
 async def update_LOCAL_DB():
@@ -143,7 +165,8 @@ async def update_LOCAL_DB():
     while True:
         try:
             # Query the Notion database to get the latest data
-            db_response = await notion.databases.query(database_id=NOTION_DATABASE_ID)
+            db_response = await notion.databases.query(
+                database_id=NOTION_DATABASE_ID)
             # Create a new DB instance
             new_db = DB(db_response)
 
@@ -151,7 +174,8 @@ async def update_LOCAL_DB():
             if LOCAL_DB is not None:
                 changes = compare_databases(LOCAL_DB, new_db)
                 # If there are any changes, handle them
-                if changes['added'] or changes['removed'] or changes['modified']:
+                if changes['added'] or changes['removed'] \
+                        or changes['modified']:
                     handle_db_changes(changes)
             else:
                 # If LOCAL_DB is None, this is the first run
@@ -201,7 +225,8 @@ async def add_item(item_info: ItemInfo):
 @router.delete("/remove_item")
 async def remove_item(page_id: str):
     """
-    Route to remove (archive) an item from the Notion database using its page ID.
+    Route to remove (archive) an item from
+    the Notion database using its page ID.
     """
     try:
         # Use the Notion API to update the page and set 'archived' to True
@@ -222,7 +247,8 @@ async def get_items():
     """
     global LOCAL_DB
     if LOCAL_DB is None:
-        # Return an error message if the local database hasn't been initialized yet
+        # Return an error message if the
+        # local database hasn't been initialized yet
         return {"status": "error", "message": "No data available"}
     else:
         # Convert each row in the local database to a dictionary
