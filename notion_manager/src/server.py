@@ -8,12 +8,17 @@ import os
 from notion_client import AsyncClient
 from .notion_classes import DB, Row
 
+# from dotenv import load_dotenv
+
+# load_dotenv(override=True)
+
 # Initialize the Notion client with the secret API key from environment variables
 NOTION_DATABASE_ID = os.environ["NOTION_DATABASE_ID"]
 notion = AsyncClient(auth=os.environ["NOTION_SECRET"])
 
 # Create an API router with a tag 'server'
 router = APIRouter(
+    prefix="/notion",
     tags=["server"],
 )
 
