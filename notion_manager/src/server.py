@@ -24,6 +24,7 @@ notion = AsyncClient(auth=os.environ["NOTION_SECRET"])
 
 # Create an API router with a tag 'server'
 router = APIRouter(
+    prefix="/notion",
     tags=["server"],
 )
 
