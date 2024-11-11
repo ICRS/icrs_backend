@@ -84,7 +84,7 @@ class Item(dict):
         # Add a default 'Tags' property with a multi-select value
         self.data["Tags"] = {
             "multi_select": [
-                {"name": "Lab"}
+                {"name": "Discord"}
             ]
         }
         # Add a default 'Status' property with a select value
