@@ -1,0 +1,20 @@
+on:
+  push:
+    branches:
+    - main
+    paths:
+      - 'notion_manager/**'
+      - '.github/workflows/notion_manager.yml'
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to remote server
+        run: |
+          cd notion_manager
+          ./docker_build.sh ${GITHUB_SHA}
+          kubectl set image deployments/notion-manager notion-manager=localhost:32000/notion_manager:${GITHUB_SHA}
