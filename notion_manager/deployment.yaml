@@ -24,12 +24,12 @@ spec:
         - name: NOTION_SECRET
           valueFrom:
             secretKeyRef:
-              name: notion
+              name: notion-secret
               key: notion-secret
         - name: NOTION_DATABASE_ID
           valueFrom:
             secretKeyRef:
-              name: notion
+              name: notion-secret
               key: notion-database-id
 
 ---
