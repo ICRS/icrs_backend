@@ -8,11 +8,11 @@
 # database or a cache. For examples, see the Awesome Compose repository:
 # https://github.com/docker/awesome-compose
 services:
-  server:
+  notion-manager:
     build:
       context: .
     ports:
-      - 8002:8000
+      - 8003:8000
     develop:
       watch:
         - action: rebuild
