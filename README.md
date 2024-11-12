@@ -1,6 +1,10 @@
-# ICRS LAB SECURITY
+# 🗃️ ICRS LAB Back end
 
-This project contains the necessary infrastructure for interfacing with the numerous systems in the lab. [Note: this does not contain the ICRS-Slicer Project]
+## [💻 MAIN CODEBASE: https://github.com/ICRS/icrs_lab](https://github.com/ICRS/icrs_lab)
+
+## 👋 Introduction
+
+This project contains the necessary infrastructure for interfacing with the numerous systems in the lab
 
 ## Projects:
 
@@ -8,23 +12,10 @@ This project contains the necessary infrastructure for interfacing with the nume
 * Bambu Printer Gateway: a translation layer from bambu p1 printers to REST service
 * Registration Page: React project for registering new users
 
-## Build Instructions
+## 🔨 Build and Deployment  Instructions
 
-BUILDX Create Builder:
-docker buildx create --config ~/.docker/buildx/config.toml --name builder --driver-opt network=host
+See [https://github.com/ICRS/icrs_lab](https://github.com/ICRS/icrs_lab)
 
-The config.toml file should look like this:
-```
-[registry."REGISTRY_IP:REGISTRY_PORT"]
-http = true
-insecure = true
-```
+## 📝 Paper
 
-Run the build_docker.sh script file in each respective folder
-
-## Deployment instructions:
-
-Deploy each project to k8s respectively with:
-```
-kubectl apply -f deployment.yaml 
-```
+https://www.researchgate.net/publication/385302645_Automated_Student_3D_Printing_Verification_Process
