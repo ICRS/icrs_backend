@@ -24,14 +24,17 @@ MEME_DB_CONFIG = {
     'port': config['postgres']['port'],
 }
 
+
 main_db_pool = ConnectionPool(
     " ".join(f"{k}={v}" for k, v in DB_CONFIG.items()),
-    min_size=5,
-    max_size=10)
+    kwargs={"prepare_threshold": 0},
+    min_size=2,
+    max_size=4)
 meme_db_pool = ConnectionPool(
     " ".join(f"{k}={v}" for k, v in MEME_DB_CONFIG.items()),
-    min_size=5,
-    max_size=10)
+    kwargs={"prepare_threshold": 0},
+    min_size=2,
+    max_size=4)
 
 main_db_pool.wait()
 meme_db_pool.wait()
