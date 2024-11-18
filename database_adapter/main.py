@@ -16,6 +16,7 @@ from src.induction_quiz import induction_router
 from src.project_box import project_box_router
 from src.printer_streamer import printer_streamer_router
 from src.database import main_db_pool, meme_db_pool
+from src.user_notes import user_notes_router
 
 import logging
 
@@ -51,6 +52,7 @@ app.include_router(project_box_router)
 app.include_router(printer_streamer_router)
 app.include_router(notification_router)
 app.include_router(slicer_router)
+app.include_router(user_notes_router)
 
 
 def db_pool_unhealthy(db_pool: ConnectionPool):
