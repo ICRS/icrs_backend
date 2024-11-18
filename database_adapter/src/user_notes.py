@@ -31,7 +31,7 @@ def get_notes_by_discord_id(
                  "FROM public.mapping m "
                  "LEFT JOIN public.user_notes u "
                  "ON u.shortcode=m.shortcode "
-                 "WHERE m.user_id=%s "
+                 "WHERE m.user_id=%s AND u.id IS NOT NULL "
                  "ORDER BY u.created DESC"),
                 (id,)
             )
