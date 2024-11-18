@@ -32,7 +32,7 @@ def get_notes_by_discord_id(
                  "LEFT JOIN public.user_notes u "
                  "ON u.shortcode=m.shortcode "
                  "WHERE m.user_id=%s "
-                 "ORDER BY u.created ASC"),
+                 "ORDER BY u.created DESC"),
                 (id,)
             )
             user_notes = cur.fetchall()
@@ -60,7 +60,7 @@ def add_note_by_discord_id(
                  "(SELECT shortcode, %s as note "
                  "FROM public.mapping m "
                  "WHERE user_id = %s LIMIT 1) "
-                 "RETURNING id"),
+                 "RETURNING id, shortcode, note, created"),
                 (note, id)
             )
             c = cur.fetchone()
@@ -70,7 +70,7 @@ def add_note_by_discord_id(
                     status_code=status.HTTP_204_NO_CONTENT,
                     detail=detail
                 )
-            return c
+            return UserNote(*c)
 
 
 @user_notes_router.delete("")
@@ -85,4 +85,4 @@ def delete_note_by_id(
                  ),
                 (id,)
             )
-            return cur.fetchone()
+            return {"id": cur.fetchone()[0]}
