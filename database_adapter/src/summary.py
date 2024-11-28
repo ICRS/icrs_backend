@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import logging
 import os
 
@@ -85,11 +86,18 @@ def recently_inducted(
         )
 
 
+@dataclass
+class InductionInfo:
+    shortcode: str
+    cid: str
+    name: str
+
+
 @summary_v2.get("/inducted")
 def all_inducted_v2(
     username: Annotated[
         str, Depends(get_current_username)],
-):
+) -> list[InductionInfo]:
     with main_db_pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -98,12 +106,52 @@ def all_inducted_v2(
             inducted = union.getShortcodesToCIDAndName(
                 [i[0] for i in inducted])
             inducted = [
-                {
-                    "shortcode": shortcode,
-                    "email": shortcode + "@ic.ac.uk",
-                    "cid": cid,
-                    "name": name
-                } for name, cid, shortcode in inducted
+                InductionInfo(
+                    shortcode=shortcode,
+                    cid=cid,
+                    name=name
+                ) for name, cid, shortcode in inducted
             ]
 
             return inducted
+
+
+@summary_v2.get("/inducted/recent")
+def recently_inducted_v2(
+    username: Annotated[
+        str, Depends(get_current_username)],
+) -> tuple[list[InductionInfo], list[InductionInfo]]:
+    with main_db_pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT shortcode FROM public.induction A " +
+                        "WHERE valid AND NOT EXISTS " +
+                        "(SELECT \'X\' FROM public.sent S " +
+                        "WHERE A.shortcode=S.shortcode)")
+            update = [c[0] for c in cur.fetchall()]
+
+            cur.execute("SELECT shortcode, time_added FROM public.sent S "
+                        "ORDER BY time_added DESC")
+            sent = {c[0]: c[1] for c in cur.fetchall()}
+
+            mapping = [
+                InductionInfo(
+                    shortcode=shortcode,
+                    cid=cid,
+                    name=name
+                )
+                for name, cid, shortcode in
+                union.getShortcodesToCIDAndName(update)]
+            sent_info = [
+                InductionInfo(
+                    shortcode=shortcode,
+                    cid=cid,
+                    name=name
+                )
+                for name, cid, shortcode in
+                union.getShortcodesToCIDAndName(list(sent))]
+
+            cur.executemany(
+                "INSERT INTO public.sent (shortcode) VALUES (%s)",
+                [(c,) for c in update])
+
+            return mapping, sent_info
