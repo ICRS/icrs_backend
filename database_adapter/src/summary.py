@@ -16,6 +16,7 @@ else:
     import src.union as union
 
 summary = APIRouter(prefix="/summary", tags=["Summary"])
+summary_v2 = APIRouter(prefix="/v2/summary", tags=["Summary"])
 
 
 @summary.get("/inducted")
@@ -82,3 +83,27 @@ def recently_inducted(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=error_msg
         )
+
+
+@summary_v2.get("/inducted")
+def all_inducted_v2(
+    username: Annotated[
+        str, Depends(get_current_username)],
+):
+    with main_db_pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT shortcode FROM public.induction WHERE valid")
+            inducted = cur.fetchall()
+            inducted = union.getShortcodesToCIDAndName(
+                [i[0] for i in inducted])
+            inducted = [
+                {
+                    "shortcode": shortcode,
+                    "email": shortcode + "@ic.ac.uk",
+                    "cid": cid,
+                    "name": name
+                } for name, cid, shortcode in inducted
+            ]
+
+            return inducted
