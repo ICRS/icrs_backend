@@ -120,6 +120,7 @@ def all_inducted_v2(
 def recently_inducted_v2(
     username: Annotated[
         str, Depends(get_current_username)],
+    update: bool = False
 ) -> tuple[list[InductionInfo], list[InductionInfo]]:
     with main_db_pool.connection() as conn:
         with conn.cursor() as cur:
@@ -150,8 +151,9 @@ def recently_inducted_v2(
                 for name, cid, shortcode in
                 union.getShortcodesToCIDAndName(list(sent))]
 
-            cur.executemany(
-                "INSERT INTO public.sent (shortcode) VALUES (%s)",
-                [(c,) for c in update])
+            if update:
+                cur.executemany(
+                    "INSERT INTO public.sent (shortcode) VALUES (%s)",
+                    [(c,) for c in update])
 
             return mapping, sent_info
