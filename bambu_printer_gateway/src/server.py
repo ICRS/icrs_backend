@@ -402,4 +402,10 @@ async def healthz(reponse: Response):
 
 @ams_router.get("")
 def get_ams_info():
+    printer._Printer__printerMQTTClient.process_ams()
     return printer.ams_hub()
+
+
+@router.get("/printer/dump")
+def get_dump():
+    return printer.mqtt_dump()
