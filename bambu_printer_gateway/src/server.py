@@ -1,3 +1,12 @@
+__all__ = [
+    "router",
+    "status_router",
+    "print_router",
+    "calibration_router",
+    "filament_router",
+    "ams_router",
+]
+
 import asyncio
 import base64
 from datetime import datetime, timedelta
@@ -26,6 +35,12 @@ logging.basicConfig(level=logging.INFO,
 router = APIRouter()
 status_router = APIRouter(prefix="/printer/status", tags=["Printer Status"])
 print_router = APIRouter(prefix="/printer/print", tags=["Print"])
+calibration_router = APIRouter(
+    prefix="/printer/calibration", tags=["Printer Calibration"])
+filament_router = APIRouter(
+    prefix="/printer/filament", tags=["Filament Options"])
+ams_router = APIRouter(
+    prefix="/printer/ams", tags=["AMS Options"])
 
 logging.info("Connecting to printer...")
 printer.connect()
@@ -71,17 +86,6 @@ async def printer_get_percentage() -> dict:
     return {"percentage": percentage} if (percentage := printer
                                           .get_percentage()
                                           ) is not None else {}
-
-
-@router.get("/printer/camera")
-async def printer_get_camera():
-    try:
-        last_frame = camera.get_frame()
-    except Exception as e:
-        print(str(e))
-        return {"error": str(e)}
-    return {"frame": frame} if (frame := last_frame
-                                ) is not None else {}
 
 
 @status_router.get("/state")
@@ -293,7 +297,7 @@ async def set_bed_temperature(temperature: int):
     return printer.set_bed_temperature(temperature)
 
 
-@router.post("/printer/calibration/home")
+@calibration_router.post("/home")
 async def home_printer():
     return printer.home_printer()
 
@@ -303,7 +307,7 @@ async def move_z_axis(distance: int):
     return printer.move_z_axis(distance)
 
 
-@router.post("/printer/filament/printer")
+@filament_router.post("/printer")
 async def set_filament_printer(color: str,
                                filament: AMSFilamentSettings | str):
     return printer.set_filament_printer(color, filament)
@@ -324,7 +328,7 @@ async def delete_file(file_path: str) -> str:
     return printer.delete_file(file_path=file_path)
 
 
-@router.post("/printer/calibration")
+@calibration_router.post("")
 async def calibrate_printer(bed_level: bool = True,
                             motor_noise_calibration: bool = True,
                             vibration_compensation: bool = True):
@@ -333,17 +337,17 @@ async def calibrate_printer(bed_level: bool = True,
                                      vibration_compensation)
 
 
-@router.post("/printer/filament/printer/load")
+@filament_router.post("/printer/load")
 async def load_filament_spool():
     return printer.load_filament_spool()
 
 
-@router.post("/printer/filament/printer/unload")
+@filament_router.post("/printer/unload")
 async def unload_filament_spool():
     return printer.unload_filament_spool()
 
 
-@router.post("/printer/filament/retry")
+@filament_router.post("/retry")
 async def retry_filament_action():
     return printer.retry_filament_action()
 
@@ -394,3 +398,8 @@ async def healthz(reponse: Response):
         reponse.status_code = 500
         return False
     return True
+
+
+@ams_router.get("")
+def get_ams_info():
+    return printer.ams_hub()
