@@ -407,7 +407,7 @@ def get_ams_info():
 
 @filament_router.get("/info")
 def get_filament_info():
-    return printer.ams_hub().__dict__ | printer.vt_tray().__dict__
+    return printer.ams_hub().__dict__ | {"vt_tray": printer.vt_tray().__dict__}
 
 
 @router.get("/printer/dump")
