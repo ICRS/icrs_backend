@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-ingress-controller
+  namespace: ingress
+spec:
+  selector:
+    matchLabels:
+      app: nginx-ingress-controller
+  template:
+    metadata:
+      labels:
+        app: nginx-ingress-controller
+    spec:
+      containers:
+        - name: nginx-ingress-controller
+          image: nginx:latest
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+          ports:
+            - containerPort: 80
+              name: http
+              protocol: TCP
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: nginx-conf 
+            items:
+              - key: nginx-conf
+                path: nginx.conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-ingress-service
+  namespace: ingress
+spec:
+  selector:
+    app: nginx-ingress-controller
+  ports:
+    - port: 80
+      targetPort: http
+  type: ClusterIP
