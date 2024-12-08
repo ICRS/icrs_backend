@@ -1,0 +1,14 @@
+services:
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 80:80
+    depends_on:
+      - grafana
+    develop:
+      watch:
+        - action: rebuild
+          path: ./
+          target: /etc/nginx/

@@ -153,35 +153,4 @@ spec:
     - port: 8081
       targetPort: http-renderer
   type: ClusterIP
-#---
-#apiVersion: networking.k8s.io/v1
-#kind: Ingress
-#metadata:
-#  name: http-ingress
-#  namespace: ingress
-#spec:
-#  ingressClassName: nginx
-#  rules:
-#  - http:
-#      paths:
-#        - path: /pgadmin
-#          backend:
-#            service:
-#              name: pgadmin-bridge
-#              port:
-#                number: 80
-#          pathType: Prefix
-#        - path: /render
-#          backend:
-#            service:
-#              name: grafana-renderer
-#              port:
-#                number: 8081
-#          pathType: Prefix
-#        - path: /
-#          backend:
-#            service:
-#              name: grafana
-#              port:
-#                number: 3000
-#          pathType: Prefix
+
