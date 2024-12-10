@@ -66,14 +66,19 @@ def main():
         "Attachments": [
             {
                 "Content-type": "text/csv",
-                "Filename": f"{today}.csv",
-                "content": base64.b64encode(
-                    update_csv_file.getvalue().encode()),
-            }
+                "Filename": f"report-{today}.csv",
+                "content": str(base64.b64encode(
+                    update_csv_file.getvalue().encode("ascii")).decode("ascii")),
+                }
         ],
     }
 
+    logging.info(data)
     result = mailjet.send.create(data=data)
+    if result.status_code != 200:
+        logging.error(result.status_code, result.reason)
+        return
+
     logging.info(result.status_code)
     logging.info(result.json())
 
