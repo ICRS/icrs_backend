@@ -67,7 +67,8 @@ def main():
             {
                 "Content-type": "text/csv",
                 "Filename": f"{today}.csv",
-                "content": base64.b64encode(update_csv_file.getvalue()),
+                "content": base64.b64encode(
+                    update_csv_file.getvalue().encode()),
             }
         ],
     }
