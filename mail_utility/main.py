@@ -61,7 +61,7 @@ def main():
     data = {
         'FromEmail': EMAIL,
         'Subject': 'Recent Inducted Members Report',
-        'Text-part': f'Recently inducted {len(update_csv_file)} members',
+        'Text-part': f'Recently inducted {len(updated)} members',
         'Recipients': [{'Email': EMAIL}],
         "Attachments": [
             {
