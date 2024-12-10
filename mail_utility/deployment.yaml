@@ -6,6 +6,7 @@ spec:
   schedule: "0 10 * * 1,3,5"
   jobTemplate:
     spec:
+      backoffLimit: 0
       template:
         spec:
           containers:
@@ -15,7 +16,7 @@ spec:
             env:
             - name: TZ
               value: Europe/London
-            - name: SERVER_IP
+            - name: DATABASE_IP
               valueFrom:
                 configMapKeyRef:
                   name: database-config
