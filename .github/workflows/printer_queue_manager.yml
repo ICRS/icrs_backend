@@ -3,8 +3,8 @@ on:
     branches:
     - main
     paths:
-      - 'printer_scanner_router/**'
-      - '.github/workflows/printer_scanner_router.yml'
+      - 'printer_queue_manager/**'
+      - '.github/workflows/printer_queue_manager.yml'
 
 jobs:
   build:
@@ -15,6 +15,6 @@ jobs:
 
       - name: Deploy to remote server
         run: |
-          cd printer_scanner_router
+          cd printer_queue_manager
           ./docker_build.sh ${GITHUB_SHA}
           kubectl set image deployments/icrsbot-printer-queue-manager-deployment icrsbot-printer-queue-manager=localhost:32000/icrsbot-printer-queue-manager:${GITHUB_SHA}
