@@ -46,4 +46,4 @@ COPY . .
 EXPOSE 8000
 
 # Run the application.
-CMD ["uvicorn", "start:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "start:app", "--host", "0.0.0.0", "--port", "8000", "--root-path", "/api/access"]

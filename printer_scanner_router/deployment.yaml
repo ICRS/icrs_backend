@@ -15,8 +15,6 @@ spec:
       containers:
       - name: printer-scanner-router
         image: localhost:32000/printer_scanner_router
-        # command: ["uvicorn"]
-        # args: ["main:app", "--host", "0.0.0.0", "--port", "8000", "--root-path", "/api/printer/router"]
         ports:
         - containerPort: 8000  # Port your Python application is listening on
         imagePullPolicy: "Always"
