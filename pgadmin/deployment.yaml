@@ -78,21 +78,3 @@ spec:
   resources:
     requests:
       storage: 200Mi
-#---
-#apiVersion: networking.k8s.io/v1
-#kind: Ingress
-#metadata:
-#  name: pgadmin-http-ingress
-#  namespace: pgadmin
-#spec:
-#  ingressClassName: nginx
-#  rules:
-#    - http:
-#        paths:
-#          - path: /
-#            backend:
-#              service:
-#                name: pgadmin-service
-#                port:
-#                  number: 80
-#            pathType: Prefix
