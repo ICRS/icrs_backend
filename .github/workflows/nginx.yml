@@ -1,0 +1,19 @@
+on:
+  push:
+    branches:
+    - main
+    paths:
+      - 'nginx/**'
+      - '.github/workflows/nginx.yml'
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to remote server
+        run: |
+          cd nginx
+          ./deploy.sh
