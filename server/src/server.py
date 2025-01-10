@@ -145,24 +145,24 @@ async def _reverse_proxy(request: Request):
         background=BackgroundTask(rp_resp.aclose),
     )
 
-access_server_router.add_route(
+access_server_router.add_api_route(
     "/member/permissions/uuid",
     _reverse_proxy,
-    ["GET"]
+    methods=["GET"],
 )
 
 
-access_server_router.add_route(
+access_server_router.add_api_route(
     "/register/card/cid",
     _reverse_proxy,
-    ["POST"]
+    methods=["POST"],
 )
 
 
-access_server_router.add_route(
+access_server_router.add_api_route(
     "/project-box/assign/uuid",
     _reverse_proxy,
-    ["GET"]
+    methods=["GET"],
 )
 
 
