@@ -19,6 +19,7 @@ import httpx
 
 # ==============================================================================
 DATABASE_ADAPTER_IP = os.getenv("DATABASE_ADAPTER_IP")
+SUBPATH = os.getenv("SUBPATH", "/api/access")
 
 # ==============================================================================
 
@@ -130,7 +131,7 @@ client = httpx.AsyncClient(base_url=DATABASE_ADAPTER_IP)
 
 
 async def _reverse_proxy(request: Request):
-    url = httpx.URL(path=request.url.path,
+    url = httpx.URL(path=request.url.path.replace(SUBPATH, "", 1),
                     query=request.url.query.encode("utf-8"))
     rp_req = client.build_request(request.method, url,
                                   headers=request.headers.raw,
