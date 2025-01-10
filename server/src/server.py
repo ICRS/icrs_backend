@@ -18,6 +18,7 @@ from requests.auth import HTTPBasicAuth
 import httpx
 
 # ==============================================================================
+
 DATABASE_ADAPTER_IP = os.getenv("DATABASE_ADAPTER_IP")
 SUBPATH = os.getenv("SUBPATH", "/api/access")
 
