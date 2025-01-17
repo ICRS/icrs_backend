@@ -17,7 +17,7 @@ import logging
 from fastapi import (APIRouter, HTTPException, Query,
                      UploadFile, Response, status)
 from bambulabs_api import AMSFilamentSettings, GcodeState
-from PIL import Image, ImageDraw, ImageFont
+from PIL import ImageDraw, ImageFont
 
 from src.printer_task import PrinterTask
 from src.validation import SHORTCODE_REGEX
@@ -133,8 +133,7 @@ async def printer_get_camera():
         dict: frame of the camera
     """
     try:
-        frame = printer.get_camera_frame()
-        im = Image.open(BytesIO(base64.b64decode(frame)))
+        im = printer.get_camera_image()
 
         width, height = im.size
         draw = ImageDraw.Draw(im)
@@ -158,7 +157,7 @@ async def printer_get_camera():
             last_frame = Response(frame_b64,
                                   media_type="image/jpeg")
     except Exception as e:  # noqa  # pylint: disable=broad-exception-caught
-        logging.error(f"Error occurred while getting camera frame: {e}")    # noqa  # pylint: disable=logging-fstring-interpolation
+        logging.error(f"Error occurred while getting camera frame: {e}")
         return {"error": str(e)}
 
     global image_last_update
