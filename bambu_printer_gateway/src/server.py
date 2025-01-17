@@ -400,6 +400,8 @@ async def healthz(reponse: Response):
     if (datetime.now() - image_last_update) > timedelta(seconds=60):
         reponse.status_code = 500
         return False
+    if not printer.mqtt_dump():
+        return False
     global last_image
     current_image = printer.get_camera_image()
     if printer.get_state() == bambulabs_api.states_info.GcodeState.RUNNING.name:  # noqa: E501
