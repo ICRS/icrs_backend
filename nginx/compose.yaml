@@ -9,6 +9,6 @@ services:
       - grafana
     develop:
       watch:
-        - action: rebuild
-          path: ./
-          target: /etc/nginx/
+        - action: sync
+          path: ./nginx.conf
+          target: /etc/nginx/nginx.conf

@@ -1,3 +1,5 @@
+__all__ = ["main_db_pool", "meme_db_pool"]
+
 from configparser import ConfigParser
 import os
 

@@ -194,4 +194,4 @@ async def get_current_user_printer(
             detail="No entry for printer"
         )
     else:
-        return shortcode[0]
+        return str(shortcode[0])

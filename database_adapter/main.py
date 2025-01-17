@@ -9,6 +9,7 @@ from src.server import (
     discord_id_router, shortcode_router, discord_mapping_router)
 from src.print_metrics import print_metrics_router
 from src.member import member_router
+from src.access import access_router
 from src.summary import summary, summary_v2
 from src.auth import auth_router
 from src.meme import meme_router
@@ -48,6 +49,7 @@ app.include_router(summary)
 app.include_router(summary_v2)
 app.include_router(auth_router)
 app.include_router(meme_router)
+app.include_router(access_router)
 app.include_router(induction_router)
 app.include_router(project_box_router)
 app.include_router(printer_streamer_router)
