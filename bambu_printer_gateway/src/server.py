@@ -14,10 +14,11 @@ from io import BytesIO
 from typing import BinaryIO
 import logging
 
+import bambulabs_api
 from fastapi import (APIRouter, HTTPException, Query,
                      UploadFile, Response, status)
 from bambulabs_api import AMSFilamentSettings, GcodeState
-from PIL import ImageDraw, ImageFont
+from PIL import ImageDraw, ImageFont, ImageChops
 
 from src.printer_task import PrinterTask
 from src.validation import SHORTCODE_REGEX
@@ -391,11 +392,21 @@ async def set_printer_available(
     return printer_available
 
 
+last_image = None
+
+
 @router.get("/healthz", status_code=200)
 async def healthz(reponse: Response):
     if (datetime.now() - image_last_update) > timedelta(seconds=60):
         reponse.status_code = 500
         return False
+    global last_image
+    current_image = printer.get_camera_image()
+    if printer.get_state() == bambulabs_api.states_info.GcodeState.RUNNING.name:  # noqa: E501
+        if last_image is not None and not ImageChops.difference(last_image, current_image):  # noqa: E501
+            return False
+    last_image = current_image
+
     return True
 
 
