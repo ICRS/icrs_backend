@@ -18,14 +18,14 @@ def update_print_window(
         with conn.cursor() as cur:
             cur.execute(
                 "INSERT INTO public.card_scan_log(ID, VALID) "
-                "SELECT card_id, coalesce(fiw.canprint, FALSE) as VALID "
-                "FROM public.full_induction_view fiw "
-                "WHERE card_id=%s "
+                "SELECT %s as ID, COALESCE(sum(COALESCE(fiw1.canprint::INTEGER, 0)), 0) > 0 as VALID "
+                "FROM public.full_induction_view fiw1 "
+                "WHERE fiw1.card_id=%s  "
                 "LIMIT 1 "
                 "RETURNING VALID",
-                (uuid, ),
+                (uuid, uuid),
             )
-            return bool(cur.fetchall())
+            return bool(cur.fetchone()[0])
 
 
 @access_router.get("/print-window/valid")
