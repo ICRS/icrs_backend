@@ -8,6 +8,7 @@ from psycopg_pool import ConnectionPool
 config = ConfigParser()
 config.read('postgres.ini')
 
+# ================ CONFIG ==================
 DB_CONFIG = {
     'dbname': config['postgres']['database'],
     'user': config['postgres']['user'],
@@ -26,6 +27,7 @@ MEME_DB_CONFIG = {
     'port': config['postgres']['port'],
 }
 
+# ================ CONFIG END ==============
 
 main_db_pool = ConnectionPool(
     " ".join(f"{k}={v}" for k, v in DB_CONFIG.items()),
