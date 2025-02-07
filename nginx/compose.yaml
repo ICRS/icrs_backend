@@ -3,6 +3,7 @@ services:
     image: nginx:latest
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./directory.html:/usr/share/nginx/html/index.html
     ports:
       - 80:80
     depends_on:
@@ -12,3 +13,6 @@ services:
         - action: sync
           path: ./nginx.conf
           target: /etc/nginx/nginx.conf
+        - action: sync
+          path: ./directory.html
+          target: /usr/share/nginx/html/index.html
