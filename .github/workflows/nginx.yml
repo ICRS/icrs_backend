@@ -32,4 +32,4 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           push: true
-          tags: icroboticssociety/nginx-ingress:latest , icroboticssociety/nginx-ingress:${GITHUB_SHA::7}
+          tags: icroboticssociety/nginx-ingress:latest
