@@ -14,22 +14,11 @@ spec:
     spec:
       containers:
         - name: nginx-ingress-controller
-          image: nginx:latest
-          volumeMounts:
-            - name: nginx-conf
-              mountPath: /etc/nginx/nginx.conf
-              subPath: nginx.conf
+          image: icroboticssociety/nginx-ingress:latest
           ports:
             - containerPort: 80
               name: http
               protocol: TCP
-      volumes:
-        - name: nginx-conf
-          configMap:
-            name: nginx-conf 
-            items:
-              - key: nginx-conf
-                path: nginx.conf
 ---
 apiVersion: v1
 kind: Service
