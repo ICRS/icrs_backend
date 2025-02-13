@@ -22,8 +22,7 @@ jobs:
           images: |
             icroboticssociety/nginx-ingress
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
             type=sha
       -
         name: Login to Docker Hub
