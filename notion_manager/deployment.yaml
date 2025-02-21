@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: notion-manager
-        image: localhost:32000/notion_manager
+        image: icroboticssociety/icrs-notion-manager
         ports:
         - containerPort: 8000  # Port your Python application is listening on
         imagePullPolicy: "Always"
