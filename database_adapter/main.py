@@ -15,6 +15,7 @@ from src.auth import auth_router
 from src.meme import meme_router
 from src.induction_quiz import induction_router
 from src.project_box import project_box_router
+from src.project import project_router
 from src.printer_streamer import printer_streamer_router
 from src.database import main_db_pool, meme_db_pool
 from src.user_notes import user_notes_router
@@ -41,6 +42,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(discord_id_router)
+app.include_router(project_router)
 app.include_router(discord_mapping_router)
 app.include_router(shortcode_router)
 app.include_router(print_metrics_router)

@@ -19,6 +19,9 @@ services:
         - action: rebuild
           path: ./src
           target: /app
+        - action: rebuild
+          path: ./main.py
+          target: /app/main.py
     # command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 # The commented out section below is an example of how to define a PostgreSQL
