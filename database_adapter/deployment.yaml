@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: database-adapter
-        image: icroboticssociety/db-adapter
+        image: icroboticssociety/db-adapter:latest
         ports:
         - containerPort: 8000  # Port your Python application is listening on
         imagePullPolicy: "Always"
