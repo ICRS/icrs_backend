@@ -5,11 +5,36 @@ import os
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
+import pydantic
 
 from src.database import meme_db_pool
 
 
 meme_router = APIRouter(prefix="/meme", tags=["Meme"])
+
+
+class Quote(pydantic.BaseModel):
+    name: str = pydantic.Field()
+    quote: str = pydantic.Field()
+
+
+@meme_router.post("/quote")
+def add_quote(payload: Quote):
+    with meme_db_pool.connection() as conn:
+        with conn.cursor() as cur:
+            logging.info(f"Insert quote: {payload}")
+            cur.execute(
+                ("INSERT INTO public.user_quote (name, quote) "
+                 "VALUES (%s,%s)"
+                 ),
+                (payload.name, payload.quote)
+            )
+            v = cur.rowcount
+            if not v:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Quote already in db"
+                )
 
 
 @meme_router.get("/quote/random")
