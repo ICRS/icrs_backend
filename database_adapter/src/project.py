@@ -3,7 +3,7 @@ import datetime
 from fastapi import APIRouter
 import pydantic
 from src.database import main_db_pool
-
+from .common import CountResponse
 
 project_router = APIRouter(
     prefix="/project",
@@ -24,7 +24,7 @@ class ProjectSummary(Project):
 class ProjectMembers(pydantic.BaseModel):
     shortcode: str = pydantic.Field(min_length=3, max_length=10)
     acknowledged: bool = pydantic.Field(False)
-    registered_at: datetime.datetime = pydantic.Field()
+    registered_at: datetime.datetime = pydantic.Field(datetime.datetime.now())
 
 
 class ProjectDetails(Project):
@@ -68,7 +68,11 @@ def get_project_summary(
                 ),
             )
 
-            return [ProjectSummary(*p) for p in cur.fetchall()]
+            return [ProjectSummary(
+                id=p[0],
+                title=p[1],
+                description=p[2],
+                created_at=p[3]) for p in cur.fetchall()]
 
 
 @project_router.get("")
@@ -100,3 +104,21 @@ def get_project(
                 title=project_detail[0],
                 description=project_detail[1],
                 project_members=[ProjectMembers(*c) for c in cur.fetchall()])
+
+
+@project_router.post(r"/{id}/member")
+def register_member_for_project(
+    id: int,
+    members: list[ProjectMembers]
+):
+    with main_db_pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.executemany(
+                "INSERT IGNORE INTO project.project_members "
+                "(id, shortcode, acknowledged, registered_at) "
+                "VALUES(%s,%s,%s,%s) "
+                "ON CONFLICT DO NOTHING",
+                [(id, mem.shortcode, mem.acknowledged, mem.registered_at)
+                 for mem in members]
+            )
+            return CountResponse(count=cur.rowcount)
