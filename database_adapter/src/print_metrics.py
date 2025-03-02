@@ -6,7 +6,7 @@ import logging
 from fastapi import APIRouter, Body, Query, HTTPException, status
 import json
 
-from validation import SHORTCODE_QUERY
+from .validation import SHORTCODE_QUERY
 
 print_metrics_router = APIRouter(prefix="/print-metrics",
                                  tags=["Print Metrics"])
