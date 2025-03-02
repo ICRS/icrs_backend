@@ -3,7 +3,7 @@ import datetime
 from fastapi import APIRouter
 import pydantic
 from src.database import main_db_pool
-from .common import CountResponse
+from src.common import CountResponse
 
 project_router = APIRouter(
     prefix="/project",
@@ -149,3 +149,26 @@ def register_discord_members_for_project(
             return {
                 "members": [c[0] for c in cur.fetchall()]
             }
+
+
+@project_router.get("/owned/discord")
+def get_projects_owned(
+    id: int,
+):
+    with main_db_pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT m.id, m.title, m.description, m.created_at "
+                "FROM project.project_master m "
+                "JOIN project.project_members mem "
+                "ON mem.id=m.id "
+                "INNER JOIN public.mapping map "
+                "ON map.shortcode=mem.shortcode "
+                "WHERE map.user_id=%s",
+                (str(id),)
+            )
+            return [ProjectSummary(
+                id=p[0],
+                title=p[1],
+                description=p[2],
+                created_at=p[3]) for p in cur.fetchall()]
