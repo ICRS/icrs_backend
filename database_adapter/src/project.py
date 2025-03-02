@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import datetime
+import logging
 from fastapi import APIRouter
 import pydantic
 from src.database import main_db_pool
@@ -136,18 +137,21 @@ def register_discord_members_for_project(
     with main_db_pool.connection() as conn:
         with conn.cursor() as cur:
             cur.executemany(
-                "INSERT IGNORE INTO project.project_members "
+                "INSERT INTO project.project_members "
                 "(id, shortcode) "
                 "SELECT %s, shortcode "
                 "FROM public.mapping "
-                "WHERE discord_id=%s "
+                "WHERE user_id=%s and shortcode is not NULL "
                 "ON CONFLICT DO NOTHING "
-                "RETURNING %s",
-                [(id, mem, mem)
-                 for mem in members.discord_id]
+                "RETURNING %s as discord_id",
+                [(id, str(mem), mem)
+                 for mem in members.discord_id],
+                returning=True,
             )
+            v = [c[0] for c in cur.fetchall()]
+            logging.info(f"Inserted {v}")
             return {
-                "members": [c[0] for c in cur.fetchall()]
+                "members": v
             }
 
 
