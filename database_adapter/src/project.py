@@ -27,6 +27,10 @@ class ProjectMembers(pydantic.BaseModel):
     registered_at: datetime.datetime = pydantic.Field(datetime.datetime.now())
 
 
+class ProjectMembersDiscordList(pydantic.BaseModel):
+    discord_id: list[int] = pydantic.Field()
+
+
 class ProjectDetails(Project):
     title: str = pydantic.Field(max_length=50),
     description: str = pydantic.Field(max_length=2048)
@@ -122,3 +126,26 @@ def register_member_for_project(
                  for mem in members]
             )
             return CountResponse(count=cur.rowcount)
+
+
+@project_router.post(r"/{id}/member/discord")
+def register_discord_members_for_project(
+    id: int,
+    members: ProjectMembersDiscordList
+):
+    with main_db_pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.executemany(
+                "INSERT IGNORE INTO project.project_members "
+                "(id, shortcode) "
+                "SELECT %s, shortcode "
+                "FROM public.mapping "
+                "WHERE discord_id=%s "
+                "ON CONFLICT DO NOTHING "
+                "RETURNING %s",
+                [(id, mem, mem)
+                 for mem in members.discord_id]
+            )
+            return {
+                "members": [c[0] for c in cur.fetchall()]
+            }
