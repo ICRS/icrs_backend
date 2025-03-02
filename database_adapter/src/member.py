@@ -10,7 +10,7 @@ from src.database import main_db_pool
 
 from src.auth import get_current_username
 from src.union import cid_to_shortcode
-from src.validation import SHORTCODE_REGEX
+from src.validation import SHORTCODE_QUERY, SHORTCODE_QUERY_PYDANTIC
 
 
 env = os.getenv("ENV", "dev")
@@ -25,14 +25,14 @@ member_router = APIRouter(prefix="/member", tags=["Member"])
 
 class MemberDetails(BaseModel):
     id: str = pydantic.Field(min_length=8, max_length=14)
-    shortcode: str = pydantic.Field(min_length=3, max_length=7)
+    shortcode: str = SHORTCODE_QUERY_PYDANTIC
     print: bool = pydantic.Field(True)
     laser: bool = pydantic.Field(False)
 
 
 @member_router.get("")
 def is_member(
-    shortcode: str = Query(min_length=3, max_length=7),
+    shortcode: str = SHORTCODE_QUERY,
 ):
     return union.isMember(shortcode)
 
@@ -94,7 +94,7 @@ def add_icrs_member(
 
 
 class MemberPermissions(BaseModel):
-    shortcode: str = pydantic.Field(min_length=3, max_length=7)
+    shortcode: str = SHORTCODE_QUERY_PYDANTIC
     print: bool = pydantic.Field(default=False)
     laser: bool = pydantic.Field(default=False)
     inducted: bool = pydantic.Field(default=True)
@@ -105,7 +105,7 @@ class MemberPermissions(BaseModel):
 @member_router.get("/permissions/shortcode")
 def get_member_permissions_from_shortcode(
     username: Annotated[str, Depends(get_current_username)],
-    shortcode: str = Query(min_length=3, max_length=7),
+    shortcode: str = SHORTCODE_QUERY,
 ) -> MemberPermissions | dict:
     """
     Get member permissions from shortcode
@@ -341,7 +341,7 @@ def remove_card_details_cid(
 def register_card_details_shortcode(
     username: Annotated[str, Depends(get_current_username)],
     uuid: str = Query(min_length=8, max_length=14),
-    shortcode: str = Query(regex=SHORTCODE_REGEX),
+    shortcode: str = SHORTCODE_QUERY,
 ):
     try:
         with main_db_pool.connection() as conn:

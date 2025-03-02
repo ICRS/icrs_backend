@@ -6,6 +6,8 @@ import logging
 from fastapi import APIRouter, Body, Query, HTTPException, status
 import json
 
+from validation import SHORTCODE_QUERY
+
 print_metrics_router = APIRouter(prefix="/print-metrics",
                                  tags=["Print Metrics"])
 
@@ -27,7 +29,7 @@ PRINTER_NAMES = [
 
 @print_metrics_router.post("/print")
 async def add_print_entry(printer_name: str = Query(enum=PRINTER_NAMES),
-                          shortcode: str = Query(min_length=3, max_length=7),
+                          shortcode: str = SHORTCODE_QUERY,
                           print_time: int = Query(ge=0),
                           print_weight: int = Query(ge=0)):
     logging.info(f"Adding entry {printer_name, print_time, print_weight} \
@@ -89,7 +91,7 @@ class PrintMetric:
 
 
 @print_metrics_router.get("/member/stats/shortcode")
-def member_stats(shortcode: str = Query(min_length=3, max_length=7)):
+def member_stats(shortcode: str = SHORTCODE_QUERY):
     shortcode = shortcode.lower()
     try:
         with main_db_pool.connection() as conn:

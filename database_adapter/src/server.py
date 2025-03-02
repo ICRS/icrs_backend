@@ -5,7 +5,8 @@ import os
 from src.database import main_db_pool
 from fastapi import APIRouter, Query, HTTPException, status
 
-from src.validation import SHORTCODE_REGEX
+from src.validation import SHORTCODE_QUERY
+
 
 env = os.getenv("ENV", "dev")
 
@@ -38,9 +39,8 @@ class DiscordMapping:
 
 @discord_mapping_router.get("/exists")
 def add_entry(
-    discord_id: str = Query(min_length=17, max_length=21),
-    shortcode: str = Query(min_length=3, max_length=7,
-                           pattern=SHORTCODE_REGEX),
+    discord_id: str = Query(min_length=17, max_length=23),
+    shortcode: str = SHORTCODE_QUERY,
 ):
     try:
         with main_db_pool.connection() as conn:
@@ -62,8 +62,7 @@ def add_entry(
 
 @shortcode_router.get("/discord-id")
 def get_discord_id_from_shortcode(
-    shortcode: str = Query(min_length=3, max_length=7,
-                           pattern=SHORTCODE_REGEX)
+    shortcode: str = SHORTCODE_QUERY,
 ) -> dict:
     """
     Get the Discord ID from the shortcode
@@ -99,7 +98,7 @@ def get_discord_id_from_shortcode(
 
 @discord_id_router.get("/shortcode")
 def get_shortcode_from_discord_id(
-    id: str = Query(min_length=17, max_length=21),
+    id: str = Query(min_length=17, max_length=23),
     active: bool = Query(default=False)
 ) -> dict:
     """
@@ -142,7 +141,7 @@ def get_shortcode_from_discord_id(
 
 @shortcode_router.get("/permissions/print")
 def get_can_print_from_shortcode(
-    shortcode: str = Query(min_length=3, max_length=7, pattern=SHORTCODE_REGEX)
+    shortcode: str = SHORTCODE_QUERY
 ) -> dict:
     """
     Get if the user can print from the shortcode
@@ -176,7 +175,7 @@ def get_can_print_from_shortcode(
 
 @discord_id_router.post("/deregister")
 def deregister_user(
-    discord_id: str = Query(min_length=17, max_length=19,)
+    discord_id: str = Query(min_length=17, max_length=23,)
 ) -> dict:
     valid = change_valid(discord_id, 0)
     return {
@@ -187,8 +186,7 @@ def deregister_user(
 
 @shortcode_router.delete("/discord/mapping")
 def delete_discord_from_table(
-    shortcode: str = Query(min_length=3, max_length=7,
-                           pattern=SHORTCODE_REGEX),
+    shortcode: str = SHORTCODE_QUERY,
 ):
     with main_db_pool.connection() as conn:
         with conn.cursor() as cursor:
@@ -206,9 +204,8 @@ def delete_discord_from_table(
 
 @discord_id_router.post("/register")
 def register_user(
-    shortcode: str = Query(min_length=3, max_length=7,
-                           pattern=SHORTCODE_REGEX),
-    discord_id: str = Query(min_length=17, max_length=19,
+    shortcode: str = SHORTCODE_QUERY,
+    discord_id: str = Query(min_length=17, max_length=23,
                             )
 ) -> dict:
     is_member = union.isMember(shortcode)

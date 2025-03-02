@@ -50,7 +50,7 @@ def get_notes_by_discord_id(
 
 @user_notes_router.post("")
 def add_note_by_discord_id(
-    id: str = Query(min_length=17, max_length=19),
+    id: str = Query(min_length=17, max_length=23),
     note: str = Query(default=""),
 ):
     with main_db_pool.connection() as conn:

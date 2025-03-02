@@ -3,10 +3,10 @@ __all__ = ["slicer_router"]
 import datetime
 import logging
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, status
 
 from src.database import main_db_pool
-from src.validation import SHORTCODE_REGEX
+from src.validation import SHORTCODE_QUERY
 
 
 slicer_router = APIRouter(prefix="/slicer", tags=["Slicer"])
@@ -15,7 +15,7 @@ slicer_router = APIRouter(prefix="/slicer", tags=["Slicer"])
 @slicer_router.get("/print/permissions")
 def print_permissions(
     time_seconds: int = 10000000,
-    shortcode: str = Query(pattern=SHORTCODE_REGEX)
+    shortcode: str = SHORTCODE_QUERY
 ) -> str:
     try:
         with main_db_pool.connection() as conn:
