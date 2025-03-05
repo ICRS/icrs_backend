@@ -28,8 +28,13 @@ class ProjectMembers(pydantic.BaseModel):
     registered_at: datetime.datetime = pydantic.Field(datetime.datetime.now())
 
 
+class ProjectMemberPermission(pydantic.BaseModel):
+    discord_id: int
+    priority: int = 0
+
+
 class ProjectMembersDiscordList(pydantic.BaseModel):
-    discord_id: list[int] = pydantic.Field()
+    discord_id: list[ProjectMemberPermission] = pydantic.Field()
 
 
 class ProjectDetails(Project):
@@ -138,13 +143,13 @@ def register_discord_members_for_project(
         with conn.cursor() as cur:
             cur.executemany(
                 "INSERT INTO project.project_members "
-                "(id, shortcode) "
-                "SELECT %s, shortcode "
+                "(id, shortcode, priority) "
+                "SELECT %s, shortcode, %s "
                 "FROM public.mapping "
                 "WHERE user_id=%s and shortcode is not NULL "
                 "ON CONFLICT DO NOTHING "
                 "RETURNING %s as discord_id",
-                [(id, str(mem), mem)
+                [(id, mem.priority,  str(mem.discord_id), mem.discord_id)
                  for mem in members.discord_id],
                 returning=True,
             )
@@ -168,7 +173,7 @@ def get_projects_owned(
                 "ON mem.id=m.id "
                 "INNER JOIN public.mapping map "
                 "ON map.shortcode=mem.shortcode "
-                "WHERE map.user_id=%s",
+                "WHERE map.user_id=%s and mem.priority=0",
                 (str(id),)
             )
             return [ProjectSummary(
