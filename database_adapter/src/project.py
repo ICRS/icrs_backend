@@ -20,6 +20,7 @@ class Project(pydantic.BaseModel):
 class ProjectSummary(Project):
     id: int = pydantic.Field()
     created_at: datetime.datetime = pydantic.Field()
+    priority: int = 0
 
 
 class ProjectMembers(pydantic.BaseModel):
@@ -181,3 +182,27 @@ def get_projects_owned(
                 title=p[1],
                 description=p[2],
                 created_at=p[3]) for p in cur.fetchall()]
+
+
+@project_router.get("/discord")
+def get_all_projects_discord(
+    id: int,
+):
+    with main_db_pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT m.id, m.title, m.description, m.created_at, mem.priority "
+                "FROM project.project_master m "
+                "JOIN project.project_members mem "
+                "ON mem.id=m.id "
+                "INNER JOIN public.mapping map "
+                "ON map.shortcode=mem.shortcode "
+                "WHERE map.user_id=%s",
+                (str(id),)
+            )
+            return [ProjectSummary(
+                id=p[0],
+                title=p[1],
+                description=p[2],
+                created_at=p[3],
+                priority=p[4]) for p in cur.fetchall()]
