@@ -206,3 +206,54 @@ def get_all_projects_discord(
                 description=p[2],
                 created_at=p[3],
                 priority=p[4]) for p in cur.fetchall()]
+
+
+class ProjectTag(pydantic.BaseModel):
+    tag: str = pydantic.Field()
+    registered_at: datetime.datetime = pydantic.Field(datetime.datetime.now())
+
+
+class ProjectTags(pydantic.BaseModel):
+    id: int = pydantic.Field(-1)
+    tags: list[ProjectTag] = pydantic.Field()
+
+
+@project_router.get(r"/{id}/tags")
+def get_project_tags(
+    id: int,
+) -> ProjectTags:
+    with main_db_pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT type, registered_at "
+                "FROM project.project_type "
+                "WHERE id=%s",
+                (str(id),)
+            )
+            return ProjectTags(
+                id=id,
+                tags=[
+                    ProjectTag(
+                        tag=p[0],
+                        registered_at=p[1],
+                    ) for p in cur.fetchall()])
+
+
+@project_router.post(r"/{id}/tags")
+def add_project_tags(
+    id: int,
+    project_tags: ProjectTags,
+) -> CountResponse:
+    with main_db_pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.executemany(
+                "INSERT INTO project.project_type (id, type) "
+                "VALUES "
+                "(%s, %s) "
+                "ON CONFLICT DO NOTHING ",
+                [(id, tag.tag) for tag in project_tags.tags],
+            )
+            count = cur.rowcount
+            logging.info(f"Inserted {count}")
+
+            return CountResponse(count=count)
