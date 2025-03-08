@@ -94,7 +94,9 @@ class ProjectFullDetails(ProjectSummary):
 
 
 @project_router.get("/all")
-def get_project_all() -> list[ProjectFullDetails]:
+def get_project_all(
+    count: int | None = None
+) -> list[ProjectFullDetails]:
     with main_db_pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -111,7 +113,10 @@ def get_project_all() -> list[ProjectFullDetails]:
                     "WHERE ty.id=ma.id "
                     ") as tags "
                     "FROM project.project_master ma "
+                    "ORDER BY ma.created_at DESC "
+                    "LIMIT %s"
                 ),
+                (count, )
             )
 
             project_detail = cur.fetchall()
