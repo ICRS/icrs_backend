@@ -86,6 +86,50 @@ def get_project_summary(
                 created_at=p[3]) for p in cur.fetchall()]
 
 
+class ProjectFullDetails(ProjectSummary):
+    id: int
+    project_owners: list[str] = pydantic.Field([])
+    project_members: list[str] = pydantic.Field([])
+    tags: list[str] = pydantic.Field([])
+
+
+@project_router.get("/all")
+def get_project_all() -> list[ProjectFullDetails]:
+    with main_db_pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                (
+                    "SELECT ma.id, ma.title, ma.description, ma.created_at, "
+                    "ARRAY("
+                    "SELECT map.user_id FROM project.project_members mem "
+                    "INNER JOIN public.mapping map ON map.shortcode=mem.shortcode WHERE mem.id=ma.id AND mem.priority=0) as owners, "
+                    "ARRAY("
+                    "SELECT map.user_id FROM project.project_members mem "
+                    "INNER JOIN public.mapping map ON map.shortcode=mem.shortcode WHERE mem.id=ma.id AND mem.priority!=0) as members, "
+                    "ARRAY(SELECT type "
+                    "FROM project.project_type ty "
+                    "WHERE ty.id=ma.id "
+                    ") as tags "
+                    "FROM project.project_master ma "
+                ),
+            )
+
+            project_detail = cur.fetchall()
+            logging.info(project_detail)
+            return [
+                ProjectFullDetails(
+                    id=p[0],
+                    title=p[1],
+                    description=p[2],
+                    created_at=p[3],
+                    project_owners=[str(a) for a in p[4]],
+                    project_members=[str(a) for a in p[5]],
+                    tags=[str(a) for a in p[6]],
+                )
+                for p in project_detail
+            ]
+
+
 @project_router.get("")
 def get_project(
     id: int
