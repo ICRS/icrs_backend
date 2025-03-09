@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import datetime
 import logging
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 import pydantic
 from src.database import main_db_pool
 from src.common import CountResponse
@@ -117,6 +117,54 @@ def get_project_all(
                     "LIMIT %s"
                 ),
                 (count, )
+            )
+
+            project_detail = cur.fetchall()
+            logging.info(project_detail)
+            return [
+                ProjectFullDetails(
+                    id=p[0],
+                    title=p[1],
+                    description=p[2],
+                    created_at=p[3],
+                    project_owners=[str(a) for a in p[4]],
+                    project_members=[str(a) for a in p[5]],
+                    tags=[str(a) for a in p[6]],
+                )
+                for p in project_detail
+            ]
+
+
+@project_router.get("/owned/discord/full/filtered")
+def get_project_filtered(
+    discord_id: int,
+    count: int | None = Query(None),
+) -> list[ProjectFullDetails]:
+    with main_db_pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                (
+                    "SELECT ma.id, ma.title, ma.description, ma.created_at, "
+                    "ARRAY("
+                    "SELECT map.user_id FROM project.project_members mem "
+                    "INNER JOIN public.mapping map ON map.shortcode=mem.shortcode WHERE mem.id=ma.id AND mem.priority=0) as owners, "
+                    "ARRAY("
+                    "SELECT map.user_id FROM project.project_members mem "
+                    "INNER JOIN public.mapping map ON map.shortcode=mem.shortcode WHERE mem.id=ma.id AND mem.priority!=0) as members, "
+                    "ARRAY(SELECT type "
+                    "FROM project.project_type ty "
+                    "WHERE ty.id=ma.id "
+                    ") as tags "
+                    "FROM project.project_master ma "
+                    "JOIN project.project_members mem "
+                    "ON mem.id=ma.id "
+                    "INNER JOIN public.mapping map ON map.shortcode=mem.shortcode "
+                    "WHERE map.user_id=%s AND mem.priority=0 "
+                    "GROUP BY ma.id "
+                    "ORDER BY ma.created_at DESC "
+                    "LIMIT %s"
+                ),
+                (str(discord_id), count, )
             )
 
             project_detail = cur.fetchall()
