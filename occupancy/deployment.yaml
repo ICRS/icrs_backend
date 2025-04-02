@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: icrs-occupancy-logger-Deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: icrs-occupancy-logger
+  template:
+    metadata:
+      labels:
+        app: icrs-occupancy-logger
+    spec:
+      containers:
+      - name: icrs-occupancy-logger
+        image: icroboticssociety/icrs-occupancy-logger:0.0.1   # Use your image
+        ports:
+        - containerPort: 1883   # MQTT broker
+        env:
+        - name: MQTT_BROKER_HOST
+          value: "localhost"    # Broker is inside the same container
+        - name: MQTT_BROKER_PORT
+          value: "1883"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: icrs-occupancy-service
+spec:
+  selector:
+    app: icrs-occupancy-logger
+  ports:
+    - protocol: TCP
+      port: 1883
+      targetPort: 1883
+  type: LoadBalancer

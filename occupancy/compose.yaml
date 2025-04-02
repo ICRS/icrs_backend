@@ -1,0 +1,17 @@
+services:
+  app:
+    build: .                       # Build image from your Dockerfile
+    image: occupancy-tracker:latest   # Name and tag the image
+    container_name: occupancy-tracker
+    ports:
+      - "1883:1883"   # MQTT broker port (from inside the container)
+    environment:
+      MQTT_BROKER_HOST: "localhost"   # Broker is in the same container
+      MQTT_BROKER_PORT: "1883"
+    restart: always
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
