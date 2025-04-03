@@ -165,6 +165,7 @@ def get_member_permissions_from_shortcode(
 def get_member_permissions_from_uuid(
     username: Annotated[str, Depends(get_current_username)],
     uuid: str = Query(min_length=8, max_length=14),
+    update_log: bool = False,
 ) -> MemberPermissions | dict:
     """
     Get member permissions from uuid
@@ -195,6 +196,13 @@ def get_member_permissions_from_uuid(
 
                 if not result:
                     result = {}
+                    if update_log:
+                        cur.execute(
+                            "INSERT INTO public.card_scan_log "
+                            "(id) VALUES (%s) "
+                            "ON CONFLICT DO NOTHING",
+                            (uuid, ),
+                        )
                 else:
                     result = MemberPermissions(
                         shortcode=result[0],
@@ -202,6 +210,13 @@ def get_member_permissions_from_uuid(
                         laser=result[2],
                         inducted=result[3],
                     )
+                    if update_log:
+                        cur.execute(
+                            "INSERT INTO public.card_scan_log "
+                            "(id, valid) VALUES (%s,%s) "
+                            "ON CONFLICT DO NOTHING",
+                            (uuid, (result.inducted and result.print)),
+                        )
                 return result
     except Exception as e:
         error_msg = (
