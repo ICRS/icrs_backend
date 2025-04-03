@@ -1,8 +1,6 @@
 services:
-  app:
+  occupancy-tracker:
     build: .                       # Build image from your Dockerfile
-    image: occupancy-tracker:latest   # Name and tag the image
-    container_name: occupancy-tracker
     ports:
       - "1883:1883"   # MQTT broker port (from inside the container)
     environment:

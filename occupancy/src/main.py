@@ -2,6 +2,7 @@ import paho.mqtt.client as mqtt
 import json
 from dateutil import parser
 
+
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, reason_code, properties):
     print(f"Connected with result code {reason_code}")
@@ -9,9 +10,11 @@ def on_connect(client, userdata, flags, reason_code, properties):
     # reconnect then subscriptions will be renewed.
     client.subscribe("monitor/ble/#")
 
+
 # Dummy database call
-def save_to_db(time,name,occupancy):
+def save_to_db(time, name, occupancy):
     print(f"At time {time}, {name} {'arrived' if occupancy else 'departed'}")
+
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
@@ -21,13 +24,12 @@ def on_message(client, userdata, msg):
             occupancy = True if int(msg['confidence']) >= 45 else False
             name = msg['name']
             time = parser.parse(msg['timestamp'])
-            save_to_db(time,name,occupancy)
+            save_to_db(time, name, occupancy)
     except Exception as e:
         print(f"Error reading message from topic {msg.topic}: {e}")
 
 
-    
-mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2,"occupancyLogger")
+mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, "occupancyLogger")
 mqttc.on_connect = on_connect
 mqttc.on_message = on_message
 
