@@ -43,7 +43,7 @@ def set_print_window(
     logging.info(f"UUID: {uuid}, Credentials Correct")
     result = requests.get(
         DATABASE_ADAPTER_IP + "/member/permissions/uuid",
-        params={"uuid": uuid},
+        params={"uuid": uuid, "update_log": True},
         auth=credentials
     )
 

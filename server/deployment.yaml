@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: icrs-access
-        image: icroboticssociety/icrs-server-router:1.0.0
+        image: icroboticssociety/icrs-server-router:1.0.1
         ports:
         - containerPort: 8000  # Port your Python application is listening on
         imagePullPolicy: "Always"

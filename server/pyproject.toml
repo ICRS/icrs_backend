@@ -1,5 +1,5 @@
 [project]
 name = "ICRS Access Server Adapter"
-version = "1.0.0"
+version = "1.0.1"
 description = "ICRS Access Server Adapter."
 requires-python = ">=3.8"
