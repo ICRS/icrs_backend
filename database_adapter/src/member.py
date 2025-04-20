@@ -100,6 +100,7 @@ class MemberPermissions(BaseModel):
     inducted: bool = pydantic.Field(default=True)
     time_added: str = pydantic.Field(default="")
     card_id: str = pydantic.Field(min_length=8, max_length=14, default="")
+    resin: bool = pydantic.Field(default=False)
 
 
 @member_router.get("/permissions/shortcode")
@@ -125,7 +126,7 @@ def get_member_permissions_from_shortcode(
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT i.canprint, i.canlasercut, i.valid, i.time_added, m.id "  # noqa: E501
+                    "SELECT i.canprint, i.canlasercut, i.valid, i.time_added, m.id, i.can_resin "  # noqa: E501
                     "FROM public.induction i "
                     "LEFT JOIN public.shortcode_card_mapping m ON i.shortcode=m.shortcode "  # noqa: E501
                     "WHERE i.shortcode = %s;",
@@ -147,6 +148,7 @@ def get_member_permissions_from_shortcode(
                         inducted=result[2],
                         time_added=datStr,
                         card_id=result[4] if result[4] else "Not Found",
+                        resin=result[5],
                     )
                 return result
     except Exception as e:
@@ -187,7 +189,7 @@ def get_member_permissions_from_uuid(
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT i.shortcode, i.canprint, i.canlasercut, valid FROM "  # noqa: E501
+                    "SELECT i.shortcode, i.canprint, i.canlasercut, valid, i.can_resin FROM "  # noqa: E501
                     "public.induction i JOIN public.shortcode_card_mapping s ON "  # noqa: E501
                     "i.shortcode=s.shortcode WHERE s.id=%s",
                     (uuid,),
@@ -209,6 +211,7 @@ def get_member_permissions_from_uuid(
                         print=result[1],
                         laser=result[2],
                         inducted=result[3],
+                        resin=result[4],
                     )
                     if update_log:
                         cur.execute(
