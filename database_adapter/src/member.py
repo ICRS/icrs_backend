@@ -274,11 +274,14 @@ def update_permissions(
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "UPDATE public.induction SET canPrint=%s, canLaserCut=%s "
-                    "WHERE shortcode=%s and valid",
+                    "UPDATE public.induction SET "
+                    "valid=%s, canPrint=%s, canLaserCut=%s, can_resin=%s "
+                    "WHERE shortcode=%s",
                     (
+                        permissions.inducted,
                         permissions.print,
                         permissions.laser,
+                        permissions.resin,
                         permissions.shortcode.lower(),
                     ),
                 )
