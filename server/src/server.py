@@ -31,6 +31,15 @@ access_server_router = APIRouter()
 last_set_time = datetime.datetime.fromtimestamp(0)
 last_short_code = ''
 
+MAX_DAYTIME_PRINT = 3 * 60 * 60
+MAX_OVERNIGHT_PRINT = 9 * 60 * 60
+OVERNIGHT_START_TIME = 23
+
+TEMP_DEVICE_PERM = {
+#   "dev_id": ["shortcode1", "shortcode2", ...] ,
+    "03919D511005250": ["ras124"] # Tim Green Machine, dev_id = Serial Number
+}
+
 
 @access_server_router.post("/print-window/update")
 def set_print_window(
@@ -81,9 +90,23 @@ def set_print_window(
 
 
 @access_server_router.get("/getPrintWindow", response_class=PlainTextResponse)
-async def get_print_window(request: Request):
+async def get_print_window(dev: str):
     global last_set_time
-    return str(last_set_time > datetime.datetime.now())
+    if last_set_time <= datetime.datetime.now():
+        return "0"
+    if dev in TEMP_DEVICE_PERM:
+        if last_short_code not in TEMP_DEVICE_PERM[dev]:
+            return "01"
+    return "1"
+    
+    
+
+@access_server_router.get("/checkPrintTime", response_class=PlainTextResponse)
+async def check_print_time(time_seconds: float):
+    hour = datetime.datetime.now().hour
+    if (time_seconds <= MAX_OVERNIGHT_PRINT and hour >= OVERNIGHT_START_TIME) or (time_seconds <= MAX_DAYTIME_PRINT):
+        return "1"
+    return "0"
 
 
 class PrintData(BaseModel):
