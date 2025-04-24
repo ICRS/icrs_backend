@@ -17,6 +17,9 @@ from requests.auth import HTTPBasicAuth
 
 import httpx
 
+MAX_DAYTIME_PRINT = 3*60*60
+MAX_OVERNIGHT_PRINT=30
+
 # ==============================================================================
 
 DATABASE_ADAPTER_IP = os.getenv("DATABASE_ADAPTER_IP")
@@ -30,16 +33,10 @@ access_server_router = APIRouter()
 
 last_set_time = datetime.datetime.fromtimestamp(0)
 last_short_code = ''
-extended_print = False
-all_printers = False
-
-MAX_DAYTIME_PRINT = 3 * 60 * 60
-MAX_OVERNIGHT_PRINT = 9 * 60 * 60
-OVERNIGHT_START_TIME = 23
-
-SPECIAL_PRINTERS = [
-    "03919D511005250", # Tim Green Machine
-    ]
+printers = []
+max_daytime_time = 3*60*60
+max_night_time = 9*60*60
+night_time = 22
 
 @access_server_router.post("/print-window/update")
 def set_print_window(
@@ -47,7 +44,7 @@ def set_print_window(
     credentials: Annotated[HTTPBasicAuth |
                            None, Depends(valid_login)] = None
 ):
-    global last_set_time, last_short_code, extended_print, all_printers
+    global last_set_time, last_short_code, printers, max_night_time, max_daytime_time
 
     logging.info(f"UUID: {uuid}, Credentials Correct")
     result = requests.get(
@@ -67,8 +64,9 @@ def set_print_window(
         body = result.json()
         shortcode = str(body.get("shortcode", ""))
         can_print = body.get("print", False)
-        extended_print = body.get("extended_print_time", False)
-        all_printers = body.get("can_use_all_printers", False)
+        printers = body.get("printers", [])
+        max_daytime_time = body.get("print_daytime_time", 0) * 60
+        max_night_time = body.get("print_night_time", 0) * 60
 
         if not can_print:
             raise HTTPException(
@@ -90,10 +88,14 @@ def set_print_window(
             detail=f"{result.reason}"
         )
 
-@access_server_router.get("/canUseAllPrinters", response_class=PlainTextResponse)
-async def can_use_all_printers():
-    global all_printers
-    return str(all_printers)
+@access_server_router.get("/canUsePrinter", response_class=PlainTextResponse)
+async def can_use_printer(
+    dev : str,
+    ):
+    global printers
+    if dev not in printers:
+        return str(False)
+    return str(True)
 
 @access_server_router.get("/getCommitteePrinters", response_class=PlainTextResponse)
 async def get_committee_printers():
@@ -108,11 +110,9 @@ async def get_print_window():
 
 @access_server_router.get("/checkPrintTime", response_class=PlainTextResponse)
 async def check_print_time(time_seconds: float):
-    global extended_print
-    if extended_print:
-        return "1"
+    global max_night_time, max_daytime_time
     hour = datetime.datetime.now().hour
-    if (time_seconds <= MAX_OVERNIGHT_PRINT and hour >= OVERNIGHT_START_TIME) or (time_seconds <= MAX_DAYTIME_PRINT):
+    if (time_seconds <= max_night_time and hour >= night_time) or (time_seconds <= max_daytime_time):
         return "1"
     return "0"
 
