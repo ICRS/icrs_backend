@@ -19,9 +19,9 @@ spec:
         - containerPort: 8000  # Port your Python application is listening on
         imagePullPolicy: "Always"
         volumeMounts:
-          - name: postgres-ini 
-            mountPath: /app/postgres.ini
-            subPath: postgres.ini
+          - name: printer-config 
+            mountPath: /app/printer_settings.json
+            subPath: printer_settings.json
             readOnly: true
         env:
         - name: TZ
@@ -31,11 +31,6 @@ spec:
             configMapKeyRef:
               name: database-config
               key: endpoint-url
-        volumeMounts:
-          - name: printer-config 
-            mountPath: /app/printer_settings.json
-            subPath: printer_settings.json
-            readOnly: true
 
       volumes:
         - name: printer-config
