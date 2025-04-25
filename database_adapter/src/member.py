@@ -101,6 +101,7 @@ class MemberPermissions(BaseModel):
     time_added: str = pydantic.Field(default="")
     card_id: str = pydantic.Field(min_length=8, max_length=14, default="")
     resin: bool = pydantic.Field(default=False)
+    printer_override: bool = pydantic.Field(default=False)
 
 
 @member_router.get("/permissions/shortcode")
@@ -126,7 +127,7 @@ def get_member_permissions_from_shortcode(
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT i.canprint, i.canlasercut, i.valid, i.time_added, m.id, i.can_resin "  # noqa: E501
+                    "SELECT i.canprint, i.canlasercut, i.valid, i.time_added, m.id, i.can_resin, i.printer_override "  # noqa: E501
                     "FROM public.induction i "
                     "LEFT JOIN public.shortcode_card_mapping m ON i.shortcode=m.shortcode "  # noqa: E501
                     "WHERE i.shortcode = %s;",
@@ -149,6 +150,7 @@ def get_member_permissions_from_shortcode(
                         time_added=datStr,
                         card_id=result[4] if result[4] else "Not Found",
                         resin=result[5],
+                        printer_override=result[6],
                     )
                 return result
     except Exception as e:
@@ -189,7 +191,7 @@ def get_member_permissions_from_uuid(
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT i.shortcode, i.canprint, i.canlasercut, valid, i.can_resin FROM "  # noqa: E501
+                    "SELECT i.shortcode, i.canprint, i.canlasercut, valid, i.can_resin, i.printer_override FROM "  # noqa: E501
                     "public.induction i JOIN public.shortcode_card_mapping s ON "  # noqa: E501
                     "i.shortcode=s.shortcode WHERE s.id=%s",
                     (uuid,),
@@ -212,6 +214,7 @@ def get_member_permissions_from_uuid(
                         laser=result[2],
                         inducted=result[3],
                         resin=result[4],
+                        printer_override=result[5],
                     )
                     if update_log:
                         cur.execute(
@@ -275,13 +278,14 @@ def update_permissions(
             with conn.cursor() as cur:
                 cur.execute(
                     "UPDATE public.induction SET "
-                    "valid=%s, canPrint=%s, canLaserCut=%s, can_resin=%s "
+                    "valid=%s, canPrint=%s, canLaserCut=%s, can_resin=%s, printer_override=%s "
                     "WHERE shortcode=%s",
                     (
                         permissions.inducted,
                         permissions.print,
                         permissions.laser,
                         permissions.resin,
+                        permissions.printer_override,
                         permissions.shortcode.lower(),
                     ),
                 )

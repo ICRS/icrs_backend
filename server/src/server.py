@@ -3,6 +3,7 @@ import logging
 import math
 import os
 from typing import Annotated
+import json
 
 from fastapi import APIRouter, Depends, Query, Request, \
     HTTPException, status
@@ -30,6 +31,20 @@ access_server_router = APIRouter()
 
 last_set_time = datetime.datetime.fromtimestamp(0)
 last_short_code = ''
+override = False
+requires_override = []
+MAX_DAYTIME_PRINT = 3 * 60 * 60
+MAX_OVERNIGHT_PRINT = 9 * 60 * 60
+OVERNIGHT_START_TIME = 23
+
+print(os.getcwd())
+with open(os.path.relpath("assets/printers.json"), "r") as f:
+    data = json.loads(f.read())
+    requires_override = list(data["requires_override"])
+    MAX_DAYTIME_PRINT = int(data["daytime_print_time"])
+    MAX_OVERNIGHT_PRINT = int(data["nightime_print_time"])
+    OVERNIGHT_START_TIME = int(data["nighttime_start"])
+    f.close()
 
 
 @access_server_router.post("/print-window/update")
@@ -38,7 +53,7 @@ def set_print_window(
     credentials: Annotated[HTTPBasicAuth |
                            None, Depends(valid_login)] = None
 ):
-    global last_set_time, last_short_code
+    global last_set_time, last_short_code, override
 
     logging.info(f"UUID: {uuid}, Credentials Correct")
     result = requests.get(
@@ -58,6 +73,7 @@ def set_print_window(
         body = result.json()
         shortcode = str(body.get("shortcode", ""))
         can_print = body.get("print", False)
+        override = body.get("printer_override", False)
 
         if not can_print:
             raise HTTPException(
@@ -79,11 +95,31 @@ def set_print_window(
             detail=f"{result.reason}"
         )
 
+@access_server_router.get("/canUsePrinter", response_class=PlainTextResponse)
+async def can_use_printer(dev : str):
+    global override
+    if override:
+        return str(True)
+    if dev in requires_override:
+        return str(False)
+    return str(True)
 
 @access_server_router.get("/getPrintWindow", response_class=PlainTextResponse)
-async def get_print_window(request: Request):
+async def get_print_window():
     global last_set_time
-    return str(last_set_time > datetime.datetime.now())
+    if last_set_time <= datetime.datetime.now():
+        return "0"
+    return "1"
+
+@access_server_router.get("/checkPrintTime", response_class=PlainTextResponse)
+async def check_print_time(time_seconds: float):
+    global override
+    if override:
+        return "1"
+    hour = datetime.datetime.now().hour
+    if (time_seconds <= MAX_OVERNIGHT_PRINT and hour >= OVERNIGHT_START_TIME) or (time_seconds <= MAX_DAYTIME_PRINT):
+        return "1"
+    return "0"
 
 
 class PrintData(BaseModel):
