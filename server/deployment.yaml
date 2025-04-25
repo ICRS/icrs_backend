@@ -14,14 +14,14 @@ spec:
     spec:
       containers:
       - name: icrs-access
-        image: icroboticssociety/icrs-server-router:1.0.1
+        image: icroboticssociety/icrs-server-router:1.0.2
         ports:
         - containerPort: 8000  # Port your Python application is listening on
         imagePullPolicy: "Always"
         volumeMounts:
-          - name: postgres-ini 
-            mountPath: /app/postgres.ini
-            subPath: postgres.ini
+          - name: printer-config 
+            mountPath: /app/printer_settings.json
+            subPath: printer_settings.json
             readOnly: true
         env:
         - name: TZ
@@ -33,9 +33,12 @@ spec:
               key: endpoint-url
 
       volumes:
-        - name: postgres-ini 
-          secret:
-            secretName: postgres-ini-secret 
+        - name: printer-config
+          configMap:
+            name: printer-config
+            items:
+              - key: printer_config
+                path: printer_settings.json
 
 
 ---
