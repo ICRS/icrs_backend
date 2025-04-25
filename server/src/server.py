@@ -27,7 +27,6 @@ requires_override = os.getenv("requires_override")
 MAX_DAYTIME_PRINT = os.getenv("daytime_print_time")
 MAX_OVERNIGHT_PRINT = os.getenv("nightime_print_time")
 OVERNIGHT_START_TIME = os.getenv("nighttime_start")
-f.close()
 
 # ==============================================================================
 
