@@ -31,11 +31,24 @@ spec:
             configMapKeyRef:
               name: database-config
               key: endpoint-url
+        volumeMounts:
+            - name: printer-config
+              mountPath: /app/printer_settings.json
+              subPath: printer_settings.json
+              readOnly: true
 
       volumes:
         - name: postgres-ini 
           secret:
             secretName: postgres-ini-secret 
+        
+      volumeMount:
+        - name: printer-config
+          configMap:
+            name: printer-config
+            items:
+              - key: printer_config
+                path: printer_settings.json
 
 
 ---
