@@ -37,7 +37,7 @@ MAX_DAYTIME_PRINT = 3 * 60 * 60
 MAX_OVERNIGHT_PRINT = 9 * 60 * 60
 OVERNIGHT_START_TIME = 23
 
-with open(os.path.relpath("printers.json"), "r") as f:
+with open(os.path.relpath("printer_settings.json"), "r") as f:
     data = json.loads(f.read())
     requires_override = list(data["requires_override"])
     MAX_DAYTIME_PRINT = int(data["daytime_print_time"])
