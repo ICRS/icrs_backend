@@ -23,6 +23,12 @@ import httpx
 DATABASE_ADAPTER_IP = os.getenv("DATABASE_ADAPTER_IP")
 SUBPATH = os.getenv("SUBPATH", "/api/access")
 
+requires_override = os.getenv("requires_override")
+MAX_DAYTIME_PRINT = os.getenv("daytime_print_time")
+MAX_OVERNIGHT_PRINT = os.getenv("nightime_print_time")
+OVERNIGHT_START_TIME = os.getenv("nighttime_start")
+f.close()
+
 # ==============================================================================
 
 
@@ -36,15 +42,6 @@ requires_override = []
 MAX_DAYTIME_PRINT = 3 * 60 * 60
 MAX_OVERNIGHT_PRINT = 9 * 60 * 60
 OVERNIGHT_START_TIME = 23
-
-print(os.getcwd())
-with open(os.path.relpath("assets/printers.json"), "r") as f:
-    data = json.loads(f.read())
-    requires_override = list(data["requires_override"])
-    MAX_DAYTIME_PRINT = int(data["daytime_print_time"])
-    MAX_OVERNIGHT_PRINT = int(data["nightime_print_time"])
-    OVERNIGHT_START_TIME = int(data["nighttime_start"])
-    f.close()
 
 
 @access_server_router.post("/print-window/update")
