@@ -1,15 +1,37 @@
-name: database adapter docker image build
+name: notion manager docker image build
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'notion_manager/**'
-      - '.github/workflows/notion_manager.yml'
+      - 'notion_manager/pyproject.toml'
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.get_version.outputs.VERSION }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install toml
+      - name: Get version from pyproject.toml file
+        id: get_version
+        working-directory: ./notion_manager
+        run: |
+          version=$(python -c "import toml; print(toml.load('pyproject.toml')['project']['version'])")
+          echo "VERSION=${version}" >> $GITHUB_OUTPUT
+      - name: Set VERSION for next jobs
+        id: set_version
+        run: echo "VERSION=${{ steps.get_version.outputs.VERSION }}" >> $GITHUB_ENV
+
   docker:
+    needs:
+      - version
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,7 +44,8 @@ jobs:
           images: |
             icroboticssociety/icrs-notion-manager
           tags: |
-            type=raw,value=latest
+            type=raw,value=${{ needs.version.outputs.VERSION }}
+            type=raw,value=latest,enable={{is_default_branch}}
             type=sha
       -
         name: Login to Docker Hub

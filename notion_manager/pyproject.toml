@@ -1,0 +1,5 @@
+[project]
+name = "ICRS Notion Manager"
+version = "1.0.0"
+description = "ICRS Notion Manager."
+requires-python = ">=3.8"

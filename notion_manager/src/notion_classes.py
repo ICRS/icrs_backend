@@ -1,4 +1,3 @@
-
 __all__ = ["DB", "Row", "Column"]
 
 
@@ -9,9 +8,11 @@ class DB:
         # Store the list of results from the database query
         self.data = db_response["results"]
         # Extract the column names from the properties of the first result
-        self.columns = list(self.data[0]["properties"].keys()) if self.data else []
+        self.columns = list(
+            self.data[0]["properties"].keys()) if self.data else []
         # Create a mapping from page_id to Row
-        self.pages = {page["id"]: Row(page["properties"], page["id"]) for page in self.data}
+        self.pages = {page["id"]: Row(
+            page["properties"], page["id"]) for page in self.data}
 
     def get_columns(self) -> list:
         # Return the list of column names
@@ -99,12 +100,12 @@ class Column:
                 self.column[idx] = values
             elif prop["type"] == "title":
                 # Extract the plain text from the title
-                self.column[idx] = prop["title"][0]["plain_text"] if prop["title"] else ''
+                self.column[idx] = prop["title"][0]["plain_text"] if prop["title"] else ''  # noqa: E501
             elif prop["type"] == "unique_id":
                 # Construct the unique ID with prefix and number
                 prefix = prop["unique_id"].get("prefix", None)
                 number = prop["unique_id"]["number"]
-                self.column[idx] = f"{'' if prefix is None else prefix}{number}"
+                self.column[idx] = f"{'' if prefix is None else prefix}{number}"  # noqa: E501
             elif prop["type"] == "rich_text":
                 # Concatenate all plain texts in the rich text
                 texts = [text["plain_text"] for text in prop["rich_text"]]
