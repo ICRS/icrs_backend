@@ -12,7 +12,13 @@ This project contains the necessary infrastructure for interfacing with the nume
 * Bambu Printer Gateway: a translation layer from bambu p1 printers to REST service
 * Registration Page: React project for registering new users
 
-## 🔨 Build and Deployment  Instructions
+## 🔨 Build and Deployment Instructions
+
+### Docker Publishing
+Each python subproject has definitions for building a docker image, these are distributed to dockerhub <https://hub.docker.com/u/icroboticssociety>.
+To trigger a publishing of the docker update the `pyproject.toml` file (make sure that the workflow files are setup correctly).
+
+### More info
 
 See [https://github.com/ICRS/icrs_lab](https://github.com/ICRS/icrs_lab)
 
