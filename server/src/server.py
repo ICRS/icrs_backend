@@ -121,7 +121,7 @@ async def check_print_time(time_seconds: float):
     return "0"
 
 @access_server_router.post("/postBluetoothDevice", response_class=PlainTextResponse)
-async def post_bluetooth_addr(mac_addr: str = Query(max_length=20)):
+async def post_bluetooth_addr(mac_addr: str = Query(max_length=17)):
     addresses = requests.get(
         DATABASE_ADAPTER_IP + "/access/ble_last_15"
     )

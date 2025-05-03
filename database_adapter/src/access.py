@@ -86,7 +86,7 @@ def post_print_time(
             return [i[0] for i in cur.fetchall()]
 
 @access_router.post("/ble_device_detected")
-def post_ble_addr(mac_addr: str = Query(max_length=20)):
+def post_ble_addr(mac_addr: str = Query(max_length=17)):
     with main_db_pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
