@@ -120,6 +120,32 @@ async def check_print_time(time_seconds: float):
         return "1"
     return "0"
 
+@access_server_router.post("/postBluetoothDevice", response_class=PlainTextResponse)
+async def post_bluetooth_addr(mac_addr: str = Query(max_length=20)):
+    addresses = requests.get(
+        DATABASE_ADAPTER_IP + "/access/ble_last_15"
+    )
+
+    if mac_addr in addresses.json():
+        return "already captured"
+
+    result = requests.post(
+        DATABASE_ADAPTER_IP + "/access/ble_device_detected",
+        params={
+            "mac_addr": mac_addr
+        }
+    )
+
+    if result.status_code != 200:
+        logging.info("got to db")
+        error_msg = f"Adding mac address to DB failed: {result.reason}"
+        logging.error(error_msg)
+        raise HTTPException(
+            status_code=result.status_code,
+            detail=error_msg
+        )
+    return mac_addr
+
 
 class PrintData(BaseModel):
     time: str

@@ -84,3 +84,28 @@ def post_print_time(
             )
 
             return [i[0] for i in cur.fetchall()]
+
+@access_router.post("/ble_device_detected")
+def post_ble_addr(mac_addr: str = Query(max_length=20)):
+    with main_db_pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO public.ble_stats (mac_addr) "
+                "VALUES (%s) "
+                "RETURNING mac_addr",
+                (mac_addr,)
+            )
+
+            return bool(cur.fetchall()[0])
+
+@access_router.get("/ble_last_15")
+def ble_last_15():
+    with main_db_pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT DISTINCT mac_addr FROM public.ble_stats as ble "
+                "WHERE ble.timestamp >= date_trunc('hour', current_timestamp) "
+                "+ date_part('minute', current_timestamp)::int / 15 * interval '15 minute'"
+            )
+
+            return [x[0] for x in cur.fetchall()]
