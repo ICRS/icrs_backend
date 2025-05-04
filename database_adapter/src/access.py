@@ -98,14 +98,14 @@ def post_ble_addr(mac_addr: str = Query(max_length=17)):
 
             return bool(cur.fetchall()[0])
 
-@access_router.get("/ble_last_15")
-def ble_last_15():
+@access_router.get("/ble_last_devices")
+def ble_last_devices(time: int):
     with main_db_pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT DISTINCT mac_addr FROM public.ble_stats as ble "
                 "WHERE ble.timestamp >= date_trunc('hour', current_timestamp) "
-                "+ date_part('minute', current_timestamp)::int / 15 * interval '15 minute'"
+                f"+ date_part('minute', current_timestamp)::int / {time} * interval '{time} minute'",
             )
 
             return [x[0] for x in cur.fetchall()]
