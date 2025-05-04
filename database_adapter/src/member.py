@@ -102,6 +102,7 @@ class MemberPermissions(BaseModel):
     card_id: str = pydantic.Field(min_length=8, max_length=14, default="")
     resin: bool = pydantic.Field(default=False)
     printer_override: bool = pydantic.Field(default=False)
+    is_lab_trained: bool = pydantic.Field(default=False)
 
 
 @member_router.get("/permissions/shortcode")
@@ -127,7 +128,7 @@ def get_member_permissions_from_shortcode(
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT i.canprint, i.canlasercut, i.valid, i.time_added, m.id, i.can_resin, i.printer_override "  # noqa: E501
+                    "SELECT i.canprint, i.canlasercut, i.valid, i.time_added, m.id, i.can_resin, i.printer_override, i.is_lab_trained "  # noqa: E501
                     "FROM public.induction i "
                     "LEFT JOIN public.shortcode_card_mapping m ON i.shortcode=m.shortcode "  # noqa: E501
                     "WHERE i.shortcode = %s;",
@@ -151,6 +152,7 @@ def get_member_permissions_from_shortcode(
                         card_id=result[4] if result[4] else "Not Found",
                         resin=result[5],
                         printer_override=result[6],
+                        is_lab_trained=result[7],
                     )
                 return result
     except Exception as e:
@@ -191,7 +193,7 @@ def get_member_permissions_from_uuid(
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT i.shortcode, i.canprint, i.canlasercut, valid, i.can_resin, i.printer_override FROM "  # noqa: E501
+                    "SELECT i.shortcode, i.canprint, i.canlasercut, valid, i.can_resin, i.printer_override, i.is_lab_trained FROM "  # noqa: E501
                     "public.induction i JOIN public.shortcode_card_mapping s ON "  # noqa: E501
                     "i.shortcode=s.shortcode WHERE s.id=%s",
                     (uuid,),
@@ -215,6 +217,7 @@ def get_member_permissions_from_uuid(
                         inducted=result[3],
                         resin=result[4],
                         printer_override=result[5],
+                        is_lab_trained=result[6],
                     )
                     if update_log:
                         cur.execute(
@@ -278,7 +281,7 @@ def update_permissions(
             with conn.cursor() as cur:
                 cur.execute(
                     "UPDATE public.induction SET "
-                    "valid=%s, canPrint=%s, canLaserCut=%s, can_resin=%s, printer_override=%s "
+                    "valid=%s, canPrint=%s, canLaserCut=%s, can_resin=%s, printer_override=%s, is_lab_trained=%s "
                     "WHERE shortcode=%s",
                     (
                         permissions.inducted,
@@ -286,6 +289,7 @@ def update_permissions(
                         permissions.laser,
                         permissions.resin,
                         permissions.printer_override,
+                        permissions.is_lab_trained,
                         permissions.shortcode.lower(),
                     ),
                 )
@@ -383,6 +387,42 @@ def register_card_details_shortcode(
 
     except Exception as e:
         error_msg = f"Error Updating db: {e}"
+        logging.warning(error_msg)
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg
+        )
+
+@member_router.get("/mac_addresses")
+def user_mac_addresses(shortcode : str = SHORTCODE_QUERY):
+    with main_db_pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT b.mac_addr FROM public.ble_addresses b "
+                "WHERE b.shortcode = %s",
+                (shortcode,)
+            )
+
+            return [ x[0] for x in cur.fetchall() ]
+        
+@member_router.post("/mac_addresses/add")
+def add_user_mac_address(
+    shortcode : str = SHORTCODE_QUERY,
+    mac_address : str = Query(max_length=17)
+    ):
+    try:
+        with main_db_pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO public.ble_addresses (mac_addr, shortcode) "
+                    "VALUES (%s, %s) "
+                    "ON CONFLICT DO NOTHING",
+                    (mac_address, shortcode)
+                )
+
+                return (mac_address, shortcode)
+    except Exception as e:
+        error_msg = f"Failed to add to db: {e}"
         logging.warning(error_msg)
 
         raise HTTPException(
