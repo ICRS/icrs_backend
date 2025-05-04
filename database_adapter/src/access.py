@@ -2,6 +2,7 @@ import math
 from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
+from datetime import datetime
 
 from src.auth import get_current_username
 from src.database import main_db_pool
@@ -109,3 +110,19 @@ def ble_last_devices(time: int):
             )
 
             return [x[0] for x in cur.fetchall()]
+        
+@access_router.get("/trained_member_present")
+def trained_member_present(timestamp: datetime, interval: int = Query(min=0)):
+    start_datetime = timestamp.replace(hour=(timestamp.hour + (timestamp.minute - int(interval/2))//60)%24,minute=abs(timestamp.minute - int(interval/2))%60)
+    end_datetime = timestamp.replace(hour=(timestamp.hour + (timestamp.minute + int(interval/2))//60)%24,minute=(timestamp.minute + int(interval/2))%60)
+    with main_db_pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT DISTINCT a.shortcode FROM public.ble_addresses as a "
+                "INNER JOIN public.ble_stats b ON b.mac_addr = a.mac_addr "
+                "INNER JOIN public.induction i ON a.shortcode = i.shortcode "
+                "WHERE %s <= b.timestamp AND b.timestamp <= %s AND i.is_lab_trained ",
+                (str(start_datetime), str(end_datetime),)
+            )
+
+            return [ x[0] for x in cur.fetchall() ]
