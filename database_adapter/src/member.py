@@ -185,7 +185,7 @@ def get_member_permissions_from_uuid(
     Returns:
         MemberPermissions | dict: member permissions or empty dict
     """
-    uuid = "".join(u.zfill(2) for u in uuid.split(" "))
+    uuid = "".join(u.zfill(2) for u in uuid.split(" ")).upper()
 
     try:
         with main_db_pool.connection() as conn:
@@ -203,7 +203,7 @@ def get_member_permissions_from_uuid(
                     if update_log:
                         cur.execute(
                             "INSERT INTO public.card_scan_log "
-                            "(id) VALUES (%s) "
+                            "(id, printer) VALUES (%s, false) "
                             "ON CONFLICT DO NOTHING",
                             (uuid, ),
                         )
@@ -219,7 +219,7 @@ def get_member_permissions_from_uuid(
                     if update_log:
                         cur.execute(
                             "INSERT INTO public.card_scan_log "
-                            "(id, valid) VALUES (%s,%s) "
+                            "(id, valid, printer) VALUES (%s,%s, false) "
                             "ON CONFLICT DO NOTHING",
                             (uuid, (result.inducted and result.print)),
                         )
@@ -387,4 +387,30 @@ def register_card_details_shortcode(
 
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error_msg
+        )
+
+@member_router.get("/scans/last")
+def get_last_scans(n : int = 5, printer : bool = False):
+    try:
+        with main_db_pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT TO_CHAR(c.scanned_time, 'dd/mm/yy hh24:mi:ss'), c.id, c.valid, s.shortcode, m.user_id FROM public.card_scan_log c "
+                    "LEFT JOIN public.shortcode_card_mapping s ON UPPER(s.id) = UPPER(c.id) "
+                    "LEFT JOIN public.mapping m ON s.shortcode=m.shortcode "
+                    "WHERE c.printer=%s "
+                    "ORDER BY scanned_time DESC LIMIT %s ",
+                    (printer, n,)
+                )
+
+                scans = cur.fetchall()
+
+                return scans
+    except Exception as e:
+        error_msg = f"Error fetching from db: {e}"
+        logging.warning(error_msg)
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=error_msg
         )

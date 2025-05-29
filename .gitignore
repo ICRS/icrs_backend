@@ -170,3 +170,4 @@ test.ipynb
 
 .DS_Store
 server/assets/printers.json
+server/printer_settings.json
