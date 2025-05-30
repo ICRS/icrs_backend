@@ -2,7 +2,7 @@ import logging
 import os
 import pydantic
 
-from typing import Annotated
+from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 
@@ -170,6 +170,7 @@ def get_member_permissions_from_uuid(
     username: Annotated[str, Depends(get_current_username)],
     uuid: str = Query(min_length=8, max_length=14),
     update_log: bool = False,
+    device: Literal['printer', 'gun'] = 'printer',
 ) -> MemberPermissions | dict:
     """
     Get member permissions from uuid
@@ -185,7 +186,7 @@ def get_member_permissions_from_uuid(
     Returns:
         MemberPermissions | dict: member permissions or empty dict
     """
-    uuid = "".join(u.zfill(2) for u in uuid.split(" ")).upper()
+    uuid = "".join(u.zfill(2) for u in uuid.split(" "))
 
     try:
         with main_db_pool.connection() as conn:
@@ -203,9 +204,9 @@ def get_member_permissions_from_uuid(
                     if update_log:
                         cur.execute(
                             "INSERT INTO public.card_scan_log "
-                            "(id, printer) VALUES (%s, false) "
+                            "(id, device) VALUES (%s, %s) "
                             "ON CONFLICT DO NOTHING",
-                            (uuid, ),
+                            (uuid, device),
                         )
                 else:
                     result = MemberPermissions(
@@ -219,9 +220,9 @@ def get_member_permissions_from_uuid(
                     if update_log:
                         cur.execute(
                             "INSERT INTO public.card_scan_log "
-                            "(id, valid, printer) VALUES (%s,%s, false) "
+                            "(id, valid, device) VALUES (%s,%s,%s) "
                             "ON CONFLICT DO NOTHING",
-                            (uuid, (result.inducted and result.print)),
+                            (uuid, (result.inducted and result.print), device),
                         )
                 return result
     except Exception as e:
@@ -390,17 +391,18 @@ def register_card_details_shortcode(
         )
 
 @member_router.get("/scans/last")
-def get_last_scans(n : int = 5, printer : bool = False):
+def get_last_scans(n : int = 5, device : Literal['printer', 'gun'] = 'gun'):
     try:
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT TO_CHAR(c.scanned_time, 'dd/mm/yy hh24:mi:ss'), c.id, c.valid, s.shortcode, m.user_id FROM public.card_scan_log c "
+                    "SELECT TO_CHAR(c.scanned_time, 'yyyy-mm-ddThh24:mi:ss'), c.id, i.valid, s.shortcode, m.user_id FROM public.card_scan_log c "
                     "LEFT JOIN public.shortcode_card_mapping s ON UPPER(s.id) = UPPER(c.id) "
                     "LEFT JOIN public.mapping m ON s.shortcode=m.shortcode "
-                    "WHERE c.printer=%s "
+                    "LEFT JOIN public.induction i ON i.shortcode=s.shortcode "
+                    "WHERE c.device=%s "
                     "ORDER BY scanned_time DESC LIMIT %s ",
-                    (printer, n,)
+                    (device, n,)
                 )
 
                 scans = cur.fetchall()
