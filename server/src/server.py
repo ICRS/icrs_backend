@@ -36,6 +36,7 @@ requires_override = []
 MAX_DAYTIME_PRINT = 3 * 60 * 60
 MAX_OVERNIGHT_PRINT = 9 * 60 * 60
 OVERNIGHT_START_TIME = 23
+BLE_WINDOW = 15
 
 with open("printer_settings.json", "r") as f:
     data = json.loads(f.read())
@@ -119,6 +120,33 @@ async def check_print_time(time_seconds: float):
     if (time_seconds <= MAX_OVERNIGHT_PRINT and hour >= OVERNIGHT_START_TIME) or (time_seconds <= MAX_DAYTIME_PRINT):
         return "1"
     return "0"
+
+@access_server_router.post("/postBluetoothDevice", response_class=PlainTextResponse)
+async def post_bluetooth_addr(mac_addr: str = Query(max_length=17)):
+    addresses = requests.get(
+        DATABASE_ADAPTER_IP + "/access/ble_last_devices",
+        params={"time": BLE_WINDOW}
+    )
+
+    if mac_addr in addresses.json():
+        return "already captured"
+
+    result = requests.post(
+        DATABASE_ADAPTER_IP + "/access/ble_device_detected",
+        params={
+            "mac_addr": mac_addr
+        }
+    )
+
+    if result.status_code != 200:
+        logging.info("got to db")
+        error_msg = f"Adding mac address to DB failed: {result.reason}"
+        logging.error(error_msg)
+        raise HTTPException(
+            status_code=result.status_code,
+            detail=error_msg
+        )
+    return mac_addr
 
 
 class PrintData(BaseModel):
