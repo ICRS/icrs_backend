@@ -85,4 +85,10 @@ def delete_note_by_id(
                  ),
                 (id,)
             )
-            return {"id": cur.fetchone()[0]}
+            id = cur.fetchone()
+            if id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_304_NOT_MODIFIED,
+                    detail=f"Note id {id} not deleted",
+                )
+            return {"id": id[0]}
