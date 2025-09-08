@@ -207,7 +207,7 @@ def register_user(
     shortcode: str = SHORTCODE_QUERY,
     discord_id: str = Query(min_length=17, max_length=23,
                             ),
-    bypass : bool = Query(default=False)
+    bypass : bool = Query(default=False),
 ) -> dict:
     
     if not bypass:
