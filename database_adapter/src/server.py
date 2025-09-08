@@ -206,9 +206,14 @@ def delete_discord_from_table(
 def register_user(
     shortcode: str = SHORTCODE_QUERY,
     discord_id: str = Query(min_length=17, max_length=23,
-                            )
+                            ),
+    bypass : bool = Query(default=False)
 ) -> dict:
-    is_member = union.isMember(shortcode)
+    
+    if not bypass:
+        is_member = union.isMember(shortcode)
+    else:
+        is_member = True
     if not is_member:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
