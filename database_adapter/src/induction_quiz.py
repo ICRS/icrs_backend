@@ -1,9 +1,10 @@
 import json
-from typing import List
-from fastapi import APIRouter, HTTPException, Query, status
+from typing import List, Annotated
+from fastapi import APIRouter, HTTPException, Query, status, Depends
 from pydantic import BaseModel
 
 from src.database import main_db_pool
+from src.auth import get_current_username
 
 
 induction_router = APIRouter(
@@ -74,3 +75,23 @@ def induct(
             )
 
     return True
+
+@induction_router.delete("/wipe")
+def wipe_inductions(
+    username: Annotated[str, Depends(get_current_username)],
+):
+    try:
+        with main_db_pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "TRUNCATE TABLE public.induction"
+                )
+                cur.execute(
+                    "TRUNCATE TABLE public.mapping"
+                )
+    except Exception as e:
+        error_msg = f"Failed to wipe inductions: {e}"
+        raise HTTPException(
+            status_code=500,
+            detail=error_msg
+        )
