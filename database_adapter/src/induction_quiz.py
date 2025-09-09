@@ -84,7 +84,7 @@ def wipe_inductions(
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "DELETE FROM TABLE public.induction"
+                    "DELETE FROM public.induction"
                 )
     except Exception as e:
         error_msg = f"Failed to wipe inductions: {e}"
