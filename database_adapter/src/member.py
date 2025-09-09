@@ -97,7 +97,7 @@ class MemberPermissions(BaseModel):
     shortcode: str = SHORTCODE_QUERY_PYDANTIC
     print: bool = pydantic.Field(default=False)
     laser: bool = pydantic.Field(default=False)
-    inducted: bool = pydantic.Field(default=True)
+    inducted: bool = pydantic.Field(default=False)
     time_added: str = pydantic.Field(default="")
     card_id: str = pydantic.Field(min_length=8, max_length=14, default="")
     resin: bool = pydantic.Field(default=False)
@@ -127,18 +127,33 @@ def get_member_permissions_from_shortcode(
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT i.canprint, i.canlasercut, i.valid, i.time_added, m.id, i.can_resin, i.printer_override "  # noqa: E501
+                    "SELECT i.canprint, i.canlasercut, i.valid, i.time_added, i.can_resin, i.printer_override "  # noqa: E501
                     "FROM public.induction i "
-                    "LEFT JOIN public.shortcode_card_mapping m ON i.shortcode=m.shortcode "  # noqa: E501
                     "WHERE i.shortcode = %s;",
                     (shortcode,)
                 )
 
                 result = cur.fetchone()
 
+                cur.execute(
+                "SELECT m.id FROM public.shortcode_card_mapping m WHERE m.shortcode = %s;",  # noqa: E501
+                (shortcode,)
+                )
+
+                id = cur.fetchone()[0]
+
                 logging.info(f"Result: {result}")
                 if not result:
-                    result = {}
+                    result = MemberPermissions(
+                        shortcode=shortcode,
+                        print=False,
+                        laser=False,
+                        inducted=False,
+                        time_added="None",
+                        card_id=id,
+                        resin=False,
+                        printer_override=False,
+                    )
                 else:
                     datStr = result[3].strftime("%d %b %Y") if result[3] else "Unknown Date"  # noqa: E501
 
@@ -148,9 +163,9 @@ def get_member_permissions_from_shortcode(
                         laser=result[1],
                         inducted=result[2],
                         time_added=datStr,
-                        card_id=result[4] if result[4] else "Not Found",
-                        resin=result[5],
-                        printer_override=result[6],
+                        card_id=id,
+                        resin=result[4],
+                        printer_override=result[5],
                     )
                 return result
     except Exception as e:
