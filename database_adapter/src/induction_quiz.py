@@ -86,9 +86,6 @@ def wipe_inductions(
                 cur.execute(
                     "DELETE FROM TABLE public.induction"
                 )
-                cur.execute(
-                    "DELETE FROM TABLE public.mapping"
-                )
     except Exception as e:
         error_msg = f"Failed to wipe inductions: {e}"
         raise HTTPException(
