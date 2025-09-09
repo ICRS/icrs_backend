@@ -88,6 +88,7 @@ def wipe_inductions(
                 )
     except Exception as e:
         error_msg = f"Failed to wipe inductions: {e}"
+        logging.info(error_msg)
         raise HTTPException(
             status_code=500,
             detail=error_msg
