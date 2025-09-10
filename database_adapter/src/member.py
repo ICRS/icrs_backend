@@ -140,7 +140,9 @@ def get_member_permissions_from_shortcode(
                 (shortcode,)
                 )
 
-                id = cur.fetchone()[0]
+                res = cur.fetchone()
+                id = res[0] if res else "Not Found"
+                
 
                 logging.info(f"Result: {result}")
                 if not result:
