@@ -1,5 +1,5 @@
 [project]
 name = "ICRS Database Adapter"
-version = "1.0.14"
+version = "1.0.15"
 description = "ICRS infrastructure main database abstraction layer/rest api."
 requires-python = ">=3.8"
