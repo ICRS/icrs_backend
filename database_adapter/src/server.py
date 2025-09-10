@@ -131,7 +131,7 @@ def get_shortcode_from_discord_id(
                     )
                 c = cur.fetchone()
                 if c is None:
-                    return {}
+                    return None
                 return {"shortcode": c[0], "active": c[1]}
     except Exception:
         error_msg = f"ShortCode not found for Discord ID: {id}"
