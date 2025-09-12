@@ -1,12 +1,18 @@
 import datetime
 import logging
-
 import ssl
+import os
 import certifi
-ssl._create_default_https_context = ssl.create_default_context
-ssl.DEFAULT_CA_BUNDLE_PATH = certifi.where()
 
+# Set environment variable for cert bundle (optional)
+os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
 
+# Patch SSL default context to use your CA file
+def create_custom_ssl_context():
+    context = ssl.create_default_context(cafile=certifi.where())
+    return context
+
+ssl._create_default_https_context = create_custom_ssl_context
 from icu_ea_api import ICUEActivitiesAPI
 import os
 from datetime import date
@@ -56,6 +62,7 @@ def update_members(function):
 
 @update_members
 def isMember(shortcode: str) -> bool:
+    
     return shortcode in [member['Login']
                          for member in society_members]
 
