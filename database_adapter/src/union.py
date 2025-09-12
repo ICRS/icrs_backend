@@ -1,10 +1,16 @@
 import datetime
 import logging
+
+import ssl
+import certifi
+ssl._create_default_https_context = ssl.create_default_context
+ssl.DEFAULT_CA_BUNDLE_PATH = certifi.where()
+
+
 from icu_ea_api import ICUEActivitiesAPI
-import icu_ea_api
 import os
 from datetime import date
-import certifi
+
 
 
 # ===== Get the current date =====
@@ -26,8 +32,6 @@ api_key = os.getenv('API_KEY')
 society_api = ICUEActivitiesAPI(CSP_CODE, api_key, year_string)
 
 # =========================================
-
-icu_ea_api.icu_ea_api.requests.utils.DEFAULT_CA_BUNDLE_PATH = certifi.where()
 
 
 society_members = []
