@@ -21,6 +21,10 @@ from src.database import main_db_pool, meme_db_pool
 from src.user_notes import user_notes_router
 
 import logging
+import os
+import certifi
+
+os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -28,6 +32,8 @@ logging.basicConfig(
     datefmt="%d-%b-%y %H:%M:%S",
     handlers=[logging.StreamHandler()],
 )
+
+logging.info(f"[STARTUP] {os.getenv('REQUESTS_CA_BUNDLE')}")
 
 
 @asynccontextmanager
