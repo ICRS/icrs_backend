@@ -24,7 +24,7 @@ import logging
 import os
 import certifi
 
-os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
+os.environ['SSL_CERT_FILE'] = certifi.where()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -33,7 +33,7 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()],
 )
 
-logging.info(f"[STARTUP] {os.getenv('REQUESTS_CA_BUNDLE')}")
+logging.info(f"[STARTUP] {os.getenv('SSL_CERT_FILE')}")
 
 
 @asynccontextmanager
