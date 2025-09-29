@@ -2,17 +2,43 @@ import datetime
 import logging
 import ssl
 import os
-import certifi
+import requests
 
-# Set environment variable for cert bundle (optional)
-os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
+class TEMPAPI:
+    base_url : str = "https://eactivities.union.ic.ac.uk/"
 
-# Patch SSL default context to use your CA file
-def create_custom_ssl_context():
-    context = ssl.create_default_context(cafile=certifi.where())
-    return context
+    endpoints = {
+        "members": "CSP/{code}/Reports/Members",
+        "purchases": "CSP/{code}/Products/{id}/Sales",
+    }
 
-ssl._create_default_https_context = create_custom_ssl_context
+    def __init__(self, csp_code, api_key, verify=True):
+        self.csp_code = csp_code
+        self.headers = {
+            'X-API-Key': api_key,
+        }
+        self.verify = verify
+
+        self.__setup_functions()
+
+
+    def __setup_functions(self):
+        for function_name in self.endpoints.keys():
+            self.__setattr__(function_name, self.__create_function(function_name))
+
+    def __get(self, path):
+        return requests.get(self.base_url + path, headers=self.headers, verify=self.verify)
+    
+    def __get_json(self, path):
+        return self.__get(path).json()
+    
+    def __create_function(self, function_name):
+        def __call_function(*args, **kwargs):
+            path_format = self.endpoints[function_name]
+            path = path_format.format(code = self.csp_code, **kwargs)
+            return self.__get_json(path)
+        return __call_function
+
 from icu_ea_api import ICUEActivitiesAPI
 import os
 from datetime import date
@@ -31,6 +57,7 @@ else:
 # =================================
 
 CSP_CODE = 625
+LAB_ACCESS_ID = 53697
 
 # ===== Get the API key =====
 
@@ -41,9 +68,26 @@ society_api = ICUEActivitiesAPI(CSP_CODE, api_key, year_string)
 
 
 society_members = []
+passes = []
 last_update = datetime.datetime(2000, 1, 1)
+last_update_passes = datetime.datetime(2000, 1, 1)
 timeout = datetime.timedelta(seconds=5)
 
+api = TEMPAPI(CSP_CODE, api_key, verify=False)
+
+def update_labpasses(function):
+    def query_api(*args, **kwargs):
+        global last_update_passes
+        now = datetime.datetime.now()
+
+        if now > last_update_passes + timeout:
+            global passes
+            passes = api.purchases(id=LAB_ACCESS_ID)
+            last_update_passes = now
+            logging.debug("updated lab passes")
+        
+            return function(*args, **kwargs)
+    return query_api
 
 def update_members(function):
     def query_api(*args, **kwargs):
@@ -92,3 +136,7 @@ def cid_to_shortcode(cid: str) -> str | None:
         (member["Login"] for member in society_members
          if member["CID"] == cid),
         None)
+
+@update_labpasses
+def has_labpass(shortcode : str) -> bool:
+    return shortcode in [item["Customer"]["Login"] for item in passes]
