@@ -35,11 +35,12 @@ class TEMPAPI:
         'list_years':                   '/CSP/{code}/Years',
     }
 
-    def __init__(self, csp_code, api_key, verify=True):
+    def __init__(self, csp_code, api_key, year, verify=True):
         self.csp_code = csp_code
         self.headers = {
             'X-API-Key': api_key,
         }
+        self.year = year
         self.verify = verify
         self.__setup_functions()
 
@@ -84,7 +85,7 @@ LAB_ACCESS_ID = 53697
 # ===== Get the API key =====
 
 api_key = os.getenv('API_KEY')
-society_api = TEMPAPI(CSP_CODE, api_key, verify=False)
+society_api = TEMPAPI(CSP_CODE, api_key, year_string, verify=False)
 
 # =========================================
 
@@ -95,7 +96,7 @@ last_update = datetime.datetime(2000, 1, 1)
 last_update_passes = datetime.datetime(2000, 1, 1)
 timeout = datetime.timedelta(seconds=5)
 
-api = TEMPAPI(CSP_CODE, api_key, verify=False)
+api = TEMPAPI(CSP_CODE, api_key, year_string, verify=False)
 
 def update_labpasses(function):
     def query_api(*args, **kwargs):
