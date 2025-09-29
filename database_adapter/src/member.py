@@ -33,8 +33,14 @@ class MemberDetails(BaseModel):
 @member_router.get("")
 def is_member(
     shortcode: str = SHORTCODE_QUERY,
-):
+):  
     return union.isMember(shortcode)
+
+@member_router.get("/pass")
+def has_pass(
+    shortcode: str = SHORTCODE_QUERY
+):
+    return union.has_labpass(shortcode)
 
 
 @member_router.post("/add")

@@ -213,10 +213,10 @@ def register_user(
 ) -> dict:
     
     if not bypass:
-        is_member = union.isMember(shortcode)
+        has_lab_pass = union.has_labpass(shortcode)
     else:
-        is_member = True
-    if not is_member:
+        has_lab_pass = True
+    if not has_lab_pass:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=(
