@@ -104,7 +104,7 @@ def update_labpasses(function):
 
         if now > last_update_passes + timeout:
             global passes
-            passes = api.purchases(id=LAB_ACCESS_ID)
+            passes = api.product_sales(id=LAB_ACCESS_ID)
             last_update_passes = now
             logging.debug("updated lab passes")
         
