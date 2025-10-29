@@ -80,7 +80,7 @@ else:
 # =================================
 
 CSP_CODE = 625
-LAB_ACCESS_ID = 53697
+LAB_ACCESS_ID = [53697, 54174]
 
 # ===== Get the API key =====
 
@@ -105,7 +105,9 @@ def update_labpasses(function):
 
         if now > last_update_passes + timeout:
             global passes
-            passes = api.product_sales(id=LAB_ACCESS_ID)
+            passes.clear()
+            for prodid in LAB_ACCESS_ID:
+                passes += api.product_sales(id=prodid)
             last_update_passes = now
             logging.debug("updated lab passes")
         
