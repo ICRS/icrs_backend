@@ -13,7 +13,7 @@ class TEMPAPI:
 
         'list_all_products':            '/CSP/{code}/Products',
         'product_details':              '/CSP/{code}/Products/{id}',
-        'product_sales':                '/CSP/{code}/Products/{id}/Sales',
+        'product_sales':                '/CSP/{code}/Products/{id}/Sales?year={year}',
 
         'profile_entry':                '/CSP/{code}/ProfileEntry',
 
@@ -81,6 +81,8 @@ else:
 
 CSP_CODE = 625
 LAB_ACCESS_ID = [1002753]
+# eActivities syncs purchases onto the API daily before 06:00
+SALES_SYNC_TIME = datetime.time(6, 0)
 
 # ===== Get the API key =====
 
@@ -98,20 +100,36 @@ timeout = datetime.timedelta(seconds=5)
 
 api = TEMPAPI(CSP_CODE, api_key, year_string, verify=False)
 
+def last_sales_sync(now: datetime.datetime) -> datetime.datetime:
+    """Most recent time eActivities synced purchases onto the API."""
+    sync = datetime.datetime.combine(now.date(), SALES_SYNC_TIME)
+    if now < sync:
+        sync -= datetime.timedelta(days=1)
+    return sync
+
+
 def update_labpasses(function):
     def query_api(*args, **kwargs):
         global last_update_passes
         now = datetime.datetime.now()
 
-        if now > last_update_passes + timeout:
+        if last_update_passes < last_sales_sync(now):
             global passes
-            passes.clear()
-            for prodid in LAB_ACCESS_ID:
-                passes += api.product_sales(id=prodid)
-            last_update_passes = now
-            logging.debug("updated lab passes")
-        
-            return function(*args, **kwargs)
+            try:
+                new_passes = []
+                for prodid in LAB_ACCESS_ID:
+                    sales = api.product_sales(id=prodid)
+                    if not isinstance(sales, list):
+                        raise ValueError(f"unexpected response for product {prodid}: {sales}")
+                    new_passes += sales
+                passes = new_passes
+                last_update_passes = now
+                logging.debug("updated lab passes")
+            except Exception:
+                # keep the previous list and retry on the next call
+                logging.exception("failed to update lab passes")
+
+        return function(*args, **kwargs)
     return query_api
 
 def update_members(function):
