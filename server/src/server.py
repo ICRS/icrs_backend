@@ -261,3 +261,45 @@ def get_slicer_print_permissions(
     else:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Card not tapped on reader")
+
+@access_server_router.get("/member/permissions/uuid")
+def member_permissions_uuid(
+    uuid: str = Query(min_length=8, max_length=14),
+        credentials: Annotated[HTTPBasicAuth |
+                               None, Depends(valid_login)] = None
+):
+    result = requests.get(
+        DATABASE_ADAPTER_IP + "/member/permissions/uuid",
+        params={"uuid": uuid},
+        auth=credentials
+    )
+    if result.status_code != 200:
+        msg = f"Permission denied for permissions reading: {result.reason}"
+        logging.error(msg)
+        raise HTTPException(
+            status_code=result.status_code,
+            detail=msg
+        )
+
+    return result.json()
+
+@access_server_router.get("/member/permissions/shortcode")
+def member_permissions_shortcode(
+    shortcode: str = Query(min_length=3, max_length=14),
+        credentials: Annotated[HTTPBasicAuth |
+                               None, Depends(valid_login)] = None
+):
+    result = requests.get(
+        DATABASE_ADAPTER_IP + "/member/permissions/shortcode",
+        params={"shortcode": shortcode},
+        auth=credentials
+    )
+    if result.status_code != 200:
+        msg = f"Permission denied for permissions reading: {result.reason}"
+        logging.error(msg)
+        raise HTTPException(
+            status_code=result.status_code,
+            detail=msg
+        )
+
+    return result.json()
