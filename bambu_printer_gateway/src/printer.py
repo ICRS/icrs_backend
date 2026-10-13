@@ -1,11 +1,18 @@
 import json
+import logging
 import os
 import dotenv
 
 from bambulabs_api import Printer
 
+from src import discovery
+from src.camera import RtspsCamera, RTSPS_PORT
+
 __all__ = ["printer",
-           "PRINTER_NAME"
+           "PRINTER_NAME",
+           "PRINTER_SERIAL",
+           "PRINTER_IP",
+           "CAMERA_TYPE",
            ]
 
 dotenv.load_dotenv()
@@ -36,4 +43,24 @@ RABBITMQ_USERNAME = os.getenv("RABBITMQ_USERNAME")
 RABBITMQ_PASSWORD = os.getenv("RABBITMQ_PASSWORD")
 # =============================================================================
 
-printer = Printer(HOSTNAME, ACCESS_CODE, PRINTER_SERIAL)
+# =============================================================================
+# Printer discovery
+# =============================================================================
+# HOSTNAME is only a hint: if the printer has moved (DHCP), it is found again
+# by serial in DISCOVERY_SUBNETS (comma-separated, empty disables the search).
+DISCOVERY_SUBNETS = os.getenv("DISCOVERY_SUBNETS", "").strip()
+
+PRINTER_IP = discovery.find_printer(
+    PRINTER_SERIAL, HOSTNAME if HOSTNAME not in ("", "None") else None,
+    DISCOVERY_SUBNETS) or HOSTNAME
+if PRINTER_IP != HOSTNAME:
+    logging.warning(f"Printer {PRINTER_SERIAL} is at {PRINTER_IP}, not HOSTNAME {HOSTNAME}")  # noqa: E501
+
+# P2S/X1/H2D serve RTSPS on 322 when LAN Only Liveview is on; P1/A1 use 6000
+CAMERA_TYPE = "rtsps" if discovery.port_open(PRINTER_IP, RTSPS_PORT) else "tls6000"
+logging.info(f"Printer {PRINTER_SERIAL} at {PRINTER_IP}, camera: {CAMERA_TYPE}")
+# =============================================================================
+
+printer = Printer(PRINTER_IP, ACCESS_CODE, PRINTER_SERIAL)
+if CAMERA_TYPE == "rtsps":
+    printer.camera_client = RtspsCamera(PRINTER_IP, ACCESS_CODE)
