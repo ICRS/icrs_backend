@@ -1,4 +1,5 @@
 __all__ = [
+    "start_background_tasks",
     "router",
     "status_router",
     "print_router",
@@ -14,15 +15,16 @@ from io import BytesIO
 from typing import BinaryIO
 import logging
 
-import bambulabs_api
 from fastapi import (APIRouter, HTTPException, Query,
                      UploadFile, Response, status)
 from bambulabs_api import AMSFilamentSettings, GcodeState
-from PIL import ImageDraw, ImageFont, ImageChops
+from PIL import ImageDraw, ImageFont
+
+from fastapi.responses import StreamingResponse
 
 from src.printer_task import PrinterTask
 from src.validation import SHORTCODE_REGEX
-from src.printer import printer
+from src.printer import printer, PRINTER_SERIAL, PRINTER_IP, CAMERA_TYPE
 from src.timelapse import Timelapse
 
 
@@ -43,14 +45,34 @@ filament_router = APIRouter(
 ams_router = APIRouter(
     prefix="/printer/ams", tags=["AMS Options"])
 
-logging.info("Connecting to printer...")
-printer.connect()
-
 timelapse = Timelapse(printer=printer)
-asyncio.create_task(timelapse.timelapse_task())
-
 printer_task = PrinterTask(printer=printer)
-asyncio.create_task(printer_task.task())
+
+# Time the camera last delivered a new frame, for /healthz
+camera_last_frame_at = datetime.now()
+
+
+async def camera_watch_task():
+    global camera_last_frame_at
+    last = None
+    while True:
+        frame = printer.camera_client.last_frame
+        if frame is not None and frame is not last:
+            last = frame
+            camera_last_frame_at = datetime.now()
+        await asyncio.sleep(5)
+
+
+def start_background_tasks() -> list[asyncio.Task]:
+    """
+    Connect to the printer and start the background tasks. Called from the
+    app's lifespan, as uvicorn >= 0.47 imports the app before its event loop
+    exists.
+    """
+    logging.info("Connecting to printer...")
+    printer.connect()
+    return [asyncio.create_task(t) for t in (
+        timelapse.timelapse_task(), printer_task.task(), camera_watch_task())]
 
 
 @router.get("/timelapse")
@@ -122,9 +144,6 @@ async def get_file_name():
     return {"file_name": printer.get_file_name()}
 
 
-image_last_update = datetime.now()
-
-
 @router.get("/printer/camera")
 async def printer_get_camera():
     """
@@ -135,6 +154,8 @@ async def printer_get_camera():
     """
     try:
         im = printer.get_camera_image()
+        # P2S frames are 1080p; keep Discord uploads at the P1S size
+        im.thumbnail((1280, 720))
 
         width, height = im.size
         draw = ImageDraw.Draw(im)
@@ -161,11 +182,65 @@ async def printer_get_camera():
         logging.error(f"Error occurred while getting camera frame: {e}")
         return {"error": str(e)}
 
-    global image_last_update
-    image_last_update = datetime.now()
-
     return {"frame": frame} if (frame := last_frame
                                 ) is not None else {}
+
+
+@router.get("/printer/camera/snapshot.jpg")
+async def printer_get_camera_snapshot():
+    """
+    Get the latest camera frame as a plain JPEG (full size, no watermark)
+
+    Returns:
+        Response: image/jpeg
+    """
+    try:
+        frame = base64.b64decode(printer.get_camera_frame())
+    except Exception as e:  # noqa  # pylint: disable=broad-exception-caught
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
+    return Response(frame, media_type="image/jpeg")
+
+
+@router.get("/printer/camera/stream")
+async def printer_camera_stream():
+    """
+    Stream the printer camera as MJPEG. Viewers share the gateway's single
+    connection to the printer, as the printer only accepts a few.
+
+    Returns:
+        StreamingResponse: multipart/x-mixed-replace MJPEG stream
+    """
+    async def frames():
+        last = None
+        while True:
+            try:
+                current = printer.get_camera_frame()
+            except Exception:  # noqa  # pylint: disable=broad-exception-caught
+                current = None
+            if current is not None and current != last:
+                last = current
+                frame = base64.b64decode(current)
+                yield (b"--frame\r\nContent-Type: image/jpeg\r\n"
+                       b"Content-Length: " + str(len(frame)).encode()
+                       + b"\r\n\r\n" + frame + b"\r\n")
+            await asyncio.sleep(0.2)
+
+    return StreamingResponse(
+        frames(), media_type="multipart/x-mixed-replace; boundary=frame")
+
+
+@router.get("/printer/info")
+async def printer_get_info() -> dict:
+    """
+    Get how the gateway reached the printer
+
+    Returns:
+        dict: serial, ip, camera type and seconds since the last camera frame
+    """
+    return {"serial": PRINTER_SERIAL, "ip": PRINTER_IP, "camera": CAMERA_TYPE,
+            "mqtt_connected": printer.mqtt_client_connected(),
+            "camera_frame_age": (datetime.now() - camera_last_frame_at).seconds}
 
 
 @router.get("/printer/led/state")
@@ -392,23 +467,17 @@ async def set_printer_available(
     return printer_available
 
 
-last_image = None
-
-
 @router.get("/healthz", status_code=200)
 async def healthz(reponse: Response):
-    if (datetime.now() - image_last_update) > timedelta(seconds=60):
+    """
+    Unhealthy when MQTT is down or the camera has stopped delivering frames,
+    so Kubernetes restarts the gateway, which then re-discovers the printer
+    in case its IP changed.
+    """
+    camera_stale = datetime.now() - camera_last_frame_at > timedelta(seconds=120)
+    if camera_stale or not printer.mqtt_client_connected():
         reponse.status_code = 500
         return False
-    if not printer.mqtt_dump():
-        return False
-    global last_image
-    current_image = printer.get_camera_image()
-    if printer.get_state() == bambulabs_api.states_info.GcodeState.RUNNING.name:  # noqa: E501
-        if last_image is not None and not ImageChops.difference(last_image, current_image):  # noqa: E501
-            return False
-    last_image = current_image
-
     return True
 
 
