@@ -108,6 +108,7 @@ class MemberPermissions(BaseModel):
     card_id: str = pydantic.Field(min_length=8, max_length=14, default="")
     resin: bool = pydantic.Field(default=False)
     printer_override: bool = pydantic.Field(default=False)
+    committee_cabinet: bool = pydantic.Field(default=False)
 
 
 @member_router.get("/permissions/shortcode")
@@ -133,7 +134,7 @@ def get_member_permissions_from_shortcode(
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT i.canprint, i.canlasercut, i.valid, i.time_added, i.can_resin, i.printer_override "  # noqa: E501
+                    "SELECT i.canprint, i.canlasercut, i.valid, i.time_added, i.can_resin, i.printer_override, i.committee_cabinet "  # noqa: E501
                     "FROM public.induction i "
                     "WHERE i.shortcode = %s;",
                     (shortcode,)
@@ -161,6 +162,7 @@ def get_member_permissions_from_shortcode(
                         card_id=id,
                         resin=False,
                         printer_override=False,
+                        committee_cabinet=False,
                     )
                 else:
                     datStr = result[3].strftime("%d %b %Y") if result[3] else "Unknown Date"  # noqa: E501
@@ -174,6 +176,7 @@ def get_member_permissions_from_shortcode(
                         card_id=id,
                         resin=result[4],
                         printer_override=result[5],
+                        committee_cabinet=result[6],
                     )
                 return result
     except Exception as e:
@@ -215,7 +218,7 @@ def get_member_permissions_from_uuid(
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "SELECT i.shortcode, i.canprint, i.canlasercut, valid, i.can_resin, i.printer_override FROM "  # noqa: E501
+                    "SELECT i.shortcode, i.canprint, i.canlasercut, valid, i.can_resin, i.printer_override, i.committee_cabinet FROM "  # noqa: E501
                     "public.induction i JOIN public.shortcode_card_mapping s ON "  # noqa: E501
                     "i.shortcode=s.shortcode WHERE s.id=%s",
                     (uuid,),
@@ -239,6 +242,7 @@ def get_member_permissions_from_uuid(
                         inducted=result[3],
                         resin=result[4],
                         printer_override=result[5],
+                        committee_cabinet=result[6],
                     )
                     if update_log:
                         cur.execute(
