@@ -6,6 +6,8 @@ __all__ = [
 ]
 
 from fastapi import Query
+from typing import Annotated
+from pydantic import StringConstraints
 import pydantic
 
 
@@ -16,6 +18,14 @@ SHORTCODE_QUERY = Query(
     pattern=SHORTCODE_REGEX,
     min_length=3,
     max_length=8)
+SHORTCODE = Annotated[
+    str,
+    StringConstraints(
+        pattern=SHORTCODE_REGEX,
+        min_length=3,
+        max_length=8,
+    ),
+]
 SHORTCODE_QUERY_PYDANTIC = pydantic.Field(
     pattern=SHORTCODE_REGEX,
     min_length=3,

@@ -3,11 +3,13 @@ import logging
 import os
 
 from typing import Annotated
-from fastapi import APIRouter, Depends,  HTTPException, status
+from fastapi import APIRouter, Depends,  HTTPException, status, Query
 
 from src.database import main_db_pool
 
 from src.auth import get_current_username
+
+from src.validation import SHORTCODE
 
 env = os.getenv("ENV", "dev")
 
@@ -157,3 +159,20 @@ def recently_inducted_v2(
                     [(c,) for c in update])
 
             return mapping, sent_info
+
+@summary_v2.post('/inducted/update')
+def update_inducted(
+    username: Annotated[str, Depends(get_current_username)],
+    shortcodes: Annotated[list[SHORTCODE], Query()],
+):
+    try:
+        with main_db_pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.executemany(
+                    "INSERT INTO public.sent (shortcode) VALUES (%s) ON CONFLICT DO NOTHING",
+                    [(shortcode,) for shortcode in shortcodes]
+                )
+                return {"success": True}
+    except Exception as e:
+        raise HTTPException(status=500, detail=str(e))
+
