@@ -46,11 +46,7 @@ def card_office_list(
             detail=msg
         )
 
-    to_send = result.json()[0]
-    csv = ["name,shortcode,cid,email"]
-    for person in to_send:
-        csv.append(','.join(person) + person["shortcode"] + "@ic.ac.uk")
-    return '\n'.join(csv)
+    return result.json()[0]
 
 @admin_server_router.post("/card-office")
 def card_office_update(
