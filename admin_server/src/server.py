@@ -54,7 +54,7 @@ def card_office_update(
     credentials: Annotated[HTTPBasicAuth |
                             None, Depends(valid_login)] = None
 ):
-    result = requests.get(
+    result = requests.post(
         DATABASE_ADAPTER_IP + "/v2/summary/inducted/update",
         params={"shortcodes": shortcodes},
         auth=credentials

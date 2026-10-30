@@ -1,5 +1,5 @@
 [project]
 name = "ICRS Admin Website Server"
-version = "1.0.3"
+version = "1.0.4"
 description = "ICRS Admin Website Server."
 requires-python = ">=3.8"
