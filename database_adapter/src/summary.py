@@ -130,7 +130,7 @@ def recently_inducted_v2(
                         "WHERE valid AND NOT EXISTS " +
                         "(SELECT \'X\' FROM public.sent S " +
                         "WHERE A.shortcode=S.shortcode)")
-            update = [c[0] for c in cur.fetchall()]
+            shortcodes = [c[0] for c in cur.fetchall()]
 
             cur.execute("SELECT shortcode, time_added FROM public.sent S "
                         "ORDER BY time_added DESC")
@@ -143,7 +143,7 @@ def recently_inducted_v2(
                     name=name
                 )
                 for name, cid, shortcode in
-                union.getShortcodesToCIDAndName(update)]
+                union.getShortcodesToCIDAndName(shortcodes)]
             sent_info = [
                 InductionInfo(
                     shortcode=shortcode,
@@ -156,7 +156,7 @@ def recently_inducted_v2(
             if update:
                 cur.executemany(
                     "INSERT INTO public.sent (shortcode) VALUES (%s)",
-                    [(c,) for c in update])
+                    [(c,) for c in shortcodes])
 
             return mapping, sent_info
 
