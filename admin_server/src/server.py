@@ -67,4 +67,8 @@ def card_office_update(
             detail=msg
         )
 
-    return result.json()
+    to_send = result.json()[0]
+    csv = ["name,shortcode,cid,email"]
+    for person in to_send:
+        csv.append(','.join(person) + person["shortcode"] + "@ic.ac.uk")
+    return '\n'.join(csv)
