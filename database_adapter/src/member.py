@@ -111,6 +111,12 @@ class MemberPermissions(BaseModel):
     committee_cabinet: bool = pydantic.Field(default=False)
 
 
+class MemberPermissionsUpdate(MemberPermissions):
+    # None leaves it unchanged, so callers that predate the field (e.g. the
+    # registration page) don't revoke cabinet access by omitting it
+    committee_cabinet: bool | None = pydantic.Field(default=None)
+
+
 @member_router.get("/permissions/shortcode")
 def get_member_permissions_from_shortcode(
     username: Annotated[str, Depends(get_current_username)],
@@ -299,14 +305,15 @@ def refresh_all_membership(
 @member_router.post("/permissions/update")
 def update_permissions(
     username: Annotated[str, Depends(get_current_username)],
-    permissions: MemberPermissions,
+    permissions: MemberPermissionsUpdate,
 ):
     try:
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "UPDATE public.induction SET "
-                    "valid=%s, canPrint=%s, canLaserCut=%s, can_resin=%s, printer_override=%s "
+                    "valid=%s, canPrint=%s, canLaserCut=%s, can_resin=%s, printer_override=%s, "  # noqa: E501
+                    "committee_cabinet=COALESCE(%s, committee_cabinet) "
                     "WHERE shortcode=%s",
                     (
                         permissions.inducted,
@@ -314,6 +321,7 @@ def update_permissions(
                         permissions.laser,
                         permissions.resin,
                         permissions.printer_override,
+                        permissions.committee_cabinet,
                         permissions.shortcode.lower(),
                     ),
                 )

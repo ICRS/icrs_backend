@@ -3,7 +3,7 @@ import datetime
 from typing import Annotated
 from src.database import main_db_pool
 import logging
-from fastapi import APIRouter, Body, Query, HTTPException, status
+from fastapi import APIRouter, Body, Depends, Query, HTTPException, status
 import json
 
 from .validation import SHORTCODE_QUERY
@@ -24,11 +24,34 @@ PRINTER_CONFIG = json.load(open("printer_config.json"))
 PRINTER_NAMES = [
     printer_name_parsing(n) for n in PRINTER_CONFIG["PRINTER_NAMES"]]
 
+
+def printer_key(s: str) -> str:
+    """Printer name ignoring case and hyphen/space differences."""
+    return " ".join(s.replace("-", " ").lower().split())
+
+
+PRINTERS_BY_KEY = {printer_key(n): n for n in PRINTER_NAMES}
+
+
+def configured_printer_name(
+        printer_name: str = Query(description=", ".join(PRINTER_NAMES))) -> str:
+    """
+    Map any spelling of a configured printer to its configured name. The
+    slicer sends the name set on the printer, e.g. "RON for pres" for
+    "Ron For Pres", which an exact enum match rejected.
+    """
+    try:
+        return PRINTERS_BY_KEY[printer_key(printer_name)]
+    except KeyError:
+        raise HTTPException(  # noqa  # pylint: disable=raise-missing-from
+            status_code=422,
+            detail=f"Unknown printer {printer_name!r}, expected one of {PRINTER_NAMES}")
+
 # ==============================================================================
 
 
 @print_metrics_router.post("/print")
-async def add_print_entry(printer_name: str = Query(enum=PRINTER_NAMES),
+async def add_print_entry(printer_name: str = Depends(configured_printer_name),
                           shortcode: str = SHORTCODE_QUERY,
                           print_time: int = Query(ge=0),
                           print_weight: int = Query(ge=0)):
@@ -57,19 +80,19 @@ async def add_print_entry(printer_name: str = Query(enum=PRINTER_NAMES),
 
 @print_metrics_router.post("/print/update/stop")
 async def stop_print_update_entry(
-        printer_name: str = Query(enum=PRINTER_NAMES)):
+        printer_name: str = Depends(configured_printer_name)):
     try:
-        printer_name = printer_name.replace("-", " ").lower()
+        printer_name = printer_key(printer_name)
         with main_db_pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     ("UPDATE ONLY public.print_metrics "
                      "SET print_duration=LEAST(EXTRACT("
                      "EPOCH FROM (NOW() - time_started)), print_duration) "
-                     "WHERE printer_name=%s AND time_started="
+                     "WHERE LOWER(printer_name)=%s AND time_started="
                      "(SELECT MAX(time_started) FROM public.print_metrics "
                      "WHERE LOWER(printer_name)=%s)"),
-                    (printer_name,)
+                    (printer_name, printer_name)
                 )
                 conn.commit()
                 return True
